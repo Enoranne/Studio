@@ -121,6 +121,7 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             expect(page.locator("#markerComposer")).to_be_hidden()
             expect(page.locator(".editorial-marker")).to_have_count(1)
 
+            page.locator(".media-row").first.click()
             expect(page.locator(".editorial-inspector-section")).to_be_visible()
             page.get_by_role("button", name="Alternatives").click()
             expect(page.locator("#editorialDrawer")).to_be_visible()
@@ -128,7 +129,7 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             expect(page.locator(".selector-policy")).to_contain_text("Validation humaine")
             page.get_by_role("button", name="Prévisualiser").click()
             expect(page.locator("#editorialDrawer")).to_be_visible()
-            page.get_by_role("button", name="×").last.click()
+            page.locator("#editorialDrawer .pane-close").click()
             expect(page.locator("#editorialDrawer")).to_be_hidden()
 
             assert errors == []
