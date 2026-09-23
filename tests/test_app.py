@@ -8,6 +8,7 @@ from piste_studio.media import scan_media
 from piste_studio.metadata import set_media_metadata, fetch_media_with_metadata
 from piste_studio.project import init_project
 from piste_studio.media_intelligence import _write_analysis
+from piste_studio.semantic_vision import store_semantic_profile
 
 
 def make_project(tmp_path: Path) -> Path:
@@ -320,3 +321,91 @@ def test_media_intelligence_state_filmstrip_and_similarity_api(tmp_path):
     assert status.status_code == 200
     assert "ffmpeg" in status.json()
     assert "ffprobe" in status.json()
+
+
+def test_semantic_vision_api_requires_resolution_before_tag_write(tmp_path):
+    root = make_project(tmp_path)
+    (root / "rushes" / "semantic_target.mp4").write_bytes(b"semantic-target")
+    scan_media(root)
+    videos = [
+        x for x in fetch_media_with_metadata(root)
+        if x["kind"] == "video"
+    ]
+    reference, target = videos[0], videos[1]
+    set_media_metadata(
+        root,
+        reference["id"],
+        title="Reference",
+        duration_seconds=10.0,
+        tags=["character:malo", "prop:fisher"],
+    )
+    set_media_metadata(
+        root,
+        target["id"],
+        title="Target",
+        duration_seconds=10.0,
+        tags=["enfance"],
+    )
+    store_semantic_profile(
+        root,
+        reference["id"],
+        embedding=[1.0, 0.0, 0.0],
+        frame_count=4,
+    )
+    store_semantic_profile(
+        root,
+        target["id"],
+        embedding=[0.999, 0.02, 0.0],
+        frame_count=4,
+    )
+
+    app = create_app(
+        root,
+        Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html",
+    )
+    client = TestClient(app)
+
+    state = client.get("/api/state").json()
+    target_state = next(
+        x for x in state["media"] if x["id"] == target["id"]
+    )
+    assert target_state["semantic_profile"]["status"] == "READY"
+    assert "character:malo" not in target_state["tags"]
+
+    proposed = client.post(
+        f"/api/vision/propose/{target['id']}",
+        json={},
+    )
+    assert proposed.status_code == 200, proposed.text
+    body = proposed.json()
+    assert body["policy"]["human_validation_required"] is True
+    assert body["policy"]["automatic_tag_write"] is False
+    proposal = next(
+        x for x in body["proposals"]
+        if x["tag"] == "character:malo"
+    )
+    assert proposal["status"] == "PENDING"
+
+    before_accept = client.get("/api/state").json()
+    target_before = next(
+        x for x in before_accept["media"] if x["id"] == target["id"]
+    )
+    assert "character:malo" not in target_before["tags"]
+
+    resolved = client.post(
+        f"/api/vision/proposals/{proposal['id']}/resolve",
+        json={"accept": True},
+    )
+    assert resolved.status_code == 200, resolved.text
+    assert resolved.json()["proposal"]["status"] == "ACCEPTED"
+
+    after_accept = client.get("/api/state").json()
+    target_after = next(
+        x for x in after_accept["media"] if x["id"] == target["id"]
+    )
+    assert "character:malo" in target_after["tags"]
+
+    status = client.get("/api/vision/status")
+    assert status.status_code == 200
+    assert status.json()["provider"] == "local_clip"
+    assert "dependencies_ready" in status.json()
