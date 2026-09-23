@@ -196,3 +196,66 @@ def trim_story_clip(
         raise StorylineError("Durée STORY trop courte.")
 
     return magnetic_reflow(doc, story_start=story_start)
+
+
+def validate_locked_change(
+    root,
+    before: dict,
+    after: dict,
+) -> None:
+    from .locks import check_operation
+
+    before_by_id = {
+        str(c.get("id")): c for c in before.get("clips", [])
+    }
+    for new in after.get("clips", []):
+        cid = str(new.get("id"))
+        old = before_by_id.get(cid)
+        if old is None:
+            continue
+
+        changed_start = abs(
+            float(old.get("start", 0)) - float(new.get("start", 0))
+        ) > 1e-6
+        changed_duration = abs(
+            float(old.get("duration", 0)) - float(new.get("duration", 0))
+        ) > 1e-6
+        changed_source = abs(
+            float(old.get("sourceStart", 0) or 0)
+            - float(new.get("sourceStart", 0) or 0)
+        ) > 1e-6
+        if not (changed_start or changed_duration or changed_source):
+            continue
+
+        track = str(new.get("track") or old.get("track") or "")
+        if track == "video":
+            operation = (
+                "trim"
+                if changed_duration or changed_source
+                else "reorder"
+            )
+        elif track == "titles":
+            operation = "graphics"
+        else:
+            operation = "audio_change"
+
+        old_start = float(old.get("start", 0))
+        old_end = old_start + float(old.get("duration", 0))
+        new_start = float(new.get("start", 0))
+        new_end = new_start + float(new.get("duration", 0))
+        start = min(old_start, new_start)
+        end = max(old_end, new_end)
+        if end <= start:
+            continue
+
+        decision = check_operation(
+            root,
+            operation=operation,
+            start=start,
+            end=end,
+            target="timeline",
+        )
+        if not decision.allowed:
+            raise StorylineError(
+                f"{cid}: {decision.reason}"
+            )
