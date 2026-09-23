@@ -68,6 +68,33 @@ def _overlap(a_start: float, a_end: float, b_start: float, b_end: float) -> bool
     return max(a_start, b_start) < min(a_end, b_end)
 
 
+def _crossfade_overlap_allowed(a: dict, b: dict) -> bool:
+    if (
+        a.get("audioDbId") is None
+        and a.get("audioId") is None
+    ) or (
+        b.get("audioDbId") is None
+        and b.get("audioId") is None
+    ):
+        return False
+    if str(a.get("crossfadeWith") or "") != str(b.get("id") or ""):
+        return False
+    if str(b.get("crossfadeWith") or "") != str(a.get("id") or ""):
+        return False
+    try:
+        da = float(a.get("crossfadeDuration") or 0)
+        db = float(b.get("crossfadeDuration") or 0)
+    except (TypeError, ValueError):
+        return False
+    if da <= 0 or db <= 0 or abs(da - db) > 1e-4:
+        return False
+    overlap = min(
+        float(a["start"]) + float(a["duration"]),
+        float(b["start"]) + float(b["duration"]),
+    ) - max(float(a["start"]), float(b["start"]))
+    return overlap > 0 and overlap <= da + 1e-4
+
+
 def _media_duration_map(root: Path) -> dict[int, float | None]:
     conn = connect(root / "media.sqlite")
     try:
@@ -311,12 +338,14 @@ def validate_timeline(root: Path, payload: dict) -> dict:
                 b["start"],
                 b["start"] + b["duration"],
             ):
+                if _crossfade_overlap_allowed(a, b):
+                    continue
                 raise TimelineError(
                     f"Collision sur la piste {tid}: {a['id']} / {b['id']}"
                 )
 
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "edit_name": slugify(str(payload.get("edit_name") or "teaser_30")),
         "duration_seconds": duration,
         "storyline": storyline,
