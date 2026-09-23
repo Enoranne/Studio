@@ -151,3 +151,37 @@ Un téléchargement de modèle peut être proposé, mais :
 - uniquement après action explicite ;
 - sans upload des médias ;
 - avec une alternative de fonctionnement sans vision sémantique.
+
+
+## 15. Audio : afficher la forme du geste
+
+L’audio ne doit pas être réduit à des champs numériques dans l’Inspector.
+
+Les actions fréquentes doivent avoir une représentation directe dans la timeline :
+- waveform pour la matière sonore ;
+- poignée pour le fade ;
+- ligne et points pour l’automation ;
+- dB visibles sur le clip ;
+- Mute/Solo au niveau de la piste ;
+- meters au niveau du Viewer.
+
+L’Inspector reste l’endroit des valeurs précises ; la timeline reste l’endroit du geste.
+
+## 16. dB comme unité utilisateur
+
+Le gain utilisateur s’exprime en dB.
+
+Le pourcentage linéaire n’est conservé que comme compatibilité technique interne avec les anciens projets ou moteurs.
+
+Une interface de mixage ne doit pas afficher « 55 % » lorsqu’elle signifie réellement environ -5 dB.
+
+## 17. Automation réversible
+
+Une automation audio est une décision éditoriale.
+
+Elle doit :
+- être visible ;
+- rester modifiable ;
+- être sauvegardée dans la timeline ;
+- bénéficier de checkpoint/Undo ;
+- ne jamais être aplatie silencieusement lors de l’authoring.
