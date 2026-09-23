@@ -1,5 +1,19 @@
 # Changelog
 
+## V0.13 — Magnetic Storyline
+
+- Réordonnancement magnétique des plans STORY.
+- Ripple trim IN/OUT avec déplacement automatique des plans en aval.
+- Connexions parent/enfant pour TITLES, VO, MUSIC et SFX.
+- parentClipId, anchorOffset et connectionMode=follow persistés dans timeline.json.
+- Inspector : attacher, changer de parent ou détacher un élément.
+- Suppression d’un plan STORY : refermeture magnétique et détachement de ses enfants.
+- Validation locale des collisions, bornes source et pistes verrouillées.
+- Validation serveur des connexions et de la continuité magnétique.
+- Validation des déplacements induits par ripple contre HARD/SOFT LOCKS.
+- Migration prudente des anciennes timelines : pas de reflow silencieux au chargement.
+- CI renforcée avec node --check sur tous les modules JavaScript.
+
 ## V0.12 — UX refactor
 
 - Refonte de l’interface inspirée de patterns éprouvés de logiciels de montage, sans reprendre leur habillage.
