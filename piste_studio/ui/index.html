@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PISTE Studio — Local App v0.11</title>
+<link rel="stylesheet" href="/ui/style.css" />
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="mark"></div><div><strong>PISTE Studio</strong><small>LOCAL APP · v0.11</small></div></div>
+  <div class="project"><div class="eyebrow">Projet actif</div><h3 id="projectName">PISTE 0</h3><p id="projectSubtitle">BONUS TRACK (REC) · teaser 30 s</p></div>
+  <div class="nav">
+    <button class="active" data-view="edit"><i></i>Montage</button>
+    <button data-view="canon"><i></i>Canon & Locks</button>
+    <button data-view="versions"><i></i>Versions</button>
+  </div>
+  <div class="sidefoot" id="backendFoot">MASTER_PROTECTED = TRUE<br>Mode autonome navigateur<br>Backend non connecté</div>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div class="crumb">PISTE 0 / <b id="crumb">Montage</b></div>
+    <div class="actions">
+      <span class="status warn" id="backendStatus">BACKEND —</span><span class="status warn" id="localStatus">0/8 vidéo · 0/4 audio</span>
+      <button class="btn" id="scanBtn">Scanner projet</button><button class="btn" id="saveBackendBtn">Enregistrer</button><button class="btn" id="bindBtn">Associer rushes</button>
+      <button class="btn" id="bindAudioBtn">Importer audio</button>
+      <input id="multiFileInput" type="file" accept="video/*" multiple hidden>
+      <input id="singleFileInput" type="file" accept="video/*" hidden>
+      <input id="multiAudioInput" type="file" accept="audio/*" multiple hidden>
+      <input id="singleAudioInput" type="file" accept="audio/*" hidden>
+      <button class="btn" id="publishBtn" onclick="publishVersion()">Publier version</button><button class="btn primary" onclick="prepareTesseract()">Authorer Tesseract</button><button class="btn" onclick="previewTesseract()">Preview</button><button class="btn" onclick="exportTesseract()">Export</button>
+    </div>
+  </header>
+  <section class="content">
+    <div class="view active" id="view-edit">
+      <div class="editor">
+        <div class="upper">
+          <section class="panel">
+            <div class="panel-head"><span>MEDIA LIBRARY</span><span id="mediaCount">8</span></div>
+            <div class="panel-body">
+              <input id="mediaSearch" class="search" placeholder="Rechercher…">
+              <div class="library-tabs"><button class="libtab active" data-lib="video">VIDEO</button><button class="libtab" data-lib="audio">AUDIO</button></div>
+              <div class="drop-help" id="libraryHelp">Glisse un rush vers la piste <b>VIDEO</b>. Les fichiers locaux portant le même nom sont associés automatiquement.</div>
+              <div class="media-list" id="mediaList"></div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><span>PROGRAM MONITOR</span><span id="monitorMode">Timeline recomposée</span></div>
+            <div class="viewer-shell">
+              <div class="viewer" id="viewer">
+                <video id="video" playsinline muted></video>
+                <div class="viewer-placeholder" id="viewerPlaceholder"><strong>PISTE 0 · PREVIEW</strong>Le viewer suit le plan VIDEO sous le playhead.<br><small>Associe les vrais rushes locaux pour une prévisualisation multi-source.</small></div>
+                <div class="viewer-hud" id="viewerHud">V001 · 00:00.0</div>
+                <div class="viewer-source" id="viewerSource">NO MEDIA</div>
+                <div class="viewer-title" id="viewerTitle">PISTE 0</div><div class="mix-meter" id="mixMeter">MIX · —</div>
+              </div>
+              <div class="transport">
+                <button class="btn" onclick="step(-1)">−1s</button>
+                <button class="btn" id="playBtn" onclick="togglePlay()">▶</button>
+                <button class="btn" onclick="step(1)">+1s</button>
+                <span class="timecode" id="timecode">00:00.0</span>
+              </div>
+            </div>
+          </section>
+          <section class="panel"><div class="panel-head"><span>INSPECTEUR</span><span id="selectionKind">CLIP</span></div><div class="panel-body inspector" id="inspector"></div></section>
+        </div>
+        <section class="panel timeline-panel">
+          <div class="timeline-toolbar">
+            <button class="btn" onclick="addTitle()">+ Titre</button>
+            <button class="btn" onclick="addAudio('vo')">+ VO</button>
+            <button class="btn" onclick="addAudio('music')">+ MUSIC</button>
+            <button class="btn" onclick="addAudio('sfx')">+ SFX</button>
+            <button class="btn" onclick="nudge(-snapValue())">◀ Snap</button>
+            <button class="btn" onclick="nudge(snapValue())">Snap ▶</button>
+            <span class="eyebrow">Snap</span><select id="snap"><option value="0.1">0,1 s</option><option value="0.5" selected>0,5 s</option><option value="1">1 s</option></select>
+            <span class="grow"></span>
+            <span class="interaction-readout" id="interactionReadout">Glisser · rogner · déposer</span>
+            <span class="eyebrow" id="hardLockLabel">HARD LOCK 00:00–00:03</span>
+          </div>
+          <div class="ruler" id="ruler"></div>
+          <div class="timeline-scroll"><div class="timeline-inner" id="timelineInner"><div class="playhead" id="playhead"></div><div id="tracks"></div></div></div>
+        </section>
+      </div>
+    </div>
+    <div class="view" id="view-canon">
+      <div class="section-head"><div><h1>Canon & Locks</h1><p>Règles éditoriales et zones protégées du projet.</p></div><span class="badge canon">PISTE 0 CANON</span></div>
+      <div class="cards" id="canonCards">
+        <div class="card"><h3>HARD LOCK · ouverture</h3><p>00:00–00:03. Aucun trim, déplacement, audio, titre ou overlay autorisé dans cette zone.</p></div>
+        <div class="card"><h3>Look</h3><p>Warm tungsten, ambre / burnt orange, texture argentique, contraste doux, pas de look publicitaire moderne.</p></div>
+        <div class="card"><h3>Son</h3><p>Souffle cassette, mécanique du magnétophone, respiration, silence et clic. Préserver le naturel des voix.</p></div>
+      </div>
+    </div>
+    <div class="view" id="view-versions">
+      <div class="section-head"><div><h1>Versions</h1><p>Révisions localisées sans reconstruction globale.</p></div></div>
+      <div class="cards" id="versionsCards">
+        <div class="card"><h3>V001 · active</h3><p>Timeline multi-pistes + audio local. Déplacement, trim, gain et fades restent locaux au clip sélectionné.</p></div>
+        <div class="card"><h3>V002 · future PATCH</h3><p>Créée uniquement lorsqu’une modification respecte les locks, collisions et bornes source.</p></div>
+        <div class="card"><h3>A/B Compare</h3><p>Prévu : lecture synchronisée de deux versions et conservation sélective de segments.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/ui/editor.js"></script>
+<script src="/ui/backend.js"></script>
+</body>
+</html>
