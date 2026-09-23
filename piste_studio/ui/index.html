@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PISTE Studio — Local App v0.18</title>
+<title>PISTE Studio — Local App v0.19</title>
 <link rel="stylesheet" href="/ui/style.css" />
 </head>
 <body class="workspace-edit">
@@ -11,7 +11,7 @@
   <header class="appbar">
     <div class="brand-row">
       <div class="brand-mark"><span></span></div>
-      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.18 · LOCAL</small></div>
+      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.19 · LOCAL</small></div>
       <div class="project-pill"><span id="projectName">PISTE 0</span><small id="projectSubtitle">BONUS TRACK (REC)</small></div>
     </div>
     <div class="workspace-switch" role="group" aria-label="Espace de travail">
@@ -84,6 +84,10 @@
             <div class="viewer-placeholder" id="viewerPlaceholder"><strong>PISTE 0</strong><span>Le Viewer affiche la source sélectionnée ou le montage sous le playhead.</span></div>
             <div class="viewer-overlay top-left" id="viewerHud">V001 · 00:00.0</div>
             <div class="viewer-overlay bottom-left" id="mixMeter">MIX · —</div>
+            <div class="audio-meters" id="audioMeters" data-peak-l="-60.0 dB" data-peak-r="-60.0 dB" title="Master L/R">
+              <span class="meter-label">L</span><i class="meter-track"><b class="meter-fill meter-l"></b></i>
+              <span class="meter-label">R</span><i class="meter-track"><b class="meter-fill meter-r"></b></i>
+            </div>
             <div class="viewer-title" id="viewerTitle">PISTE 0</div>
             <div class="source-range-overlay" id="sourceRangeOverlay"><span id="sourceInBadge">IN 00:00.0</span><span id="sourceOutBadge">OUT 00:05.0</span></div>
           </div>
@@ -170,6 +174,7 @@
 <script src="/ui/ux-editorial.js"></script>
 <script src="/ui/ux-media-intelligence.js"></script>
 <script src="/ui/ux-semantic-vision.js"></script>
+<script src="/ui/ux-audio-mix.js"></script>
 <script src="/ui/backend.js"></script>
 </body>
 </html>
