@@ -98,6 +98,14 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             page.locator('[data-workspace="edit"]').click()
             expect(page.locator("body")).to_have_class(re.compile("workspace-edit"))
 
+            page.locator("#addMarkerBtn").click()
+            expect(page.locator("#markerComposer")).to_be_visible()
+            page.locator("#markerLabel").fill("Décision test")
+            page.locator("#markerKind").select_option("decision")
+            page.locator("#markerSaveBtn").click()
+            expect(page.locator("#markerComposer")).to_be_hidden()
+            expect(page.locator(".editorial-marker")).to_have_count(1)
+
             assert errors == []
             browser.close()
     finally:
