@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.16
+# Démarrage rapide — PISTE Studio v0.17
 
 ## 1. Installer
 
@@ -77,3 +77,16 @@ Avant chaque reorder/ripple validé, PISTE Studio crée un checkpoint persistant
 4. Depuis l’Inspector, clique **Alternatives** pour ouvrir l’Editorial Source Selector.
 5. Lis les raisons proposées et prévisualise les candidats.
 6. **Charger la plage** ne modifie que la sélection SOURCE ; la Storyline n’est jamais remplacée automatiquement.
+
+
+## Media Intelligence V0.17
+
+1. Place les rushes dans `rushes/`.
+2. Clique **Scanner**.
+3. Clique **Analyser** pour lancer ffprobe/ffmpeg localement et générer les filmstrips.
+4. Sélectionne un rush : l’Inspector affiche ses caractéristiques techniques.
+5. Clique **Prises proches** pour comparer les autres rushes.
+6. Utilise des tags structurés comme `character:malo`, `prop:fisher`, `decor:salon` ou `look:warm-tungsten` pour enrichir les contrôles de continuité.
+7. **Alternatives** utilise ces signaux avec Favorite/Reject, Canon, Safe et Spoiler.
+
+Si ffmpeg/ffprobe n’est pas présent, le reste de PISTE Studio continue de fonctionner et l’analyse affiche explicitement que les outils sont indisponibles.
