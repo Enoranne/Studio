@@ -1,4 +1,4 @@
-# PISTE Studio Local App — v0.16
+# PISTE Studio Local App — v0.17
 
 L’application locale relie l’interface de montage au moteur PISTE Studio via FastAPI.
 
@@ -15,27 +15,43 @@ L’application locale relie l’interface de montage au moteur PISTE Studio via
 
 ## Editorial Intelligence
 
-### Favorite / Reject
-Les plages IN/OUT marquées sont stockées dans SQLite et réhydratées dans le Browser.
+- Favorite / Reject persistants ;
+- Markers ;
+- Source Selector explicable ;
+- aucune modification automatique de la Storyline.
 
-### Markers
-`M` ouvre le composeur. Les marqueurs Note / Décision / Beat / Vigilance sont persistés par edit et affichés sur la règle.
+## Media Intelligence V0.17
 
-### Editorial Source Selector
-Depuis l’Inspector d’une source ou d’un clip STORY, **Alternatives** ouvre un tiroir de candidats. Chaque proposition contient une fenêtre source et des raisons de classement.
+### Analyser
+Le bouton **Analyser** inspecte localement les vidéos cataloguées lorsque `ffmpeg` et `ffprobe` sont disponibles.
 
-Le sélecteur est consultatif : aucun remplacement de la Storyline n’est automatique.
+### Filmstrips
+Des filmstrips JPEG sont mis en cache côté backend. Le Browser les affiche au repos puis repasse au skimming vidéo au survol.
+
+### Prises proches
+L’Inspector affiche les caractéristiques techniques du rush et propose **Prises proches**.
+
+La proximité combine :
+- empreinte perceptuelle visuelle ;
+- nom de fichier ;
+- durée.
+
+### Continuité
+Les tags structurés `character:`, `prop:`, `decor:` et `look:` enrichissent les raisons du Source Selector.
+
+La V0.17 ne reconnaît pas automatiquement les personnages ou objets : elle exploite les tags existants et une empreinte visuelle générique.
 
 ## Backend connecté
 
 - project.yaml, canon.yaml, locks.yaml ;
 - catalogue SQLite ;
-- plages éditoriales et marqueurs SQLite ;
+- media_analysis SQLite ;
+- plages éditoriales et marqueurs ;
+- cache filmstrip local ;
 - streaming local des médias ;
 - timeline schema v2 ;
 - historique de checkpoints ;
 - publication V001+ ;
-- Tesseract vidéo + audio ;
-- preview / filmstrip / export.
+- Tesseract vidéo + audio.
 
 Aucun média du projet n’est envoyé vers un serveur distant par PISTE Studio.
