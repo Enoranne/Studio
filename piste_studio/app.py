@@ -102,7 +102,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.20")
+    app = FastAPI(title="PISTE Studio Local App", version="0.21")
     app.state.project_root = root
 
     @app.get("/")
@@ -516,6 +516,58 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             return {"ok": True, "timeline": clean}
         except (AudioIntelligenceError, TimelineError, HistoryError, KeyError, TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/audio/delivery/presets")
+    def audio_delivery_presets():
+        return {
+            "version": AUDIO_DELIVERY_VERSION,
+            "presets": delivery_presets(),
+            "policy": {
+                "reference_presets_not_universal_standards": True,
+                "limiter_requires_explicit_choice": True,
+            },
+        }
+
+    @app.post("/api/audio/master/check")
+    def audio_master_check(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        if not isinstance(timeline, dict):
+            raise HTTPException(422, "timeline doit être un objet.")
+        try:
+            clean = validate_timeline(root, timeline)
+            report = run_master_check(
+                root,
+                clean,
+                preset_id=str(payload.get("preset_id") or "online_reference"),
+                target_lufs=(
+                    float(payload["target_lufs"])
+                    if payload.get("target_lufs") is not None
+                    else None
+                ),
+                true_peak_ceiling=(
+                    float(payload["true_peak_ceiling"])
+                    if payload.get("true_peak_ceiling") is not None
+                    else None
+                ),
+                loudness_tolerance_lu=(
+                    float(payload["loudness_tolerance_lu"])
+                    if payload.get("loudness_tolerance_lu") is not None
+                    else None
+                ),
+                limiter=bool(payload.get("limiter", False)),
+            )
+            report["report_url"] = f"/api/audio/master/reports/{report['report_name']}"
+            return report
+        except (AudioDeliveryError, TimelineError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/audio/master/reports/{report_name}")
+    def audio_master_report(report_name: str):
+        try:
+            path = audio_report_path(root, report_name)
+        except AudioDeliveryError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return FileResponse(path, media_type="application/json", filename=path.name)
 
     @app.get("/api/timeline")
     def get_timeline(edit_name: str = "teaser_30"):
