@@ -1,4 +1,4 @@
-let storylineStart=null,storylineMode='free';
+let storylineStart=null,storylineMode='free',localUndoStack=[];
 
 function getStorylineStart(){
   if(Number.isFinite(storylineStart))return storylineStart;
@@ -69,10 +69,38 @@ async function validateMagneticWithBackend(before,candidate){
   try{await api('/api/storyline/validate',{method:'POST',body:JSON.stringify({before:backendTimelinePayload(before,storylineMode),after:backendTimelinePayload(candidate,'magnetic')})});return true}
   catch(err){toast('Opération magnétique bloquée : '+err.message,true);return false}
 }
+async function checkpointBeforeMagnetic(before,reason){
+  if(backendConnected){
+    try{
+      await api('/api/history/checkpoint',{method:'POST',body:JSON.stringify({edit_name:activeEditName,reason,timeline:backendTimelinePayload(before,storylineMode)})});
+      return true
+    }catch(err){toast('Checkpoint impossible : '+err.message,true);return false}
+  }
+  localUndoStack.push({clips:cloneClips(before),storylineMode,storylineStart:getStorylineStart(),reason});
+  if(localUndoStack.length>50)localUndoStack.shift();
+  return true
+}
 async function commitMagneticCandidate(candidate,message,before=clips){
   const err=validateCandidate(candidate,before);if(err){toast(err,true);return false}
   if(!(await validateMagneticWithBackend(before,candidate)))return false;
+  if(!(await checkpointBeforeMagnetic(before,message)))return false;
   storylineMode='magnetic';clips=candidate;selectedClip=selectedClip&&getClip(selectedClip)?selectedClip:(clips[0]?.id||null);renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));toast(message);return true
+}
+async function undoLastEdit(){
+  pausePlayback();
+  if(backendConnected){
+    try{
+      const r=await api('/api/history/undo',{method:'POST',body:JSON.stringify({edit_name:activeEditName})});
+      hydrateTimeline(r.timeline);
+      renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));
+      toast('Undo · '+(r.restored?.reason||'checkpoint restauré'));
+      return true
+    }catch(err){toast('Undo indisponible : '+err.message,true);return false}
+  }
+  const snap=localUndoStack.pop();
+  if(!snap){toast('Aucun checkpoint local à restaurer',true);return false}
+  clips=cloneClips(snap.clips);storylineMode=snap.storylineMode;storylineStart=snap.storylineStart;selectedClip=clips[0]?.id||null;
+  renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));toast('Undo local · '+(snap.reason||'édition'));return true
 }
 
 const _legacyBeginClipInteraction=beginClipInteraction,_legacyPointerMove=onClipPointerMove,_legacyEndClipInteraction=endClipInteraction;
@@ -152,3 +180,9 @@ renderInspector=function(){
 
 const _v012RenderTracks=renderTracks;
 renderTracks=function(){_v012RenderTracks();$$('.clip').forEach(el=>{const c=getClip(el.dataset.clip);if(!c?.parentClipId)return;el.classList.add('connected');const tag=document.createElement('span');tag.className='connection-badge';tag.textContent='↳ '+(getClip(c.parentClipId)?.label||c.parentClipId);el.appendChild(tag)})}
+
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){
+    e.preventDefault();undoLastEdit()
+  }
+});
