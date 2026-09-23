@@ -67,14 +67,19 @@ def test_timeline_persists_and_reloads(tmp_path):
         ],
         "clips": [
             {"id": "v1", "track": "video", "label": "clip", "start": 3, "duration": 4, "sourceStart": 1, "mediaDbId": video_id},
-            {"id": "a1", "track": "vo", "label": "voice", "start": 3, "duration": 5, "sourceStart": 0, "audioDbId": audio_id, "gain": 0.8, "fadeIn": 0.2, "fadeOut": 0.3},
+            {"id": "a1", "track": "vo", "label": "voice", "start": 3, "duration": 5, "sourceStart": 0, "audioDbId": audio_id, "gainDb": -6, "pan": 0.2, "audioRole": "vo", "fadeIn": 0.2, "fadeOut": 0.3, "volumeEnvelope": [{"time": 1, "gainDb": -6}, {"time": 3, "gainDb": -12}]},
         ],
     }
     saved = client.post("/api/timeline", json=payload)
     assert saved.status_code == 200, saved.text
     reloaded = client.get("/api/timeline?edit_name=teaser_30").json()["timeline"]
     assert reloaded["clips"][0]["mediaDbId"] == video_id
+    assert reloaded["schema_version"] == 3
     assert reloaded["clips"][1]["audioDbId"] == audio_id
+    assert reloaded["clips"][1]["gainDb"] == -6
+    assert reloaded["clips"][1]["pan"] == 0.2
+    assert reloaded["clips"][1]["audioRole"] == "vo"
+    assert reloaded["clips"][1]["volumeEnvelope"][1]["gainDb"] == -12
 
 
 def test_timeline_collision_rejected(tmp_path):
