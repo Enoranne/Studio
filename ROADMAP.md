@@ -12,25 +12,25 @@
 - **V0.12** — refonte UX : Assemble/Edit/Review, Browser filmstrip, SOURCE/PROGRAM, Inspector contextuel, Timeline Index.
 - **V0.13** — Storyline magnétique : reorder/ripple trim, connexions parent/enfant, validation serveur des effets domino contre les locks.
 - **V0.14** — hardening : checkpoint/Undo persistant, schema v2, Playwright/Chromium en CI, store d’état UI initial.
-- **V0.15** — UX Refinement : Viewer-first, Browser plus visuel, workspaces différenciés, Focus Mode, Overlays et Command Palette.
+- **V0.15** — UX Refinement : Viewer-first, Browser plus visuel, Focus Mode, Overlays et Command Palette.
+- **V0.16** — Editorial Intelligence : Favorite/Reject persistants, marqueurs, Source Selector explicable et validation humaine.
 
-## V0.16 — Editorial Intelligence
+## V0.17 — Media Intelligence
 
-- persistance backend des plages Favorite/Reject ;
-- marqueurs éditoriaux persistants ;
-- vraies vignettes filmstrip générées côté backend ;
-- fenêtres IN/OUT candidates ;
-- raisons éditoriales par coupe ;
-- validation humaine avant matérialisation ;
-- point de connexion graphique déplaçable ;
-- menus contextuels éditoriaux.
+- vignettes / filmstrips pré-calculés côté backend ;
+- inspection visuelle et sémantique des rushes ;
+- fenêtres IN/OUT candidates dérivées du contenu ;
+- continuité personnage / accessoire / décor ;
+- détection de doublons ou prises proches ;
+- raisons éditoriales enrichies sans remplacer la décision humaine.
 
-## V0.17 — Audio & motion
+## V0.18 — Audio & motion
 
 - fades audio en enveloppes natives Tesseract ;
 - titres et overlays éditables ;
 - carton final ;
-- export festival / social.
+- export festival / social ;
+- point de connexion graphique déplaçable.
 
 ## Avant V1
 
