@@ -41,6 +41,8 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             page = browser.new_page(viewport={"width": 1440, "height": 900})
             page.on("pageerror", lambda exc: errors.append(str(exc)))
             page.goto(f"http://127.0.0.1:{port}/", wait_until="networkidle")
+            page.wait_for_timeout(150)
+            assert errors == [], f"JavaScript page errors on load: {errors}"
 
             expect(page.locator("#view-edit")).to_have_class(re.compile("active"))
 
