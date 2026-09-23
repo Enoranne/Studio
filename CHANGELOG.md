@@ -1,5 +1,17 @@
 # Changelog
 
+## V0.14 — Hardening
+
+- Correction de la navigation multi-vues révélée par le test Chromium.
+- Ajout de checkpoints persistants avant les opérations magnétiques.
+- Undo persistant côté backend + Ctrl/Cmd+Z et bouton UI.
+- Ajout de l’état d’historique dans l’API projet.
+- Migration de la démo vers `timeline schema_version: 2`.
+- Ajout de Playwright/Chromium à la CI pour de vrais clics UI.
+- Surveillance des erreurs JavaScript de page pendant les tests navigateur.
+- Introduction du store `PisteState` et migration progressive des états transversaux.
+- Conservation des validations Python et `node --check`.
+
 ## V0.13 — Magnetic Storyline
 
 - Réordonnancement magnétique des plans STORY.
