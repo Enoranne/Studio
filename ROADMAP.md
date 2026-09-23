@@ -14,29 +14,29 @@
 - **V0.14** — hardening : checkpoint/Undo persistant, schema v2, Playwright/Chromium en CI, store d’état UI initial.
 - **V0.15** — UX Refinement : Viewer-first, Browser plus visuel, Focus Mode, Overlays et Command Palette.
 - **V0.16** — Editorial Intelligence : Favorite/Reject persistants, marqueurs, Source Selector explicable et validation humaine.
-- **V0.17** — Media Intelligence locale : ffprobe, filmstrips backend, empreinte perceptuelle, prises proches et continuité par tags structurés.
+- **V0.17** — Media Intelligence : ffprobe, filmstrips backend, empreinte perceptuelle, prises proches et continuité structurée.
+- **V0.18** — Semantic Vision & Continuity : embeddings locaux optionnels, références visuelles validées, propositions de tags acceptées/rejetées humainement.
 
-## V0.18 — Semantic Vision & Continuity
-
-- proposition automatique de tags personnage / accessoire / décor ;
-- analyse d’images échantillonnées avec modèle visuel explicitement configuré ;
-- validation humaine avant écriture des tags ;
-- comparaison de continuité personnage / accessoire / décor / look ;
-- fenêtres IN/OUT candidates dérivées de changements visuels ;
-- détection plus robuste des doublons et prises quasi-identiques ;
-- traitement local privilégié ou consentement explicite si un service externe est choisi.
-
-## V0.19 — Audio & motion
+## V0.19 — Audio & Motion
 
 - fades audio en enveloppes natives Tesseract ;
 - titres et overlays éditables ;
 - carton final ;
+- point de connexion graphique déplaçable ;
 - export festival / social ;
-- point de connexion graphique déplaçable.
+- contrôles de niveau plus proches d’un vrai NLE.
+
+## V0.20 — Editorial Vision Refinement
+
+- fenêtres IN/OUT candidates issues de ruptures/changements visuels ;
+- références visuelles ciblées sur une zone ou un frame plutôt qu’un rush complet ;
+- groupes de références et qualité de référence ;
+- détection de conflit entre tags sémantiques et Canon ;
+- comparaison de continuité plan précédent / plan suivant.
 
 ## Avant V1
 
-- refactor progressif des globals JS vers état/actions ;
+- refactor progressif des globals JS vers state/actions ;
 - recovery après crash ;
 - tests navigateur de drag/trim/ripple ;
 - performances sur catalogues média importants ;
