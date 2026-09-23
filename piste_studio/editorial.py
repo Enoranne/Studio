@@ -5,6 +5,7 @@ from typing import Iterable
 
 from .db import connect
 from .metadata import fetch_media_with_metadata
+from .media_intelligence import media_similarity
 
 
 RANGE_KINDS = {"favorite", "reject"}
@@ -228,6 +229,10 @@ def suggest_alternatives(
         raise ValueError("Le Source Selector travaille sur les médias vidéo.")
 
     ranges = _ranges_by_media(list_editorial_ranges(root))
+    similarities = {
+        int(x["media_id"]): x
+        for x in media_similarity(root, int(media_id))
+    }
     ref_tags = _tag_set(reference)
     ref_spoiler = int(reference.get("spoiler_level") or 0)
     if max_spoiler is None:
@@ -282,6 +287,41 @@ def suggest_alternatives(
             score += 1.5
             reasons.append(f"Statut {item['status']}")
 
+        similarity = similarities.get(item_id) or {}
+        visual_similarity = similarity.get("visual_similarity")
+        if visual_similarity is not None and visual_similarity >= 0.72:
+            score += min(3.0, float(visual_similarity) * 3.0)
+            reasons.append(
+                f"Prise visuellement proche ({round(float(visual_similarity) * 100)} %)"
+            )
+        elif similarity.get("similarity", 0) >= 0.72:
+            score += min(1.25, float(similarity["similarity"]) * 1.25)
+            reasons.append("Prise proche selon nom/durée")
+
+        continuity_groups = {
+            "personnage": ("character:", "person:", "personnage:"),
+            "accessoire": ("prop:", "accessory:", "accessoire:"),
+            "décor": ("decor:", "location:", "lieu:"),
+            "look": ("look:", "style:"),
+        }
+        for label, prefixes in continuity_groups.items():
+            ref_values = {
+                tag.split(":", 1)[1]
+                for tag in ref_tags
+                if any(tag.startswith(prefix) for prefix in prefixes) and ":" in tag
+            }
+            item_values = {
+                tag.split(":", 1)[1]
+                for tag in tags
+                if any(tag.startswith(prefix) for prefix in prefixes) and ":" in tag
+            }
+            shared_values = sorted(ref_values & item_values)
+            if shared_values:
+                score += min(2.5, len(shared_values) * 1.25)
+                reasons.append(
+                    f"Continuité {label} : " + ", ".join(shared_values[:3])
+                )
+
         if not reasons:
             reasons.append("Alternative vidéo disponible")
 
@@ -317,6 +357,8 @@ def suggest_alternatives(
                 "spoiler_level": spoiler,
                 "rating": rating,
                 "tags": sorted(tags),
+                "media_similarity": similarity.get("similarity"),
+                "visual_similarity": visual_similarity,
             }
         )
 
@@ -338,6 +380,9 @@ def suggest_alternatives(
                 "reject_ranges",
                 "spoiler_level",
                 "status",
+                "visual_similarity_local",
+                "filename_duration_similarity",
+                "continuity_tag_facets",
             ],
         },
         "suggestions": suggestions[: max(1, min(int(limit), 20))],
