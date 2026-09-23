@@ -1,4 +1,4 @@
-# PISTE Studio Local App — v0.17
+# PISTE Studio Local App — v0.18
 
 L’application locale relie l’interface de montage au moteur PISTE Studio via FastAPI.
 
@@ -20,35 +20,57 @@ L’application locale relie l’interface de montage au moteur PISTE Studio via
 - Source Selector explicable ;
 - aucune modification automatique de la Storyline.
 
-## Media Intelligence V0.17
+## Media Intelligence
 
-### Analyser
-Le bouton **Analyser** inspecte localement les vidéos cataloguées lorsque `ffmpeg` et `ffprobe` sont disponibles.
+- ffprobe / ffmpeg local ;
+- filmstrips backend ;
+- empreinte perceptuelle ;
+- prises proches ;
+- continuité structurée via tags.
 
-### Filmstrips
-Des filmstrips JPEG sont mis en cache côté backend. Le Browser les affiche au repos puis repasse au skimming vidéo au survol.
+## Semantic Vision V0.18
 
-### Prises proches
-L’Inspector affiche les caractéristiques techniques du rush et propose **Prises proches**.
+La vision locale est optionnelle.
 
-La proximité combine :
-- empreinte perceptuelle visuelle ;
-- nom de fichier ;
-- durée.
+### Références
 
-### Continuité
-Les tags structurés `character:`, `prop:`, `decor:` et `look:` enrichissent les raisons du Source Selector.
+Les tags déjà validés servent de références :
 
-La V0.17 ne reconnaît pas automatiquement les personnages ou objets : elle exploite les tags existants et une empreinte visuelle générique.
+- `character:malo`
+- `prop:fisher`
+- `decor:salon`
+- `look:warm-tungsten`
+
+Un rush doit avoir un profil vision READY avant de pouvoir recevoir des propositions.
+
+### Propositions
+
+**Proposer continuité** compare le rush aux références de même facette.
+
+Chaque proposition reste `PENDING` jusqu’à une décision utilisateur :
+
+- Accepter → ajoute le tag ;
+- Rejeter → mémorise le refus.
+
+Aucune proposition ne modifie la Storyline.
+
+### Modèle local
+
+Installer l’extra :
+
+    pip install -e '.[vision]'
+
+Le modèle n’est pas téléchargé automatiquement. Si son cache est absent, l’interface peut demander une autorisation explicite de téléchargement. Seul le modèle est téléchargé ; les frames du projet restent locales.
 
 ## Backend connecté
 
 - project.yaml, canon.yaml, locks.yaml ;
 - catalogue SQLite ;
-- media_analysis SQLite ;
+- media_analysis ;
+- semantic_profiles ;
+- semantic_tag_proposals ;
 - plages éditoriales et marqueurs ;
-- cache filmstrip local ;
-- streaming local des médias ;
+- cache filmstrip / vision local ;
 - timeline schema v2 ;
 - historique de checkpoints ;
 - publication V001+ ;
