@@ -118,7 +118,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/ui/{filename}")
     def ui_asset(filename: str):
-        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-semantic-vision.js", "ux-audio-mix.js", "ux-audio-intelligence.js", "backend.js"}:
+        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-semantic-vision.js", "ux-audio-mix.js", "ux-audio-intelligence.js", "ux-audio-delivery.js", "backend.js"}:
             raise HTTPException(404, "Ressource UI introuvable.")
         path = ui_file.parent / filename
         if not path.exists():
@@ -128,7 +128,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.20", "project_root": str(root)}
+        return {"ok": True, "version": "0.21", "project_root": str(root)}
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
