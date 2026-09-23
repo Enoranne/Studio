@@ -31,10 +31,18 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
     (root / "rushes" / "malo_a.mp4").write_bytes(b"fake-a")
     (root / "rushes" / "malo_b.mp4").write_bytes(b"fake-b")
     (root / "audio" / "voice.wav").write_bytes(b"fake-audio")
+    (root / "audio" / "music_a.wav").write_bytes(b"fake-music-a")
+    (root / "audio" / "music_b.wav").write_bytes(b"fake-music-b")
     scan_media(root)
     rows = fetch_media_with_metadata(root)
     videos = [row for row in rows if row["kind"] == "video"]
-    audio = next(row for row in rows if row["kind"] == "audio")
+    audios = {
+        Path(row["relative_path"]).name: row
+        for row in rows if row["kind"] == "audio"
+    }
+    audio = audios["voice.wav"]
+    music_a = audios["music_a.wav"]
+    music_b = audios["music_b.wav"]
     for index, row in enumerate(videos):
         tags = ["malo", "enfance"]
         if index == 0:
@@ -54,6 +62,14 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
         duration_seconds=8.0,
         tags=["voice", "malo"],
     )
+    for music, title in ((music_a, "Music A"), (music_b, "Music B")):
+        set_media_metadata(
+            root,
+            music["id"],
+            title=title,
+            duration_seconds=8.0,
+            tags=["music"],
+        )
     _write_audio_loudness(
         root,
         audio["id"],
@@ -119,8 +135,8 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
                     "id": "a1",
                     "track": "vo",
                     "label": "Voice",
-                    "start": 3,
-                    "duration": 5,
+                    "start": 5,
+                    "duration": 2,
                     "sourceStart": 0,
                     "audioDbId": audio["id"],
                     "gainDb": -6,
@@ -128,6 +144,36 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
                     "audioRole": "vo",
                     "fadeIn": 0.4,
                     "fadeOut": 0.5,
+                    "volumeEnvelope": [],
+                },
+                {
+                    "id": "m1",
+                    "track": "music",
+                    "label": "Music A",
+                    "start": 3,
+                    "duration": 5,
+                    "sourceStart": 0,
+                    "audioDbId": music_a["id"],
+                    "gainDb": -6,
+                    "pan": 0,
+                    "audioRole": "music",
+                    "fadeIn": 0.2,
+                    "fadeOut": 0.2,
+                    "volumeEnvelope": [],
+                },
+                {
+                    "id": "m2",
+                    "track": "music",
+                    "label": "Music B",
+                    "start": 8,
+                    "duration": 4,
+                    "sourceStart": 0,
+                    "audioDbId": music_b["id"],
+                    "gainDb": -6,
+                    "pan": 0,
+                    "audioRole": "music",
+                    "fadeIn": 0.2,
+                    "fadeOut": 0.2,
                     "volumeEnvelope": [],
                 },
             ],
@@ -289,6 +335,22 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             expect(page.locator("#editorialDrawer")).to_be_visible()
             expect(page.locator(".selector-policy")).to_contain_text("ESTIMATION PAR CLIP")
             page.locator("#editorialDrawer .pane-close").click()
+
+            page.locator('.clip[data-clip="m1"]').click()
+            expect(page.locator(".audio-intelligence-section")).to_be_visible()
+            page.get_by_role("button", name="Ducking VO").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator("#editorialDrawer")).to_contain_text("Voice")
+            page.locator("#editorialDrawer").get_by_role("button", name="Accepter").click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
+            expect(page.locator('.clip[data-clip="m1"] .automation-point')).to_have_count(4)
+
+            page.get_by_role("button", name="Crossfade suivant").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator("#editorialDrawer")).to_contain_text("0.50 s")
+            page.locator("#editorialDrawer").get_by_role("button", name="Accepter").click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
+            expect(page.locator(".crossfade-badge")).to_have_count(2)
 
             assert errors == []
             browser.close()
