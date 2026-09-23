@@ -68,6 +68,7 @@ from .audio_delivery import (
     AudioDeliveryError,
     AUDIO_DELIVERY_VERSION,
     delivery_presets,
+    master_check_status,
     report_path as audio_report_path,
     run_master_check,
 )
@@ -139,7 +140,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.20",
+            "app_version": "0.21",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},
@@ -576,6 +577,23 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             raise HTTPException(404, str(exc)) from exc
         return FileResponse(path, media_type="application/json", filename=path.name)
 
+    @app.get("/api/audio/master/status")
+    def audio_master_status(edit_name: str = "teaser_30"):
+        timeline = load_timeline(root, edit_name)
+        if not isinstance(timeline, dict):
+            return {
+                "status": "MISSING",
+                "can_export": True,
+                "message": "Aucune timeline publiée pour ce montage.",
+                "reasons": ["Timeline indisponible pour le contrôle audio."],
+            }
+        status = master_check_status(root, timeline)
+        if status.get("report_name"):
+            status["report_url"] = (
+                f"/api/audio/master/reports/{status['report_name']}"
+            )
+        return status
+
     @app.get("/api/timeline")
     def get_timeline(edit_name: str = "teaser_30"):
         return {"timeline": load_timeline(root, edit_name)}
@@ -711,6 +729,21 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     @app.post("/api/tesseract/{version}/export")
     def tesseract_export(version: str, payload: dict = Body(default_factory=dict)):
         edit_name = str(payload.get("edit_name") or "teaser_30")
+        timeline = load_timeline(root, edit_name)
+        audio_delivery = (
+            master_check_status(root, timeline)
+            if isinstance(timeline, dict)
+            else {
+                "status": "MISSING",
+                "can_export": True,
+                "message": "Aucune timeline disponible pour le contrôle audio.",
+                "reasons": ["Timeline audio indisponible."],
+            }
+        )
+        if audio_delivery.get("report_name"):
+            audio_delivery["report_url"] = (
+                f"/api/audio/master/reports/{audio_delivery['report_name']}"
+            )
         try:
             path = execute_export(
                 root, edit_name, version,
@@ -720,7 +753,11 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             )
         except (TesseractBridgeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
-        return {"ok": True, "path": str(path.relative_to(root))}
+        return {
+            "ok": True,
+            "path": str(path.relative_to(root)),
+            "audio_delivery": audio_delivery,
+        }
 
     return app
 
