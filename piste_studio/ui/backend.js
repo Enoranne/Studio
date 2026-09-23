@@ -11,7 +11,21 @@ async function scanBackend(){if(!backendConnected){toast('Backend local non conn
 async function publishVersion(){if(!backendConnected){toast('Backend local requis',true);return null}if(!(await saveBackendTimeline()))return null;try{const r=await api('/api/publish',{method:'POST',body:JSON.stringify({edit_name:activeEditName})});activeVersion=r.version;toast(`${r.version} créée depuis la timeline`);await hydrateBackend();return r.version}catch(err){toast('Publication refusée : '+err.message,true);return null}}
 async function prepareTesseract(){if(!backendConnected){toast('Backend local requis pour Tesseract',true);return}try{if(!activeVersion){activeVersion=await publishVersion();if(!activeVersion)return}const st=await api('/api/tesseract/status');if(!st.ready){toast((st.message||'Tesseract non prêt')+` · ${activeVersion} reste publiée`,true);return}toast(`Bootstrap ${activeVersion}…`);await api(`/api/tesseract/${activeVersion}/bootstrap`,{method:'POST',body:JSON.stringify({edit_name:activeEditName,execute:true})});toast(`Authoring ${activeVersion}…`);const r=await api(`/api/tesseract/${activeVersion}/author`,{method:'POST',body:JSON.stringify({edit_name:activeEditName,execute:true})});toast(`${activeVersion} authorée · ${(r.manifest?.layers||[]).length} vidéo · ${(r.manifest?.audio_layers||[]).length} audio`);await hydrateBackend()}catch(err){toast('Tesseract : '+err.message,true)}}
 async function previewTesseract(){if(!activeVersion){toast('Publie d’abord une version',true);return}try{const r=await api(`/api/tesseract/${activeVersion}/preview`,{method:'POST',body:JSON.stringify({edit_name:activeEditName,time_seconds:Math.min(playhead,DURATION-.01)})});toast(`Preview créée : ${r.path}`)}catch(err){toast('Preview : '+err.message,true)}}
-async function exportTesseract(){if(!activeVersion){toast('Publie d’abord une version',true);return}try{const r=await api(`/api/tesseract/${activeVersion}/export`,{method:'POST',body:JSON.stringify({edit_name:activeEditName,resolution:'1080p',fps:24,format:'mp4'})});toast(`Export créé : ${r.path}`)}catch(err){toast('Export : '+err.message,true)}}
+async function exportTesseract(forceAudio=false){
+  if(!activeVersion){toast('Publie d’abord une version',true);return}
+  try{
+    if(!forceAudio){
+      let audioStatus=null;
+      try{audioStatus=await api(`/api/audio/master/status?edit_name=${encodeURIComponent(activeEditName)}`)}
+      catch(err){audioStatus={status:'MISSING',can_export:true,message:'Master Check indisponible : '+err.message,reasons:['Contrôle audio non vérifié.']}}
+      if(audioStatus?.status!=='PASS'&&typeof openAudioExportAdvisory==='function'){openAudioExportAdvisory(audioStatus);return}
+    }
+    const r=await api(`/api/tesseract/${activeVersion}/export`,{method:'POST',body:JSON.stringify({edit_name:activeEditName,resolution:'1080p',fps:24,format:'mp4'})});
+    const audio=r.audio_delivery||{};
+    const suffix=audio.status?` · Audio ${audio.status}`:'';
+    toast(`Export créé : ${r.path}${suffix}`,['WARN','STALE','MISSING'].includes(audio.status))
+  }catch(err){toast('Export : '+err.message,true)}
+}
 
 function switchView(v){$$('.nav-tab').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$$('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));}
 $$('.nav-tab').forEach(b=>b.onclick=()=>switchView(b.dataset.view));$$('.libtab').forEach(b=>b.onclick=()=>{libraryMode=b.dataset.lib;renderMedia();if(libraryMode==='audio')renderAudioInspector();else renderMediaInspector()});$('#mediaSearch').oninput=renderMedia;$('#snap').onchange=()=>{renderInspector();toast(`Snap ${snapValue()} s`)};
