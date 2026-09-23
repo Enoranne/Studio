@@ -1,109 +1,127 @@
 # PISTE Studio
 
-PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média, continuité visuelle et mixage audio**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
+PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média, continuité visuelle et mixage audio non destructif**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
 
-## V0.19 — Audio Editing & Mixing
+## V0.20 — Audio Intelligence & Loudness
 
-La V0.19 rééquilibre PISTE Studio en donnant enfin à l’audio une profondeur comparable au montage vidéo.
+La V0.20 ajoute une couche de contrôle et d’assistance audio au mixage V0.19.
 
-### Timeline audio schema v3
+### Analyse loudness locale
 
-Chaque clip audio peut maintenant stocker :
+PISTE Studio utilise ffmpeg pour mesurer les sources audio :
 
-- rôle : `dialogue / vo / music / ambience / sfx` ;
-- gain en dB : `-60 dB → +12 dB` ;
-- pan : `-1 → +1` ;
-- fade in / fade out ;
-- enveloppe de volume avec keyframes ;
-- connexion Storyline existante.
+- LUFS intégré ;
+- true peak source ;
+- loudness range (LRA) ;
+- seuil loudness ;
+- plages de silence détectées.
 
-Les anciennes timelines utilisant `gain: 0..1` restent lisibles et sont automatiquement converties en `gainDb`.
+Les résultats sont persistés dans SQLite et restent associés au média source.
 
-### Preview Web Audio
+### Normalisation non destructive
 
-Le navigateur utilise un vrai graphe Web Audio :
+L’utilisateur choisit une cible LUFS et un ceiling true peak.
 
-- GainNode par clip ;
-- StereoPannerNode lorsque disponible ;
-- bus par piste ;
-- bus master ;
-- Mute ;
-- Solo ;
-- meters stéréo L/R.
+PISTE Studio calcule alors un **ajustement de gain proposé**.
 
-Le gain positif est donc réellement prévisualisable : `+3 dB` n’est plus limité par `HTMLAudioElement.volume`.
+Si le gain nécessaire pour atteindre la cible ferait dépasser le ceiling true peak, la proposition est limitée et l’interface l’indique explicitement.
 
-### Automation
+Exemple :
 
-Les clips audio affichent directement :
+    source          -20.0 LUFS
+    true peak        -4.0 dBTP
+    cible           -16.0 LUFS
+    ceiling          -1.5 dBTP
 
-- forme d’onde ;
-- ligne de volume ;
-- keyframes ;
-- poignée de fade in ;
-- poignée de fade out.
+    gain théorique    +4.0 dB
+    gain proposé      +2.5 dB
+    résultat estimé  -17.5 LUFS
+    TP estimé         -1.5 dBTP
 
-Les keyframes sont manipulables sur le clip et depuis l’Inspector.
+La normalisation ne réécrit jamais le fichier source. Elle modifie le gain du clip et décale de la même valeur ses keyframes éventuels.
 
-Le bouton **+ Point au playhead** ajoute un point d’automation au temps courant.
+### Contrôle clipping
 
-### Inspector Audio Mix
+PISTE Studio peut produire un rapport de **risque de clipping par clip**.
 
-L’Inspector expose maintenant :
+Il combine :
+
+- true peak mesuré sur la source ;
+- gain maximal du clip ou de son automation.
+
+Il ne s’agit pas d’une mesure true peak du master final. Plusieurs sources simultanées peuvent s’additionner : un rendu/mix final devra être mesuré séparément avant une livraison critique.
+
+### Ducking VO / Dialogue
+
+Sur un clip MUSIC, PISTE Studio peut analyser les chevauchements temporels avec :
+
+- VO ;
+- DIALOGUE.
+
+Il propose alors une enveloppe de volume avec :
+
+- niveau de base ;
+- réduction configurable ;
+- attack ;
+- release.
+
+La proposition est visible avant application.
+
+Politique :
+
+- validation humaine obligatoire ;
+- aucun changement automatique ;
+- aucun déplacement de Storyline ;
+- automation totalement éditable après acceptation.
+
+### Crossfade audio
+
+Deux clips audio adjacents d’une même piste peuvent recevoir un crossfade contrôlé.
+
+PISTE Studio :
+
+- avance légèrement le second clip pour créer l’overlap ;
+- ajoute fade out / fade in ;
+- enregistre une relation réciproque `crossfadeWith` ;
+- conserve la durée `crossfadeDuration`.
+
+Un overlap audio arbitraire sur une même piste reste interdit. Seul un crossfade explicitement déclaré contourne la règle de collision.
+
+### Silence
+
+L’analyse locale peut également repérer des plages silencieuses via ffmpeg.
+
+V0.20 ne prétend pas encore détecter automatiquement une « bonne respiration » ou une intention vocale : elle identifie des zones de silence mesurables qui pourront alimenter de futures suggestions éditoriales.
+
+## Timeline schema v4
+
+La timeline conserve désormais explicitement les crossfades en plus du modèle audio V0.19 :
 
 - rôle ;
 - gain dB ;
 - pan ;
-- fade in ;
-- fade out ;
-- liste des points d’automation.
-
-Les actions audio courantes sont également disponibles dans la Command Palette.
-
-### Solo / Mute
-
-Les pistes audio disposent de :
-
-- `M` — Mute ;
-- `S` — Solo ;
-- `L` — Lock.
-
-Le Solo est persisté dans la timeline.
-
-### Tesseract
-
-Le plan d’authoring V0.19 conserve désormais :
-
-- `gain_db` ;
-- `pan` ;
-- `role` ;
 - fades ;
-- enveloppe de volume.
+- automation ;
+- Mute / Solo ;
+- crossfade réciproque.
 
-Le gain statique est matérialisé dans la couche Audio Tesseract.
+## Tesseract
 
-En revanche, PISTE Studio **n’invente pas** une API d’automation Tesseract : pan, fades et keyframes restent conservés dans le plan/manifest tant que le schéma Tesseract installé ne confirme pas une représentation native compatible.
+Le modèle audio enrichi reste auditable dans le plan d’authoring.
 
-### Ce qui reste pour V0.20
+Le gain statique est matérialisé dans Tesseract.
 
-- analyse loudness LUFS ;
-- peak / true peak backend ;
-- normalisation ;
-- ducking VO/MUSIC proposé et modifiable ;
-- crossfades audio ;
-- éventuellement bus/faders de piste plus avancés.
+PISTE Studio ne génère toujours pas de propriétés non documentées pour automation/pan/fades : les informations restent conservées tant que le schéma Tesseract installé ne confirme pas un mécanisme natif compatible.
 
-## Fondations conservées
+## Ce que V0.20 ne prétend pas encore faire
 
-- Semantic Vision V0.18 ;
-- Media Intelligence ;
-- Favorite / Reject ;
-- Source Selector ;
-- Storyline magnétique ;
-- Canon / Locks ;
-- checkpoint / Undo ;
-- versions V001+ ;
-- bridge Tesseract.
+- mesure true peak du master final rendu ;
+- limiteur/mastering automatique ;
+- détection sémantique des respirations ;
+- correction audio destructive ;
+- choix automatique d’une norme de loudness universelle.
+
+La cible LUFS est configurable car elle dépend du contexte de diffusion.
 
 ## Installation
 
@@ -111,24 +129,23 @@ En revanche, PISTE Studio **n’invente pas** une API d’automation Tesseract :
     source .venv/bin/activate
     pip install -e .
 
-Avec vision optionnelle :
-
-    pip install -e '.[vision]'
+L’analyse loudness nécessite ffmpeg disponible sur la machine.
 
 Lancer :
 
     piste-studio-app --project /chemin/vers/PISTE_0
 
-## Workflow audio
+## Workflow audio conseillé
 
-1. Importe/catalogue les sources audio.
-2. Dépose une source sur VO / MUSIC / SFX.
-3. Sélectionne le clip.
-4. Règle gain, pan, rôle et fades dans **AUDIO MIX**.
-5. Ajoute des keyframes au playhead ou déplace-les directement.
-6. Utilise Mute/Solo pour contrôler le mix.
-7. Vérifie les meters L/R dans le Viewer.
-8. Enregistre puis publie la timeline.
+1. Catalogue les sources audio.
+2. Sélectionne un clip et lance **Analyser loudness**.
+3. Vérifie LUFS / true peak / LRA / silences.
+4. Choisis ta cible et utilise **Normaliser** si nécessaire.
+5. Lance **Clipping** pour repérer les clips à risque.
+6. Sur MUSIC, utilise **Ducking VO** puis examine l’enveloppe proposée.
+7. Entre deux clips adjacents, utilise **Crossfade suivant**.
+8. Ajuste manuellement les keyframes/fades.
+9. Mesure à nouveau le master final avant livraison.
 
 ## Tests
 
