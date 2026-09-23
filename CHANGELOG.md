@@ -1,5 +1,23 @@
 # Changelog
 
+## V0.17 — Media Intelligence
+
+- Analyse technique locale via ffprobe.
+- Mise à jour automatique d’une durée catalogue manquante.
+- Filmstrips JPEG pré-calculés côté backend.
+- Cache filmstrip exclu de Git.
+- Browser : filmstrip cache au repos, skimming vidéo au survol.
+- Empreinte visuelle perceptuelle multi-images locale.
+- Mesure de proximité visuelle entre prises.
+- Fallback proximité nom/durée lorsque l’empreinte n’est pas disponible.
+- Inspector Media Intelligence.
+- Tiroir **Prises proches**.
+- Source Selector enrichi avec proximité visuelle et facettes de continuité structurées.
+- Tags `character:`, `prop:`, `decor:`, `look:` reconnus comme signaux de continuité.
+- Dégradation explicite `TOOLS_UNAVAILABLE` lorsque ffmpeg/ffprobe manque.
+- Aucun média envoyé vers un service externe.
+- Tests moteur/API/UI/Chromium étendus à la Media Intelligence.
+
 ## V0.16 — Editorial Intelligence
 
 - Plages Favorite/Reject persistées dans SQLite.
