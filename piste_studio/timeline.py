@@ -185,6 +185,7 @@ def validate_timeline(root: Path, payload: dict) -> dict:
                 "name": str(t.get("name") or tid).strip(),
                 "kind": str(t.get("kind") or "generic").strip(),
                 "muted": bool(t.get("muted", False)),
+                "solo": bool(t.get("solo", False)),
                 "locked": bool(t.get("locked", False)),
             }
         )
