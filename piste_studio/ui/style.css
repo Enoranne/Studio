@@ -136,3 +136,23 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .audio-mix-section .row input,.audio-mix-section .row select{font-variant-numeric:tabular-nums}
 .audio-mix-section .ins-actions{margin-top:8px}
 .viewer-stage.hide-mix #audioMeters{display:none!important}
+
+
+/* V0.20 — Audio Intelligence & Loudness */
+.loudness-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px}
+.loudness-grid>div{display:grid;gap:2px;padding:6px;border-radius:5px;background:#12171c;border:1px solid #1f262d}
+.loudness-grid span{font-size:5.5px;letter-spacing:.7px;color:#68737d}
+.loudness-grid b{font:7px ui-monospace,monospace;color:#c3c9ce}
+.audio-intelligence-section .ins-actions{margin-top:7px}
+.loudness-proposal{display:grid;gap:6px;margin:10px 0;padding:10px;border-radius:7px;background:#12171c}
+.loudness-proposal>b{font:18px ui-monospace,monospace;color:#d8b383}
+.loudness-proposal span{font-size:7px;color:#a3adb5}
+.loudness-proposal em{font-size:6px;font-style:normal;color:#c58c6b}
+.clip-risk-list{display:grid;gap:5px;margin-top:9px}
+.clip-risk{display:grid;grid-template-columns:1fr auto;gap:3px 8px;padding:7px;border-radius:5px;background:#12171c;border-left:2px solid #59636c}
+.clip-risk b{font-size:7px}.clip-risk span{font-size:6px;font-weight:700}.clip-risk small{grid-column:1/-1;font-size:6px;color:#737e87}
+.clip-risk.risk{border-left-color:#c56f68}.clip-risk.risk span{color:#d67c74}.clip-risk.ok{border-left-color:#789b80}.clip-risk.ok span{color:#91b29a}
+.duck-preview{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0}
+.duck-preview span{padding:4px 6px;border-radius:4px;background:#171d23;font:6px ui-monospace,monospace;color:#aeb8c0}
+.crossfade-clip{box-shadow:inset 0 0 0 1px rgba(197,148,105,.24)}
+.crossfade-badge{position:absolute;z-index:14;right:3px;top:3px;padding:2px 4px;border-radius:3px;background:#513d2c;color:#ebc69e;font:5.3px ui-monospace,monospace;pointer-events:none}
