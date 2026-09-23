@@ -47,6 +47,35 @@ CREATE TABLE IF NOT EXISTS edit_versions (
     UNIQUE(edit_name, version_number)
 );
 
+CREATE TABLE IF NOT EXISTS editorial_ranges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    media_id INTEGER NOT NULL,
+    kind TEXT NOT NULL CHECK(kind IN ('favorite','reject')),
+    source_in REAL NOT NULL,
+    source_out REAL NOT NULL,
+    note TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(media_id, kind, source_in, source_out),
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS editorial_markers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    edit_name TEXT NOT NULL,
+    time_seconds REAL NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'note',
+    label TEXT NOT NULL,
+    note TEXT,
+    media_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_editorial_ranges_media ON editorial_ranges(media_id);
+CREATE INDEX IF NOT EXISTS idx_editorial_markers_edit ON editorial_markers(edit_name, time_seconds);
+
 CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
