@@ -185,3 +185,37 @@ Elle doit :
 - être sauvegardée dans la timeline ;
 - bénéficier de checkpoint/Undo ;
 - ne jamais être aplatie silencieusement lors de l’authoring.
+
+
+## 18. Loudness : mesurer avant de corriger
+
+L’interface doit distinguer quatre choses :
+- mesure source ;
+- objectif utilisateur ;
+- proposition de correction ;
+- résultat estimé.
+
+Ne jamais présenter un gain proposé comme un traitement déjà effectué.
+
+## 19. True peak : source vs master
+
+Un true peak mesuré sur un fichier source est une mesure réelle.
+
+Un true peak calculé comme `source + gain du clip` est une estimation de risque.
+
+Le mix de plusieurs sources peut créer un pic supérieur. L’UI doit toujours distinguer ces deux niveaux de confiance.
+
+## 20. Ducking : proposition visible
+
+Le ducking doit rester une automation de volume ordinaire :
+- keyframes visibles ;
+- attack/release compréhensibles ;
+- réduction indiquée en dB ;
+- modification manuelle possible ;
+- aucune application silencieuse.
+
+## 21. Crossfade : overlap intentionnel
+
+Une collision accidentelle et un crossfade ne sont pas la même chose.
+
+PISTE Studio continue de refuser les overlaps même piste, sauf lorsque deux clips déclarent explicitement une relation de crossfade réciproque.
