@@ -112,3 +112,37 @@ Le Master Check :
 - ne modifie pas les sources ;
 - produit uniquement un rendu temporaire et un rapport ;
 - n’active un limiteur que sur choix explicite.
+
+
+## Préflight export audio
+
+Chaque rapport Master Check enregistre une empreinte SHA-256 de l’état audio pertinent de la timeline : clips audio, timing, source IN, gain, automation, fades, pan, crossfades et Mute/Solo.
+
+Au moment d’un export :
+
+- **PASS** : le rapport correspond au mix courant ;
+- **WARN** : le rapport est à jour mais signale un écart ;
+- **STALE** : le mix a changé depuis le dernier rapport ;
+- **MISSING** : aucun rapport exploitable n’existe.
+
+Seul PASS laisse partir l’export sans interruption visuelle.
+
+Pour WARN, STALE ou MISSING, PISTE Studio affiche un préflight avec trois actions :
+
+- **Lancer Master Check** ;
+- **Exporter quand même** ;
+- **Annuler**.
+
+Le serveur ne bloque jamais automatiquement l’export : l’état audio est également renvoyé dans la réponse d’export pour rester traçable.
+
+## Validation end-to-end ffmpeg
+
+La CI installe désormais ffmpeg explicitement et exécute un test réel qui :
+
+1. génère deux WAV synthétiques ;
+2. construit un mix avec gain, automation, fades et pan ;
+3. rend le master stéréo ;
+4. mesure LUFS intégré, true peak et LRA avec ffmpeg/loudnorm ;
+5. vérifie le rapport et l’empreinte du mix.
+
+Ce test n’est pas simulé et n’est pas skipped dans la CI de référence V0.21.
