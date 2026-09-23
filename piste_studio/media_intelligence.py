@@ -289,7 +289,12 @@ def analyze_media(
         and existing.get("status") == "READY"
         and not force
     ):
-        return existing
+        strip_ok = True
+        if make_filmstrip:
+            rel = existing.get("filmstrip_path")
+            strip_ok = bool(rel and (root / rel).exists())
+        if strip_ok:
+            return existing
 
     path = _media_path(root, item)
     tools = detect_media_tools()
