@@ -1,127 +1,117 @@
 # PISTE Studio
 
-PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média locale et continuité visuelle validée humainement**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
+PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média, continuité visuelle et mixage audio**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
 
-## V0.18 — Semantic Vision & Continuity
+## V0.19 — Audio Editing & Mixing
 
-La V0.18 ajoute une couche de vision sémantique **optionnelle et locale** au-dessus de la Media Intelligence V0.17.
+La V0.19 rééquilibre PISTE Studio en donnant enfin à l’audio une profondeur comparable au montage vidéo.
 
-### Principe
+### Timeline audio schema v3
 
-PISTE Studio n’essaie pas de reconnaître un personnage uniquement parce qu’il connaît son nom.
+Chaque clip audio peut maintenant stocker :
 
-La continuité spécifique repose sur des **références visuelles déjà validées** :
+- rôle : `dialogue / vo / music / ambience / sfx` ;
+- gain en dB : `-60 dB → +12 dB` ;
+- pan : `-1 → +1` ;
+- fade in / fade out ;
+- enveloppe de volume avec keyframes ;
+- connexion Storyline existante.
 
-- un rush tagué `character:malo` devient une référence visuelle de Malo ;
-- un rush tagué `prop:fisher` devient une référence de cet accessoire ;
-- idem pour `decor:` et `look:`.
+Les anciennes timelines utilisant `gain: 0..1` restent lisibles et sont automatiquement converties en `gainDb`.
 
-Les rushes analysés reçoivent un embedding local. PISTE Studio compare ensuite un rush candidat aux embeddings des références et peut proposer les mêmes tags.
+### Preview Web Audio
 
-### Tags proposés
+Le navigateur utilise un vrai graphe Web Audio :
 
-Les facettes reconnues sont :
+- GainNode par clip ;
+- StereoPannerNode lorsque disponible ;
+- bus par piste ;
+- bus master ;
+- Mute ;
+- Solo ;
+- meters stéréo L/R.
 
-- `character:`
-- `prop:`
-- `decor:`
-- `look:`
+Le gain positif est donc réellement prévisualisable : `+3 dB` n’est plus limité par `HTMLAudioElement.volume`.
 
-Chaque proposition affiche :
+### Automation
 
-- le tag proposé ;
-- un score de proximité ;
-- le seuil utilisé pour cette facette ;
-- le nombre de références ;
-- la meilleure référence ;
-- son niveau de similarité.
+Les clips audio affichent directement :
 
-### Validation obligatoire
+- forme d’onde ;
+- ligne de volume ;
+- keyframes ;
+- poignée de fade in ;
+- poignée de fade out.
 
-Une proposition commence en `PENDING`.
+Les keyframes sont manipulables sur le clip et depuis l’Inspector.
 
-Deux actions seulement sont possibles :
+Le bouton **+ Point au playhead** ajoute un point d’automation au temps courant.
 
-- **Accepter** : le tag est ajouté au catalogue ;
-- **Rejeter** : la proposition est mémorisée comme refusée.
+### Inspector Audio Mix
 
-Un tag rejeté ne réapparaît pas automatiquement lors d’un nouveau passage, sauf réinitialisation explicite.
+L’Inspector expose maintenant :
 
-Les politiques serveur imposent :
+- rôle ;
+- gain dB ;
+- pan ;
+- fade in ;
+- fade out ;
+- liste des points d’automation.
 
-- `human_validation_required = true`
-- `automatic_tag_write = false`
-- `automatic_storyline_change = false`
+Les actions audio courantes sont également disponibles dans la Command Palette.
 
-### Vision locale
+### Solo / Mute
 
-Le provider par défaut est un modèle CLIP local optionnel.
+Les pistes audio disposent de :
 
-Installation des dépendances :
+- `M` — Mute ;
+- `S` — Solo ;
+- `L` — Lock.
 
-    pip install -e '.[vision]'
+Le Solo est persisté dans la timeline.
 
-Le modèle n’est **pas téléchargé automatiquement**.
+### Tesseract
 
-Si les dépendances sont installées mais que le modèle n’est pas déjà présent dans le cache local, l’interface peut proposer :
+Le plan d’authoring V0.19 conserve désormais :
 
-**Autoriser le téléchargement du modèle**
+- `gain_db` ;
+- `pan` ;
+- `role` ;
+- fades ;
+- enveloppe de volume.
 
-Cette action ne transmet aucun rush : elle télécharge uniquement le modèle configuré. Les images extraites des vidéos restent locales.
+Le gain statique est matérialisé dans la couche Audio Tesseract.
 
-Le modèle peut être changé via :
+En revanche, PISTE Studio **n’invente pas** une API d’automation Tesseract : pan, fades et keyframes restent conservés dans le plan/manifest tant que le schéma Tesseract installé ne confirme pas une représentation native compatible.
 
-    PISTE_VISION_MODEL=<model_id>
+### Ce qui reste pour V0.20
 
-### Images de référence
-
-PISTE Studio extrait quelques images des rushes avec ffmpeg dans :
-
-    cache/vision/
-
-Ces images sont temporaires/cache et ne sont pas versionnées dans Git.
-
-### Dégradation propre
-
-Sans `torch`, `transformers`, Pillow, ffmpeg ou modèle local :
-
-- le montage reste fonctionnel ;
-- Media Intelligence V0.17 reste disponible selon les outils présents ;
-- Favorite/Reject, Markers et Source Selector continuent de fonctionner ;
-- la vision sémantique indique explicitement ce qui manque.
+- analyse loudness LUFS ;
+- peak / true peak backend ;
+- normalisation ;
+- ducking VO/MUSIC proposé et modifiable ;
+- crossfades audio ;
+- éventuellement bus/faders de piste plus avancés.
 
 ## Fondations conservées
 
-- filmstrips backend ;
-- prises proches ;
-- empreinte perceptuelle V0.17 ;
-- Favorite / Reject persistants ;
-- Editorial Source Selector ;
-- Markers ;
-- UX Viewer-first / Focus / Command Palette ;
+- Semantic Vision V0.18 ;
+- Media Intelligence ;
+- Favorite / Reject ;
+- Source Selector ;
 - Storyline magnétique ;
-- Canon et Locks ;
+- Canon / Locks ;
 - checkpoint / Undo ;
 - versions V001+ ;
 - bridge Tesseract.
 
-## Ce que V0.18 ne fait pas
-
-V0.18 ne prétend pas qu’un embedding est une vérité d’identité.
-
-Une proximité élevée avec des références `character:malo` signifie seulement que le rush ressemble suffisamment au groupe de références pour **proposer** ce tag.
-
-L’utilisateur doit toujours valider.
-
 ## Installation
-
-Base :
 
     python -m venv .venv
     source .venv/bin/activate
     pip install -e .
 
-Avec vision locale optionnelle :
+Avec vision optionnelle :
 
     pip install -e '.[vision]'
 
@@ -129,18 +119,16 @@ Lancer :
 
     piste-studio-app --project /chemin/vers/PISTE_0
 
-## Workflow vision
+## Workflow audio
 
-1. Scanner les rushes.
-2. Lancer **Analyser** pour la Media Intelligence.
-3. Valider quelques tags de référence comme `character:malo` ou `prop:fisher`.
-4. Installer/configurer la vision locale si souhaité.
-5. Dans l’Inspector d’un rush, cliquer **Analyser vision**.
-6. Cliquer **Proposer continuité**.
-7. Examiner les références et le score.
-8. **Accepter** ou **Rejeter** chaque proposition.
-
-Aucun de ces choix ne modifie automatiquement la Storyline.
+1. Importe/catalogue les sources audio.
+2. Dépose une source sur VO / MUSIC / SFX.
+3. Sélectionne le clip.
+4. Règle gain, pan, rôle et fades dans **AUDIO MIX**.
+5. Ajoute des keyframes au playhead ou déplace-les directement.
+6. Utilise Mute/Solo pour contrôler le mix.
+7. Vérifie les meters L/R dans le Viewer.
+8. Enregistre puis publie la timeline.
 
 ## Tests
 
