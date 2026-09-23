@@ -41,7 +41,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.12")
+    app = FastAPI(title="PISTE Studio Local App", version="0.13")
     app.state.project_root = root
 
     @app.get("/")
@@ -50,7 +50,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/ui/{filename}")
     def ui_asset(filename: str):
-        if filename not in {"style.css", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-shell.js", "backend.js"}:
+        if filename not in {"style.css", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "backend.js"}:
             raise HTTPException(404, "Ressource UI introuvable.")
         path = ui_file.parent / filename
         if not path.exists():
@@ -60,7 +60,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.12", "project_root": str(root)}
+        return {"ok": True, "version": "0.13", "project_root": str(root)}
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
@@ -71,7 +71,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.12",
+            "app_version": "0.13",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},
