@@ -55,13 +55,13 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             page.get_by_role("button", name="Montage").click()
             expect(page.locator("#view-edit")).to_have_class(re.compile("active"))
 
-            page.get_by_role("button", name="ASSEMBLE").click()
+            page.locator('[data-workspace="assemble"]').click()
             expect(page.locator("body")).to_have_class(re.compile("workspace-assemble"))
 
-            page.get_by_role("button", name="REVIEW").click()
+            page.locator('[data-workspace="review"]').click()
             expect(page.locator("body")).to_have_class(re.compile("workspace-review"))
 
-            page.get_by_role("button", name="EDIT").click()
+            page.locator('[data-workspace="edit"]').click()
             expect(page.locator("body")).to_have_class(re.compile("workspace-edit"))
 
             expect(page.locator("#undoBtn")).to_be_visible()
