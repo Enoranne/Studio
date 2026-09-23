@@ -45,6 +45,21 @@ CREATE TABLE IF NOT EXISTS media_analysis (
     FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS audio_loudness_analysis (
+    media_id INTEGER PRIMARY KEY,
+    analyzer_version TEXT NOT NULL,
+    status TEXT NOT NULL,
+    integrated_lufs REAL,
+    true_peak_dbfs REAL,
+    loudness_range_lu REAL,
+    threshold_lufs REAL,
+    silence_json TEXT NOT NULL DEFAULT '[]',
+    raw_json TEXT NOT NULL DEFAULT '{}',
+    analyzed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS semantic_profiles (
     media_id INTEGER NOT NULL,
     provider TEXT NOT NULL,
