@@ -452,6 +452,7 @@ def run_master_check(
         "version": AUDIO_DELIVERY_VERSION,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "edit_name": str(timeline.get("edit_name") or "mix"),
+        "audio_mix_fingerprint": audio_mix_fingerprint(timeline),
         "preset": settings,
         "measurement": {
             "integrated_lufs": measurement.get("integrated_lufs"),
