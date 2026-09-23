@@ -15,5 +15,6 @@ projects/
 **/graphics/
 **/proxies/
 **/thumbnails/
+**/cache/
 **/renders/
 *.tsrct
