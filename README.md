@@ -2,6 +2,31 @@
 
 PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média, continuité visuelle et mixage audio non destructif**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
 
+## V0.21 — Audio Delivery & Master Check
+
+La V0.21 ferme le principal écart audio restant : PISTE Studio peut désormais contrôler **le mix réellement rendu**, après sommation des sources audibles de la timeline.
+
+### Master Check
+
+Depuis la Command Palette (`Ctrl/Cmd+K` → **Audio · Master Check**), l’application :
+
+- rend localement un master audio temporaire via ffmpeg ;
+- respecte Mute/Solo, gain dB, automation, fades, pan et crossfades ;
+- mesure ensuite le LUFS intégré et le true peak du master ;
+- compare séparément loudness et plafond true peak ;
+- retourne un statut **PASS** ou **WARN** avec les raisons ;
+- génère un rapport JSON exportable dans `reports/audio/`.
+
+Le rendu de contrôle est stéréo 48 kHz / 24 bits et reste dans le cache du projet. Les médias source ne sont jamais modifiés.
+
+### Presets de livraison
+
+PISTE Studio propose des presets de référence configurables. Ils ne sont pas présentés comme des normes universelles : la cible LUFS, le ceiling true peak et la tolérance restent modifiables selon le diffuseur, le festival ou le contexte de livraison.
+
+### Limiteur explicite
+
+Le limiteur master est **désactivé par défaut**. Il n’est ajouté au rendu que si l’utilisateur l’active volontairement. Il n’existe ni normalisation master automatique, ni correction silencieuse.
+
 ## V0.20 — Audio Intelligence & Loudness
 
 La V0.20 ajoute une couche de contrôle et d’assistance audio au mixage V0.19.
@@ -145,7 +170,7 @@ Lancer :
 6. Sur MUSIC, utilise **Ducking VO** puis examine l’enveloppe proposée.
 7. Entre deux clips adjacents, utilise **Crossfade suivant**.
 8. Ajuste manuellement les keyframes/fades.
-9. Mesure à nouveau le master final avant livraison.
+9. Ouvre **Audio · Master Check**, mesure le master rendu et vérifie LUFS-I / true peak.\n10. Télécharge le rapport JSON si tu dois conserver une trace de conformité.\n11. N’active le limiteur que volontairement si le contexte de livraison le justifie.
 
 ## Tests
 
