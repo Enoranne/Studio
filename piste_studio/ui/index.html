@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PISTE Studio — Local App v0.15</title>
+<title>PISTE Studio — Local App v0.16</title>
 <link rel="stylesheet" href="/ui/style.css" />
 </head>
 <body class="workspace-edit">
@@ -11,7 +11,7 @@
   <header class="appbar">
     <div class="brand-row">
       <div class="brand-mark"><span></span></div>
-      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.15 · LOCAL</small></div>
+      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.16 · LOCAL</small></div>
       <div class="project-pill"><span id="projectName">PISTE 0</span><small id="projectSubtitle">BONUS TRACK (REC)</small></div>
     </div>
     <div class="workspace-switch" role="group" aria-label="Espace de travail">
@@ -111,6 +111,7 @@
                 <button class="btn tiny" onclick="addAudio('vo')">+ VO</button>
                 <button class="btn tiny" onclick="addAudio('music')">+ Music</button>
                 <button class="btn tiny" onclick="addAudio('sfx')">+ SFX</button>
+                <button class="btn tiny" id="addMarkerBtn" onclick="openMarkerComposer()">+ Marker</button>
               </div>
               <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span><button class="timeline-focus focus-trigger" data-focus-pane="timeline" type="button" title="Agrandir la Timeline">⛶</button></div>
               <div class="timeline-right"><label>Snap</label><select id="snap"><option value="0.1">0,1</option><option value="0.5" selected>0,5</option><option value="1">1,0</option></select><span class="lock-readout" id="hardLockLabel">LOCKS</span></div>
@@ -146,6 +147,16 @@
     <div class="command-footer"><span>↑↓ naviguer</span><span>Entrée exécuter</span><span>Échap fermer</span></div>
   </div>
 </div>
+<aside class="editorial-drawer" id="editorialDrawer" hidden>
+  <div class="editorial-drawer-head"><div><small>EDITORIAL SOURCE SELECTOR</small><strong id="editorialDrawerTitle">Alternatives</strong></div><button class="pane-close" onclick="closeEditorialDrawer()">×</button></div>
+  <div class="editorial-drawer-body" id="editorialDrawerBody"></div>
+</aside>
+<div class="marker-composer" id="markerComposer" hidden>
+  <div class="popover-title">NOUVEAU MARQUEUR</div>
+  <input id="markerLabel" placeholder="Ex. respiration à préserver">
+  <div class="marker-row"><select id="markerKind"><option value="note">Note</option><option value="decision">Décision</option><option value="beat">Beat</option><option value="warning">Vigilance</option></select><button class="btn primary" id="markerSaveBtn">Ajouter</button></div>
+  <small id="markerTimeLabel">00:00.0</small>
+</div>
 <div class="focus-exit" id="focusExit" hidden>~ Quitter le focus</div>
 <div class="toast" id="toast"></div>
 <script src="/ui/state.js"></script>
@@ -155,6 +166,7 @@
 <script src="/ui/ux-magnetic.js"></script>
 <script src="/ui/ux-shell.js"></script>
 <script src="/ui/ux-polish.js"></script>
+<script src="/ui/ux-editorial.js"></script>
 <script src="/ui/backend.js"></script>
 </body>
 </html>
