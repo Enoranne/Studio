@@ -1,4 +1,4 @@
-let storylineStart=null;
+let storylineStart=null,storylineMode='free';
 
 function getStorylineStart(){
   if(Number.isFinite(storylineStart))return storylineStart;
@@ -7,9 +7,14 @@ function getStorylineStart(){
   return storylineStart;
 }
 function setStorylineStateFromDoc(doc){
-  const v=doc?.storyline?.start;
-  const story=storyClipsSorted();
+  const v=doc?.storyline?.start,story=storyClipsSorted();
   storylineStart=Number.isFinite(+v)?+v:(story.length?story[0].start:Math.max(0,HARD_END||0));
+  if(doc?.storyline?.mode){storylineMode=doc.storyline.mode}
+  else{
+    let cursor=storylineStart,contiguous=true;
+    for(const c of story){if(Math.abs(c.start-cursor)>1e-4){contiguous=false;break}cursor+=c.duration}
+    storylineMode=contiguous?'magnetic':'free'
+  }
 }
 function storyClipsSorted(list=clips){return list.filter(c=>c.track==='video').slice().sort((a,b)=>a.start-b.start||String(a.id).localeCompare(String(b.id)))}
 function storyParentAt(time,list=clips){
@@ -56,18 +61,18 @@ function validateCandidate(candidate,original=clips){
   const story=storyClipsSorted(candidate);let cursor=getStorylineStart();for(const c of story){if(Math.abs(c.start-cursor)>1e-4)return 'Storyline non contiguë';cursor+=c.duration}
   return null
 }
-function backendTimelinePayload(list=clips){
-  return {edit_name:activeEditName,duration_seconds:DURATION,storyline:{mode:'magnetic',start:getStorylineStart()},tracks,clips:list.map(c=>{const n={...c};const m=c.mediaId&&getMedia(c.mediaId),a=c.audioId&&getAudio(c.audioId);if(m?.dbId)n.mediaDbId=m.dbId;if(a?.dbId)n.audioDbId=a.dbId;delete n.mediaId;delete n.audioId;return n})}
+function backendTimelinePayload(list=clips,mode=storylineMode){
+  return {edit_name:activeEditName,duration_seconds:DURATION,storyline:{mode,start:getStorylineStart()},tracks,clips:list.map(c=>{const n={...c};const m=c.mediaId&&getMedia(c.mediaId),a=c.audioId&&getAudio(c.audioId);if(m?.dbId)n.mediaDbId=m.dbId;if(a?.dbId)n.audioDbId=a.dbId;delete n.mediaId;delete n.audioId;return n})}
 }
 async function validateMagneticWithBackend(before,candidate){
   if(!backendConnected)return true;
-  try{await api('/api/storyline/validate',{method:'POST',body:JSON.stringify({before:backendTimelinePayload(before),after:backendTimelinePayload(candidate)})});return true}
+  try{await api('/api/storyline/validate',{method:'POST',body:JSON.stringify({before:backendTimelinePayload(before,storylineMode),after:backendTimelinePayload(candidate,'magnetic')})});return true}
   catch(err){toast('Opération magnétique bloquée : '+err.message,true);return false}
 }
 async function commitMagneticCandidate(candidate,message,before=clips){
   const err=validateCandidate(candidate,before);if(err){toast(err,true);return false}
   if(!(await validateMagneticWithBackend(before,candidate)))return false;
-  clips=candidate;selectedClip=selectedClip&&getClip(selectedClip)?selectedClip:(clips[0]?.id||null);renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));toast(message);return true
+  storylineMode='magnetic';clips=candidate;selectedClip=selectedClip&&getClip(selectedClip)?selectedClip:(clips[0]?.id||null);renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));toast(message);return true
 }
 
 const _legacyBeginClipInteraction=beginClipInteraction,_legacyPointerMove=onClipPointerMove,_legacyEndClipInteraction=endClipInteraction;
