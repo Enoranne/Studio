@@ -76,4 +76,40 @@ function renderTracks(){
     root.appendChild(row);const lane=row.querySelector('.lane');
     lane.addEventListener('dragover',e=>{const can=t.id==='video'||['vo','music','sfx'].includes(t.id);if(can){e.preventDefault();lane.classList.add('dragover')}});lane.addEventListener('dragleave',()=>lane.classList.remove('dragover'));lane.addEventListener('drop',e=>dropLibraryOnLane(e,t.id,lane));
     clips.filter(c=>c.track===t.id).sort((a,b)=>a.start-b.start).forEach(c=>{
-      const e=document.createElement('div');e.className=`clip ${t.kind}${c.id===selectedClip?' selected':''}
+      const e=document.createElement('div');e.className=`clip ${t.kind}${c.id===selectedClip?' selected':''}`;e.dataset.clip=c.id;e.style.left=`${c.start/DURATION*100}%`;e.style.width=`${c.duration/DURATION*100}%`;
+      e.innerHTML=`<span class="handle left" data-edge="left"></span><b>${c.label}</b><small>${fmt(c.start)} · ${c.duration.toFixed(1)}s${c.audioId?` · ${Math.round((c.gain??1)*100)}%`:''}</small>${c.audioId?`<canvas class="waveform-canvas" data-clip-wave="${c.id}"></canvas>`:''}<span class="handle right" data-edge="right"></span>`;
+      e.addEventListener('pointerdown',ev=>beginClipInteraction(ev,c.id,lane));e.addEventListener('click',ev=>{ev.stopPropagation();selectedClip=c.id;selectedMedia=c.mediaId||selectedMedia;renderTracks();renderInspector();setPlayhead(c.start);if(c.mediaId)renderMedia()});lane.appendChild(e)
+    });
+  });renderInspector();requestAnimationFrame(drawAllWaveforms)
+}
+function laneTimeFromEvent(ev,lane){const box=lane.getBoundingClientRect();return Math.max(0,Math.min(DURATION,((ev.clientX-box.left)/box.width)*DURATION))}
+function beginClipInteraction(ev,clipId,lane){
+  if(ev.button!==0)return;const c=getClip(clipId),track=getTrack(c.track);if(track.locked){toast(`Piste ${track.name} verrouillée`,true);return}
+  ev.preventDefault();ev.stopPropagation();selectedClip=clipId;selectedMedia=c.mediaId||selectedMedia;const edge=ev.target.dataset.edge||'move';
+  interaction={clipId,mode:edge,startX:ev.clientX,lane,start:{...c},element:ev.currentTarget,valid:true};interaction.element.classList.add('selected');
+  document.addEventListener('pointermove',onClipPointerMove);document.addEventListener('pointerup',endClipInteraction,{once:true});renderInspector();$('#interactionReadout').textContent=edge==='move'?'Déplacement…':edge==='left'?'Trim IN…':'Trim OUT…'
+}
+function onClipPointerMove(ev){
+  if(!interaction)return;const c=getClip(interaction.clipId),box=interaction.lane.getBoundingClientRect();const dt=(ev.clientX-interaction.startX)/box.width*DURATION;const base=interaction.start;let next={...base};
+  if(interaction.mode==='move'){next.start=snapTime(base.start+dt)}
+  else if(interaction.mode==='left'){
+    let newStart=snapTime(base.start+dt);let delta=newStart-base.start;next.start=newStart;next.duration=base.duration-delta;if(next.mediaId||next.audioId)next.sourceStart=(base.sourceStart||0)+delta
+  }else{next.duration=snapTime(base.duration+dt)}
+  next.start=Math.max(0,next.start);next.duration=Math.max(MIN_CLIP,next.duration);
+  const err=validate(next,c.id);interaction.valid=!err;interaction.preview=next;interaction.error=err;
+  const el=interaction.element;el.classList.toggle('invalid',!!err);el.style.left=`${next.start/DURATION*100}%`;el.style.width=`${next.duration/DURATION*100}%`;el.querySelector('small').textContent=`${fmt(next.start)} · ${next.duration.toFixed(1)}s`;$('#interactionReadout').textContent=err||`${interaction.mode==='move'?'MOVE':interaction.mode==='left'?'IN':'OUT'} · ${fmt(next.start)} · ${next.duration.toFixed(1)}s`
+}
+function endClipInteraction(){
+  document.removeEventListener('pointermove',onClipPointerMove);if(!interaction)return;const c=getClip(interaction.clipId);
+  if(interaction.preview&&interaction.valid){Object.assign(c,interaction.preview);toast(interaction.mode==='move'?'Clip déplacé':'Trim appliqué')}else if(interaction.error){toast(interaction.error,true)}
+  interaction=null;$('#interactionReadout').textContent='Glisser · rogner · déposer';renderTracks();setPlayhead(c.start)
+}
+function dropLibraryOnLane(e,trackId,lane){
+  e.preventDefault();lane.classList.remove('dragover');const start=snapTime(laneTimeFromEvent(e,lane));
+  const mid=e.dataTransfer.getData('text/piste-media');if(mid){if(trackId!=='video')return toast('Un rush vidéo se dépose sur VIDEO',true);const m=getMedia(mid);if(!m)return;const d=Math.max(MIN_CLIP,m.out-m.in);const c={id:'v'+Date.now(),track:'video',mediaId:m.id,label:m.label,start,duration:d,sourceStart:m.in};const err=validate(c);if(err)return toast(err,true);clips.push(c);selectedClip=c.id;selectedMedia=m.id;renderTracks();setPlayhead(c.start);return toast(`${m.label} déposé à ${fmt(c.start)}`)}
+  const aid=e.dataTransfer.getData('text/piste-audio');if(aid){if(!['vo','music','sfx'].includes(trackId))return toast('Une source audio se dépose sur VO / MUSIC / SFX',true);const a=getAudio(aid);if(!a)return;const d=Math.min(a.duration,Math.max(MIN_CLIP,a.duration));const c={id:'a'+Date.now(),track:trackId,audioId:a.id,label:a.label,start,duration:d,sourceStart:0,gain:1,fadeIn:.1,fadeOut:.2};const err=validate(c);if(err)return toast(err,true);clips.push(c);selectedClip=c.id;selectedAudio=a.id;renderTracks();setPlayhead(c.start);toast(`${a.label} déposé sur ${getTrack(trackId).name}`)}
+}
+function renderMedia(){
+  const q=$('#mediaSearch').value.toLowerCase().trim(),root=$('#mediaList');root.innerHTML='';
+  $$('.libtab').forEach(b=>b.classList.toggle('active',b.dataset.lib===libraryMode));
+  $('#libraryHelp').innerHTML=libraryMode==='video'?'Glisse un rush vers la piste <b>VIDEO</b>. Les fichiers locaux portant le même nom sont ass
