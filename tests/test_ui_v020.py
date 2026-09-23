@@ -62,3 +62,6 @@ def test_v021_ux_contains_master_delivery_patterns():
     assert "TRUE PEAK" in ux
     assert "limiteur" in ux.lower()
     assert "Télécharger le rapport JSON" in ux
+    assert "openAudioExportAdvisory" in ux
+    assert "Exporter quand même" in ux
+    assert "Export non bloqué" in ux
