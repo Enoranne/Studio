@@ -1,67 +1,74 @@
 # PISTE Studio
 
-PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH et historique de sécurité**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
+PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité et décisions éditoriales**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
 
-## V0.15 — UX Refinement
+## V0.16 — Editorial Intelligence
 
-La V0.15 ne cherche pas à ajouter de puissance au moteur : elle rend l’outil plus agréable et plus rapide à utiliser.
+La V0.16 ajoute une couche d’intelligence éditoriale **explicable et réversible** au-dessus de la V0.15.
 
-### Interface
+### Favorite / Reject persistants
 
-- Viewer plus dominant dans EDIT et REVIEW ;
-- Browser à filmstrips plus grands et plus visuels ;
-- réduction des bordures, badges et textes permanents ;
-- hiérarchie visuelle plus proche d’une workstation de montage que d’un dashboard web ;
-- Inspector plus sobre ;
-- Storyline et pistes audio plus lisibles ;
-- workspaces ASSEMBLE / EDIT / REVIEW davantage différenciés.
+Les plages marquées dans SOURCE sont désormais stockées dans SQLite :
 
-### Focus Mode
+- Favorite ;
+- Reject ;
+- IN / OUT exacts ;
+- coexistence de plusieurs plages sur un même rush ;
+- suppression individuelle depuis l’Inspector.
 
-Chaque panneau principal peut devenir temporairement l’espace de travail complet :
+Un Favorite ou Reject survit donc au rechargement du projet.
 
-- Browser ;
-- Viewer ;
-- Timeline ;
-- Inspector.
+### Marqueurs éditoriaux
 
-Utiliser `~` sur le panneau courant, le bouton `⛶` ou Échap pour revenir.
+La timeline accepte désormais des marqueurs persistants :
 
-### Command Palette
+- Note ;
+- Décision ;
+- Beat ;
+- Vigilance.
 
-`Ctrl/Cmd+K` ouvre une palette de commandes pour accéder rapidement aux workspaces, modes Viewer, panneaux, Focus Mode, Undo, sauvegarde et publication sans multiplier les boutons permanents.
+Ils sont positionnés sur la règle de timeline et stockés par edit. Le raccourci `M` ouvre le composeur de marqueur.
 
-### Viewer Overlays
+### Editorial Source Selector
 
-Le menu Overlays permet d’afficher/masquer :
+Depuis une source ou un clip STORY, **Alternatives** ouvre un tiroir latéral proposant d’autres prises.
 
-- timecode / version ;
-- état du mix ;
-- plage IN/OUT en SOURCE.
+Le classement est déterministe et explicable. Les signaux actuellement pris en compte sont :
 
-Le mix est volontairement masqué par défaut pour alléger l’image.
+- tags communs ;
+- média canonique ;
+- trailer-safe ;
+- rating ;
+- plages Favorite ;
+- plages Reject ;
+- niveau de spoiler ;
+- statut média.
+
+Chaque suggestion affiche :
+
+- la prise ;
+- la plage source conseillée ;
+- les raisons du classement ;
+- un aperçu ou la possibilité de charger la plage en SOURCE.
+
+**Aucun remplacement de la Storyline n’est automatique.** Le Source Selector ne modifie pas le montage sans action explicite de l’utilisateur.
 
 ### Fondations conservées
 
-- Storyline magnétique ;
-- ripple trim ;
+- UX V0.15 : Focus Mode, Command Palette, Viewer Overlays ;
+- Storyline magnétique et ripple ;
 - connexions parent/enfant ;
-- HARD/SOFT/OPEN Locks ;
+- Canon et HARD/SOFT/OPEN Locks ;
 - checkpoint persistant et Undo ;
-- timeline schema v2 ;
 - versions V001+ ;
 - Tesseract bridge et authoring ;
 - tests Python, JavaScript et Chromium.
 
-### Direction produit
-
-Voir `UX_GUIDE.md` pour les règles de conception : contenu avant interface, progressive disclosure, couleurs sémantiques, Viewer-first et tests comportementaux réels.
-
 ### Limites connues
 
-- Favorite/Reject n’est pas encore persisté côté backend ;
-- le point de connexion reste un offset temporel ;
-- les filmstrips utilisent encore le média local plutôt que des vignettes backend pré-calculées ;
+- le Source Selector travaille actuellement sur les métadonnées cataloguées, pas encore sur une analyse visuelle/sémantique automatique des images ;
+- les filmstrips utilisent encore les médias locaux plutôt que des vignettes backend pré-calculées ;
+- le point de connexion graphique reste à rendre directement manipulable ;
 - le premier test avec le vrai CLI Tesseract et les vrais rushes PISTE 0 reste à effectuer.
 
 ## Installation
@@ -84,6 +91,7 @@ Lancer :
 - `P` : SOURCE / PROGRAM
 - `F` : Favorite
 - `X` : Reject
+- `M` : Marker
 - `Ctrl/Cmd+Z` : Undo
 
 ## Tests
