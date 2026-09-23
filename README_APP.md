@@ -1,23 +1,34 @@
-# PISTE Studio Local App — v0.12
+# PISTE Studio Local App — v0.14
 
 L’application locale relie l’interface de montage au moteur PISTE Studio via FastAPI.
 
-## UX V0.12
+## UX
 
 - `ASSEMBLE` : Browser dominant ;
-- `EDIT` : Browser + Viewer + Inspector + Timeline ;
+- `EDIT` : Browser + Viewer + Inspector + Storyline ;
 - `REVIEW` : Viewer et Timeline Index prioritaires ;
 - Viewer `SOURCE / PROGRAM` ;
 - Browser filmstrip/skimming ;
 - Inspector contextuel ;
-- Timeline Index `CLIPS / LOCKS / DECISIONS`.
+- Storyline magnétique et connexions parent/enfant ;
+- Timeline Index `CLIPS / LOCKS / DECISIONS` ;
+- bouton Undo et raccourci `Ctrl/Cmd+Z`.
+
+## Hardening V0.14
+
+- checkpoint persistant avant une opération ripple/reorder validée ;
+- restauration backend de la timeline précédente ;
+- test Chromium réel de la navigation et des workspaces ;
+- contrôle syntaxique de tous les JavaScript ;
+- début de centralisation d’état via `PisteState`.
 
 ## Backend connecté
 
 - `project.yaml`, `canon.yaml`, `locks.yaml` ;
 - catalogue SQLite ;
 - streaming local des médias ;
-- timeline persistante ;
+- timeline persistante schema v2 ;
+- historique de checkpoints ;
 - publication en `V001+` ;
 - authoring Tesseract vidéo + audio ;
 - preview / filmstrip / export.
