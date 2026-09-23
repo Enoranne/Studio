@@ -265,7 +265,7 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
 
     width, height = SUPPORTED_CANVASES[ratio]
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "engine": "piste-studio-authoring-v0.19",
         "source": "timeline.json",
         "edit_name": edit_name,
