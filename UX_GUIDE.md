@@ -116,3 +116,15 @@ Le Source Selector doit :
 - distinguer clairement recommandation, sélection humaine et modification effective de la Storyline.
 
 Une future analyse visuelle ou IA devra respecter les mêmes règles.
+
+
+## 12. Intelligence média : ne pas surinterpréter
+
+Une empreinte perceptuelle indique une proximité d’images, pas une compréhension sémantique.
+
+L’interface doit distinguer :
+- **proximité visuelle** : calcul local sur images échantillonnées ;
+- **continuité structurée** : tags validés dans le catalogue ;
+- **reconnaissance sémantique** : future analyse par modèle visuel.
+
+Ne jamais transformer une forte similarité perceptuelle en affirmation du type « même personnage », « même accessoire » ou « même décor » sans preuve sémantique correspondante.
