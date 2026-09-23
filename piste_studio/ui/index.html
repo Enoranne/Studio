@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PISTE Studio — Local App v0.12</title>
+<title>PISTE Studio — Local App v0.13</title>
 <link rel="stylesheet" href="/ui/style.css" />
 </head>
 <body class="workspace-edit">
@@ -11,7 +11,7 @@
   <header class="appbar">
     <div class="brand-row">
       <div class="brand-mark"><span></span></div>
-      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.12 · LOCAL</small></div>
+      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.13 · LOCAL</small></div>
       <div class="project-pill"><span id="projectName">PISTE 0</span><small id="projectSubtitle">BONUS TRACK (REC)</small></div>
     </div>
     <div class="workspace-switch" role="group" aria-label="Espace de travail">
@@ -111,7 +111,7 @@
                 <button class="btn tiny" onclick="addAudio('music')">+ Music</button>
                 <button class="btn tiny" onclick="addAudio('sfx')">+ SFX</button>
               </div>
-              <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline principale · drag · trim</span></div>
+              <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span></div>
               <div class="timeline-right"><label>Snap</label><select id="snap"><option value="0.1">0,1</option><option value="0.5" selected>0,5</option><option value="1">1,0</option></select><span class="lock-readout" id="hardLockLabel">LOCKS</span></div>
             </div>
             <div class="ruler" id="ruler"></div>
@@ -136,6 +136,7 @@
 <script src="/ui/editor.js"></script>
 <script src="/ui/ux-browser.js"></script>
 <script src="/ui/ux-timeline.js"></script>
+<script src="/ui/ux-magnetic.js"></script>
 <script src="/ui/ux-shell.js"></script>
 <script src="/ui/backend.js"></script>
 </body>
