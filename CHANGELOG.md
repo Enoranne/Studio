@@ -18,6 +18,12 @@
 - Command Palette : **Audio · Master Check**.
 - Résultat synthétique affiché dans l’overlay MIX du Viewer.
 - API dédiée aux presets, au Master Check et au téléchargement du rapport.
+- Empreinte SHA-256 du mix audio enregistrée dans chaque Master Check.
+- Détection PASS / WARN / STALE / MISSING avant export.
+- Préflight export non bloquant avec choix **Master Check / Exporter quand même / Annuler**.
+- État audio renvoyé par l’API d’export pour traçabilité.
+- Test ffmpeg réellement end-to-end en CI, avec génération WAV, rendu master et mesure loudnorm.
+- ffmpeg système installé explicitement dans GitHub Actions.
 
 
 ## V0.20 — Audio Intelligence & Loudness
