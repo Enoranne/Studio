@@ -186,7 +186,7 @@ class AuthoringTests(unittest.TestCase):
                 ],
                 'clips':[
                     {'id':'v1','track':'video','label':'Shot','start':3,'duration':4,'sourceStart':1,'mediaDbId':video['id']},
-                    {'id':'a1','track':'vo','label':'Voice','start':3,'duration':5,'sourceStart':.5,'audioDbId':audio['id'],'gain':.8,'fadeIn':.2,'fadeOut':.3},
+                    {'id':'a1','track':'vo','label':'Voice','start':3,'duration':5,'sourceStart':.5,'audioDbId':audio['id'],'gainDb':-6,'pan':-.25,'audioRole':'vo','fadeIn':.2,'fadeOut':.3,'volumeEnvelope':[{'time':1,'gainDb':-6},{'time':3,'gainDb':-12}]},
                 ],
             }
             save_timeline(root,timeline)
@@ -195,7 +195,15 @@ class AuthoringTests(unittest.TestCase):
             self.assertEqual(plan['source'],'timeline.json')
             self.assertEqual(len(plan['cuts']),1)
             self.assertEqual(len(plan['audio_cuts']),1)
-            self.assertEqual(plan['audio_cuts'][0]['volume'],.8)
+            audio_cut=plan['audio_cuts'][0]
+            self.assertAlmostEqual(audio_cut['volume'],10**(-6/20),places=6)
+            self.assertEqual(audio_cut['gain_db'],-6)
+            self.assertEqual(audio_cut['pan'],-.25)
+            self.assertEqual(audio_cut['role'],'vo')
+            self.assertEqual(audio_cut['volume_envelope'],[
+                {'time_ms':1000,'gain_db':-6.0},
+                {'time_ms':3000,'gain_db':-12.0},
+            ])
             install_fake(base,root)
             execute_bootstrap(root,rec.edit_name,rec.version_label,dry_run=False)
             result=execute_authoring(root,rec.edit_name,rec.version_label,dry_run=False)
@@ -208,7 +216,15 @@ class AuthoringTests(unittest.TestCase):
             audio_layer=doc['composition']['layers'][1]
             self.assertEqual(audio_layer['activeRange'],{'start':3000,'duration':5000})
             self.assertEqual(audio_layer['sourceRange'],{'start':500,'duration':5000})
-            self.assertEqual(audio_layer['volume'],.8)
+            self.assertAlmostEqual(audio_layer['volume'],10**(-6/20),places=6)
+            manifest_audio=result['manifest']['audio_layers'][0]
+            self.assertEqual(manifest_audio['gain_db'],-6)
+            self.assertEqual(manifest_audio['pan'],-.25)
+            self.assertEqual(manifest_audio['role'],'vo')
+            self.assertEqual(manifest_audio['volume_envelope'],[
+                {'time_ms':1000,'gain_db':-6.0},
+                {'time_ms':3000,'gain_db':-12.0},
+            ])
 
     @unittest.skipIf(os.name == 'nt','POSIX executable fixture')
     def test_second_authoring_is_refused(self):
