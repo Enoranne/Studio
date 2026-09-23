@@ -248,3 +248,23 @@ Un limiteur modifie le signal.
 Il ne doit donc jamais être activé silencieusement dans un Master Check.
 
 L’option reste désactivée par défaut et son état doit apparaître dans le rapport exporté.
+
+
+## 25. Rupture visuelle ≠ décision de coupe
+
+Un changement de scène détecté par un algorithme est un **signal**, pas une intention de montage.
+
+Une fenêtre issue d’une rupture visuelle doit :
+- être présentée comme candidate ;
+- montrer explicitement ses bornes ;
+- indiquer la méthode de détection ;
+- rester prévisualisable avant adoption ;
+- ne jamais modifier automatiquement la Storyline.
+
+## 26. Sensibilité compréhensible
+
+Un seuil technique brut ne doit pas être le seul contrôle exposé.
+
+L’interface propose des niveaux Faible / Normale / Forte, tout en affichant le seuil ffmpeg correspondant pour l’auditabilité.
+
+Augmenter la sensibilité doit être décrit comme une augmentation possible du nombre de ruptures détectées, pas comme une augmentation de la « qualité » de l’analyse.
