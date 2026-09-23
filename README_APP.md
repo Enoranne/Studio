@@ -1,6 +1,46 @@
-# PISTE Studio Local App — v0.21
+# PISTE Studio Local App — v0.22
 
 L’application locale relie l’interface de montage au moteur PISTE Studio via FastAPI.
+
+## Editorial Vision V0.22.1
+
+Le premier refinement V0.22 propose des fenêtres IN/OUT à partir des ruptures visuelles détectées localement par ffmpeg.
+
+### Accès
+
+- Inspector **MEDIA INTELLIGENCE** → **Fenêtres IN/OUT** ;
+- Command Palette → **Vision · Fenêtres IN/OUT**.
+
+### Fonctionnement
+
+PISTE Studio applique un détecteur de changement de scène au rush puis construit les segments entre deux ruptures successives.
+
+Chaque candidat contient :
+
+- Source IN ;
+- Source OUT ;
+- durée ;
+- rupture précédente/suivante lorsqu’elles existent ;
+- méthode utilisée ;
+- seuil de détection.
+
+Sensibilités UI :
+
+- Faible : seuil 0,45 ;
+- Normale : seuil 0,32 ;
+- Forte : seuil 0,22.
+
+Une durée minimale de 0,75 s évite de présenter les micro-segments les moins utiles.
+
+### Politique éditoriale
+
+Le résultat est une suggestion, pas une décision de montage.
+
+- aucune coupe automatique ;
+- aucune insertion automatique ;
+- aucune modification de Storyline ;
+- **Prévisualiser** ne change pas le montage ;
+- **Charger IN/OUT** modifie uniquement la plage SOURCE sélectionnée.
 
 ## Audio Delivery V0.21
 
