@@ -1,5 +1,18 @@
 # Changelog
 
+## V0.15 — UX Refinement
+
+- Viewer plus dominant et surfaces UI simplifiées.
+- Browser avec filmstrips plus grands et métadonnées moins envahissantes.
+- Workspaces ASSEMBLE / EDIT / REVIEW plus différenciés.
+- Focus Mode pour Browser, Viewer, Timeline et Inspector.
+- Command Palette via Ctrl/Cmd+K.
+- Viewer Overlays configurables.
+- Réduction du chrome visuel : bordures, badges et boutons secondaires.
+- Couleurs davantage réservées au sens éditorial.
+- Ajout d’une charte `UX_GUIDE.md`.
+- Tests Chromium étendus aux nouvelles interactions.
+
 ## V0.14 — Hardening
 
 - Correction de la navigation multi-vues révélée par le test Chromium.
