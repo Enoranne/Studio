@@ -4,6 +4,10 @@
     viewerMode: "program",
     browserFilter: "all",
     indexMode: "clips",
+    focusPane: null,
+    overlayHud: true,
+    overlayMix: false,
+    overlayRange: true,
   };
   const listeners = new Set();
 
