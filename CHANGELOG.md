@@ -1,5 +1,30 @@
 # Changelog
 
+## V0.20 — Audio Intelligence & Loudness
+
+- Analyse LUFS intégrée via ffmpeg loudnorm.
+- Mesure true peak source.
+- Loudness range et threshold persistés.
+- Détection locale de plages de silence.
+- Table SQLite dédiée aux analyses loudness.
+- Analyse par média et par catalogue audio.
+- Normalisation non destructive avec cible LUFS configurable.
+- Limitation automatique du gain proposé par ceiling true peak.
+- Politique de validation humaine avant application.
+- Décalage cohérent du gain et des keyframes lors d’une normalisation acceptée.
+- Rapport de risque de clipping par clip.
+- Distinction explicite entre estimation par clip et mesure master finale.
+- Ducking MUSIC piloté par chevauchements VO / DIALOGUE.
+- Attack / release / réduction configurables.
+- Enveloppe de ducking proposée avant application.
+- Crossfade audio contrôlé entre clips adjacents.
+- Overlap même piste autorisé uniquement pour un crossfade réciproque explicite.
+- Timeline schema v4.
+- Inspector LOUDNESS.
+- Actions Normaliser / Clipping / Ducking VO / Crossfade suivant.
+- Command Palette enrichie pour loudness, normalisation, clipping et ducking.
+- Tests moteur, API, UI et Chromium étendus à V0.20.
+
 ## V0.19 — Audio Editing & Mixing
 
 - Timeline schema v3.
