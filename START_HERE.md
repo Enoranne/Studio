@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.11
+# Démarrage rapide — PISTE Studio v0.12
 
 ## 1. Installer
 
@@ -36,7 +36,7 @@ piste-studio-app --project /chemin/vers/PISTE_0
 
 L’application s’ouvre sur `http://127.0.0.1:8765/`.
 
-## 3. Workflow UI
+## 3. Workflow UI V0.12
 
 1. Place les vidéos dans `rushes/` et les sons dans `audio/`.
 2. Clique **Scanner projet**.
