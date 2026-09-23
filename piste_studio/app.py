@@ -64,6 +64,13 @@ from .audio_intelligence import (
     propose_crossfade,
     propose_ducking,
 )
+from .audio_delivery import (
+    AudioDeliveryError,
+    AUDIO_DELIVERY_VERSION,
+    delivery_presets,
+    report_path as audio_report_path,
+    run_master_check,
+)
 
 
 def _media_payload(root: Path) -> list[dict]:
