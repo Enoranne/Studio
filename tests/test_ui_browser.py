@@ -185,6 +185,60 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
     master_report.write_text('{"evaluation":{"status":"PASS"}}\n', encoding="utf-8")
     monkeypatch.setattr(
         app_module,
+        "suggest_editorial_windows",
+        lambda root, media_id, **kwargs: {
+            "version": "0.22-scenes-1",
+            "media_id": media_id,
+            "relative_path": "rushes/malo_a.mp4",
+            "duration_seconds": 8.0,
+            "scene_threshold": float(kwargs.get("threshold", 0.32)),
+            "scene_changes": [2.0, 5.0],
+            "candidates": [
+                {
+                    "rank": 1,
+                    "source_in": 0.0,
+                    "source_out": 2.0,
+                    "duration": 2.0,
+                    "boundary_before": None,
+                    "boundary_after": 2.0,
+                    "reason": "Début du rush → rupture visuelle à 2.00 s.",
+                    "method": "ffmpeg_scene_change",
+                    "scene_threshold": float(kwargs.get("threshold", 0.32)),
+                },
+                {
+                    "rank": 2,
+                    "source_in": 2.0,
+                    "source_out": 5.0,
+                    "duration": 3.0,
+                    "boundary_before": 2.0,
+                    "boundary_after": 5.0,
+                    "reason": "Segment entre ruptures visuelles à 2.00 s et 5.00 s.",
+                    "method": "ffmpeg_scene_change",
+                    "scene_threshold": float(kwargs.get("threshold", 0.32)),
+                },
+                {
+                    "rank": 3,
+                    "source_in": 5.0,
+                    "source_out": 8.0,
+                    "duration": 3.0,
+                    "boundary_before": 5.0,
+                    "boundary_after": None,
+                    "reason": "Rupture visuelle à 5.00 s → fin du rush.",
+                    "method": "ffmpeg_scene_change",
+                    "scene_threshold": float(kwargs.get("threshold", 0.32)),
+                },
+            ],
+            "policy": {
+                "suggestion_only": True,
+                "automatic_storyline_edit": False,
+                "human_validation_required": True,
+                "local_processing": True,
+            },
+        },
+    )
+
+    monkeypatch.setattr(
+        app_module,
         "run_master_check",
         lambda root, timeline, **kwargs: {
             "version": "0.21-master-1",
@@ -319,6 +373,20 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
             page.locator(".media-row").first.click()
             expect(page.locator(".editorial-inspector-section")).to_be_visible()
             expect(page.locator(".media-intelligence-section")).to_be_visible()
+
+            page.get_by_role("button", name="Fenêtres IN/OUT").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator(".selector-policy")).to_contain_text("RUPTURES VISUELLES")
+            expect(page.locator(".editorial-window-card")).to_have_count(3)
+            expect(page.locator("#visualWindowSensitivity")).to_have_value("normal")
+            page.locator(".editorial-window-card").first.get_by_role(
+                "button", name="Charger IN/OUT"
+            ).click()
+            expect(page.locator("#mi")).to_have_value("0")
+            expect(page.locator("#mo")).to_have_value("2")
+            page.locator("#editorialDrawer .pane-close").click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
+
             page.get_by_role("button", name="Prises proches").click()
             expect(page.locator("#editorialDrawer")).to_be_visible()
             expect(page.locator(".suggestion-card")).to_have_count(1)
