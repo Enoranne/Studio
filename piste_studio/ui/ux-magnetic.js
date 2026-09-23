@@ -35,7 +35,7 @@ function changeConnection(parentId){
   renderTracks();toast(parentId?'Élément connecté à la STORY':'Élément détaché')
 }
 
-function cloneClips(list=clips){return list.map(c=>({...c}))}
+function cloneClips(list=clips){return list.map(c=>({...c,volumeEnvelope:Array.isArray(c.volumeEnvelope)?c.volumeEnvelope.map(p=>({...p})):c.volumeEnvelope}))}
 function reflowCandidate(candidate,orderIds=null){
   const story=storyClipsSorted(candidate),byId=new Map(candidate.map(c=>[c.id,c]));
   const ordered=orderIds?orderIds.map(id=>byId.get(id)).filter(Boolean):story;
