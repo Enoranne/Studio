@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 import json
 import os
+import math
 import shutil
 import subprocess
 
@@ -47,6 +48,7 @@ class PlannedClip:
 class PlannedAudio:
     clip_id: str
     track: str
+    role: str
     media_id: int
     relative_path: str
     timeline_start_ms: int
@@ -54,8 +56,11 @@ class PlannedAudio:
     source_start_ms: int
     source_duration_ms: int
     volume: float
+    gain_db: float
+    pan: float
     fade_in_ms: int
     fade_out_ms: int
+    volume_envelope: list[dict]
 
 
 def _stable_json_hash(value: Any) -> str:
@@ -207,23 +212,51 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
             }
             fade_in_ms = round(float(clip.get("fadeIn", 0) or 0) * 1000)
             fade_out_ms = round(float(clip.get("fadeOut", 0) or 0) * 1000)
-            if fade_in_ms or fade_out_ms:
+            gain_db = float(
+                clip.get("gainDb")
+                if clip.get("gainDb") is not None
+                else (
+                    -60.0
+                    if float(clip.get("gain", 1.0) or 0) <= 0
+                    else 20.0 * math.log10(float(clip.get("gain", 1.0)))
+                )
+            )
+            gain_db = max(-60.0, min(12.0, gain_db))
+            static_volume = 10.0 ** (gain_db / 20.0)
+            if bool(track.get("muted")):
+                static_volume = 0.0
+            pan = max(-1.0, min(1.0, float(clip.get("pan", 0) or 0)))
+            role = str(clip.get("audioRole") or track_id or "sfx").lower()
+            envelope = [
+                {
+                    "time_ms": round(float(point.get("time", 0)) * 1000),
+                    "gain_db": float(point.get("gainDb", 0)),
+                }
+                for point in (clip.get("volumeEnvelope") or [])
+                if isinstance(point, dict)
+            ]
+            if fade_in_ms or fade_out_ms or envelope or abs(pan) > 1e-6:
                 warnings.append(
-                    f"{clip.get('id','?')}: fades conservés dans le plan mais pas encore matérialisés en V0.11; "
-                    "le gain statique est authoré."
+                    f"{clip.get('id','?')}: fades/pan/enveloppe conservés dans le plan V0.19; "
+                    "Tesseract matérialise uniquement le gain statique tant que son schéma installé "
+                    "ne confirme pas une automation audio native compatible."
                 )
             audio_cuts.append(PlannedAudio(
                 clip_id=str(clip.get("id") or f"audio-{media_id}"),
                 track=track_id,
+                role=role,
                 media_id=media_id,
                 relative_path=rel,
                 timeline_start_ms=start_ms,
                 requested_duration_ms=duration_ms,
                 source_start_ms=source_start_ms,
                 source_duration_ms=source_duration_ms,
-                volume=0.0 if bool(track.get("muted")) else float(clip.get("gain", 1.0) if clip.get("gain") is not None else 1.0),
+                volume=static_volume,
+                gain_db=gain_db,
+                pan=pan,
                 fade_in_ms=fade_in_ms,
                 fade_out_ms=fade_out_ms,
+                volume_envelope=envelope,
             ))
             continue
 
@@ -233,7 +266,7 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
     width, height = SUPPORTED_CANVASES[ratio]
     return {
         "schema_version": 2,
-        "engine": "piste-studio-authoring-v0.11",
+        "engine": "piste-studio-authoring-v0.19",
         "source": "timeline.json",
         "edit_name": edit_name,
         "version": version,
@@ -244,7 +277,10 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
             "timeline_is_authoritative": True,
             "preserve_embedded_video_audio": True,
             "static_audio_gain_supported": True,
-            "audio_fades_deferred": True,
+            "audio_gain_db_preserved": True,
+            "audio_pan_preserved": True,
+            "audio_volume_envelope_preserved": True,
+            "audio_automation_native_support": "runtime-schema-dependent",
             "append_footage_behind_existing_overlays": True,
             "work_on_copy_then_atomic_replace": True,
             "never_modify_source_media": True,
@@ -680,8 +716,12 @@ def execute_authoring(
                 "active_range": layer["activeRange"],
                 "source_range": layer["sourceRange"],
                 "volume": layer["volume"],
+                "gain_db": float(cut.get("gain_db", 0)),
+                "pan": float(cut.get("pan", 0)),
+                "role": str(cut.get("role") or cut.get("track") or "sfx"),
                 "fade_in_ms": int(cut.get("fade_in_ms", 0)),
                 "fade_out_ms": int(cut.get("fade_out_ms", 0)),
+                "volume_envelope": list(cut.get("volume_envelope") or []),
             })
             next_id += 1
 
