@@ -11,9 +11,10 @@
 - **V0.11** — timeline UI publiée en V001+, authoring Tesseract vidéo + audio.
 - **V0.12** — refonte UX : Assemble/Edit/Review, Browser filmstrip, SOURCE/PROGRAM, Inspector contextuel, Timeline Index.
 - **V0.13** — Storyline magnétique : reorder/ripple trim, connexions parent/enfant, validation serveur des effets domino contre les locks.
-- **V0.14** — hardening : checkpoint/Undo persistant, schema v2 de démonstration, Playwright/Chromium en CI, store d’état UI initial.
+- **V0.14** — hardening : checkpoint/Undo persistant, schema v2, Playwright/Chromium en CI, store d’état UI initial.
+- **V0.15** — UX Refinement : Viewer-first, Browser plus visuel, workspaces différenciés, Focus Mode, Overlays et Command Palette.
 
-## V0.15 — Editorial Source Selector
+## V0.16 — Editorial Intelligence
 
 - persistance backend des plages Favorite/Reject ;
 - marqueurs éditoriaux persistants ;
@@ -21,9 +22,10 @@
 - fenêtres IN/OUT candidates ;
 - raisons éditoriales par coupe ;
 - validation humaine avant matérialisation ;
-- point de connexion graphique déplaçable.
+- point de connexion graphique déplaçable ;
+- menus contextuels éditoriaux.
 
-## V0.16 — Audio & motion
+## V0.17 — Audio & motion
 
 - fades audio en enveloppes natives Tesseract ;
 - titres et overlays éditables ;
