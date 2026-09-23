@@ -1,9 +1,13 @@
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
 import piste_studio.audio_delivery as ad
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.project import init_project
+from piste_studio.app import create_app
+import piste_studio.app as app_module
 
 
 def make_delivery_project(tmp_path: Path):
@@ -173,3 +177,69 @@ def test_master_check_writes_exportable_report(tmp_path, monkeypatch):
     path = root / report["report_relative_path"]
     assert path.exists()
     assert ad.report_path(root, report["report_name"]) == path
+
+
+def test_audio_master_check_api_returns_downloadable_report(tmp_path, monkeypatch):
+    root, rows = make_delivery_project(tmp_path)
+    timeline = {
+        "edit_name": "mix",
+        "duration_seconds": 10,
+        "tracks": [{"id": "vo", "kind": "audio"}],
+        "clips": [{
+            "id": "v1",
+            "track": "vo",
+            "audioDbId": rows["voice.wav"]["id"],
+            "start": 0,
+            "duration": 5,
+            "sourceStart": 0,
+            "gainDb": -6,
+        }],
+    }
+    report_file = root / "reports" / "audio" / "mix_master_check.json"
+    report_file.parent.mkdir(parents=True, exist_ok=True)
+    report_file.write_text('{"status":"ok"}\n', encoding="utf-8")
+
+    monkeypatch.setattr(
+        app_module,
+        "run_master_check",
+        lambda root, clean, **kwargs: {
+            "version": ad.AUDIO_DELIVERY_VERSION,
+            "edit_name": "mix",
+            "preset": {
+                "id": "online_reference",
+                "target_lufs": -16.0,
+                "true_peak_ceiling": -1.0,
+                "loudness_tolerance_lu": 1.0,
+            },
+            "measurement": {
+                "integrated_lufs": -16.1,
+                "true_peak_dbfs": -1.2,
+                "loudness_range_lu": 4.0,
+                "threshold_lufs": -27.0,
+            },
+            "evaluation": {"status": "PASS"},
+            "render": {"limiter_enabled": False},
+            "policy": {
+                "measured_after_sum": True,
+                "limiter_requires_explicit_choice": True,
+            },
+            "report_name": report_file.name,
+            "report_relative_path": report_file.relative_to(root).as_posix(),
+        },
+    )
+
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    presets = client.get("/api/audio/delivery/presets")
+    assert presets.status_code == 200
+    assert presets.json()["version"] == ad.AUDIO_DELIVERY_VERSION
+
+    response = client.post("/api/audio/master/check", json={"timeline": timeline})
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["evaluation"]["status"] == "PASS"
+    assert body["report_url"].endswith("/mix_master_check.json")
+
+    downloaded = client.get(body["report_url"])
+    assert downloaded.status_code == 200
+    assert downloaded.json()["status"] == "ok"
