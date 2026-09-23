@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.18
+# Démarrage rapide — PISTE Studio v0.19
 
 ## 1. Installer
 
@@ -108,3 +108,19 @@ Si ffmpeg/ffprobe n’est pas présent, le reste de PISTE Studio continue de fon
 8. Aucune proposition ne modifie la Storyline.
 
 La vision locale fonctionne comme une aide à la continuité, pas comme une décision automatique d’identité.
+
+
+## Audio Mixing V0.19
+
+1. Sélectionne ou dépose un clip audio dans la timeline.
+2. Dans **AUDIO MIX**, règle :
+   - rôle ;
+   - gain dB ;
+   - pan ;
+   - fade in / fade out.
+3. Utilise **+ Point au playhead** pour créer une automation de volume.
+4. Déplace directement les points de volume ou les poignées de fade sur le clip.
+5. Utilise **M** pour Mute et **S** pour Solo sur les pistes audio.
+6. Contrôle les meters L/R dans le Viewer.
+7. Enregistre la timeline : le format V3 conserve gain, pan, rôles, fades et automation.
+8. À l’authoring Tesseract, le gain statique est appliqué ; les autres paramètres restent préservés tant que le schéma Tesseract installé ne confirme pas leur automation native.
