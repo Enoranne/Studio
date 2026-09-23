@@ -1,5 +1,27 @@
 # Changelog
 
+## V0.22 — Editorial Vision Refinement
+
+### V0.22.1 — Fenêtres IN/OUT issues de ruptures visuelles
+
+- Détection locale de changements de scène via ffmpeg `select(scene)`.
+- Seuil de sensibilité configurable.
+- Parsing déterministe des timestamps de rupture.
+- Construction de segments chronologiques entre ruptures.
+- Durée minimale de fenêtre configurable.
+- Fallback explicite vers le rush complet si aucun segment exploitable ne dépasse la durée minimale.
+- API `/api/media/{media_id}/editorial-windows`.
+- Politique stricte : suggestion uniquement, validation humaine obligatoire, aucune modification automatique de Storyline.
+- Inspector Media Intelligence : bouton **Fenêtres IN/OUT**.
+- Tiroir de comparaison avec sensibilité Faible / Normale / Forte.
+- Actions **Prévisualiser** et **Charger IN/OUT**.
+- Command Palette : **Vision · Fenêtres IN/OUT**.
+- Réutilisation du workflow SOURCE existant : charger une fenêtre ne remplace aucun plan monté.
+- Test ffmpeg réel avec vidéo synthétique rouge → bleu → vert.
+- Test Chromium du parcours jusqu’au chargement effectif de Source IN/OUT.
+- CI de référence : **85 tests passés / 85**.
+
+
 ## V0.21 — Audio Delivery & Master Check
 
 - Rendu master audio temporaire local via ffmpeg.
