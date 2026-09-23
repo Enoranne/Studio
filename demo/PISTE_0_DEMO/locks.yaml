@@ -1,0 +1,14 @@
+schema_version: 1
+locks:
+- name: Opening validated
+  start: 0.0
+  end: 17.24
+  level: HARD
+  forbidden:
+  - trim
+  - reorder
+  - retime
+  - crop
+  - grade
+  - audio_change
+  - graphics
