@@ -8,6 +8,7 @@ import uvicorn
 from playwright.sync_api import expect, sync_playwright
 
 from piste_studio.app import create_app
+import piste_studio.app as app_module
 from piste_studio.project import init_project
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
@@ -25,7 +26,7 @@ def _free_port():
     return port
 
 
-def test_real_browser_navigation_and_workspaces(tmp_path):
+def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
     root = tmp_path / "Project"
     init_project(root, "Browser Test")
     (root / "rushes" / "malo_a.mp4").write_bytes(b"fake-a")
@@ -179,6 +180,55 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             ],
         },
     )
+    master_report = root / "reports" / "audio" / "teaser_30_master_check.json"
+    master_report.parent.mkdir(parents=True, exist_ok=True)
+    master_report.write_text('{"evaluation":{"status":"PASS"}}\n', encoding="utf-8")
+    monkeypatch.setattr(
+        app_module,
+        "run_master_check",
+        lambda root, timeline, **kwargs: {
+            "version": "0.21-master-1",
+            "edit_name": "teaser_30",
+            "preset": {
+                "id": "online_reference",
+                "label": "Online stéréo · repère",
+                "target_lufs": -16.0,
+                "true_peak_ceiling": -1.0,
+                "loudness_tolerance_lu": 1.0,
+                "reference_only": True,
+            },
+            "measurement": {
+                "integrated_lufs": -16.2,
+                "true_peak_dbfs": -1.3,
+                "loudness_range_lu": 5.0,
+                "threshold_lufs": -27.0,
+            },
+            "evaluation": {
+                "status": "PASS",
+                "loudness_ok": True,
+                "true_peak_ok": True,
+                "loudness_delta_lu": -0.2,
+                "reasons": [],
+            },
+            "render": {
+                "relative_path": "cache/audio_delivery/teaser_30_master_check.wav",
+                "duration_seconds": 30,
+                "clip_count": 3,
+                "limiter_enabled": bool(kwargs.get("limiter", False)),
+            },
+            "policy": {
+                "measured_after_sum": True,
+                "reference_presets_not_universal_standards": True,
+                "automatic_normalization": False,
+                "automatic_limiter": False,
+                "limiter_requires_explicit_choice": True,
+                "source_media_immutable": True,
+            },
+            "report_relative_path": master_report.relative_to(root).as_posix(),
+            "report_name": master_report.name,
+        },
+    )
+
     app = create_app(root)
     port = _free_port()
     server = uvicorn.Server(
@@ -351,6 +401,20 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             page.locator("#editorialDrawer").get_by_role("button", name="Accepter").click()
             expect(page.locator("#editorialDrawer")).to_be_hidden()
             expect(page.locator(".crossfade-badge")).to_have_count(2)
+
+            page.keyboard.press("Control+K")
+            expect(page.locator("#commandPalette")).to_be_visible()
+            page.locator("#commandSearch").fill("Audio · Master Check")
+            page.keyboard.press("Enter")
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator("#editorialDrawer")).to_contain_text("MASTER RENDU")
+            expect(page.locator("#masterLimiter")).not_to_be_checked()
+            page.get_by_role("button", name="Mesurer le master").click()
+            expect(page.locator("#masterCheckResult")).to_contain_text("PASS")
+            expect(page.locator("#masterCheckResult")).to_contain_text("-16.2 LUFS")
+            expect(page.locator("#masterCheckResult")).to_contain_text("-1.3 dBTP")
+            expect(page.locator("#mixMeter")).to_contain_text("MASTER")
+            expect(page.get_by_role("link", name="Télécharger le rapport JSON")).to_be_visible()
 
             assert errors == []
             browser.close()
