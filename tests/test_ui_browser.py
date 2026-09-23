@@ -13,6 +13,7 @@ from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.media_intelligence import _write_analysis
 from piste_studio.semantic_vision import store_semantic_profile
+from piste_studio.timeline import save_timeline
 
 
 def _free_port():
@@ -28,9 +29,12 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
     init_project(root, "Browser Test")
     (root / "rushes" / "malo_a.mp4").write_bytes(b"fake-a")
     (root / "rushes" / "malo_b.mp4").write_bytes(b"fake-b")
+    (root / "audio" / "voice.wav").write_bytes(b"fake-audio")
     scan_media(root)
     rows = fetch_media_with_metadata(root)
-    for index, row in enumerate(rows):
+    videos = [row for row in rows if row["kind"] == "video"]
+    audio = next(row for row in rows if row["kind"] == "audio")
+    for index, row in enumerate(videos):
         tags = ["malo", "enfance"]
         if index == 0:
             tags += ["character:malo", "prop:fisher", "decor:salon"]
@@ -42,9 +46,19 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             rating=4,
             tags=tags,
         )
+    set_media_metadata(
+        root,
+        audio["id"],
+        title="Voice",
+        duration_seconds=8.0,
+        tags=["voice", "malo"],
+    )
     cache = root / "cache" / "filmstrips"
     cache.mkdir(parents=True, exist_ok=True)
-    for index, row in enumerate(fetch_media_with_metadata(root), start=1):
+    for index, row in enumerate(
+        [x for x in fetch_media_with_metadata(root) if x["kind"] == "video"],
+        start=1,
+    ):
         strip = cache / f"browser_{index}.jpg"
         strip.write_bytes(b"\xff\xd8\xff\xd9")
         _write_analysis(
@@ -67,6 +81,47 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             embedding=[1.0, 0.01 * index, 0.0],
             frame_count=4,
         )
+    save_timeline(
+        root,
+        {
+            "edit_name": "teaser_30",
+            "duration_seconds": 30,
+            "storyline": {"mode": "free", "start": 3},
+            "tracks": [
+                {"id": "video", "name": "VIDEO", "kind": "video"},
+                {"id": "titles", "name": "TITLES", "kind": "title"},
+                {"id": "vo", "name": "VO", "kind": "audio"},
+                {"id": "music", "name": "MUSIC", "kind": "music"},
+                {"id": "sfx", "name": "SFX", "kind": "sfx"},
+            ],
+            "clips": [
+                {
+                    "id": "v1",
+                    "track": "video",
+                    "label": "Malo A",
+                    "start": 3,
+                    "duration": 4,
+                    "sourceStart": 0,
+                    "mediaDbId": videos[0]["id"],
+                },
+                {
+                    "id": "a1",
+                    "track": "vo",
+                    "label": "Voice",
+                    "start": 3,
+                    "duration": 5,
+                    "sourceStart": 0,
+                    "audioDbId": audio["id"],
+                    "gainDb": -6,
+                    "pan": 0,
+                    "audioRole": "vo",
+                    "fadeIn": 0.4,
+                    "fadeOut": 0.5,
+                    "volumeEnvelope": [],
+                },
+            ],
+        },
+    )
     app = create_app(root)
     port = _free_port()
     server = uvicorn.Server(
@@ -187,6 +242,24 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             expect(page.locator("#inspector")).to_contain_text("character:malo")
             page.locator("#editorialDrawer .pane-close").click()
             expect(page.locator("#editorialDrawer")).to_be_hidden()
+
+            expect(page.locator("#audioMeters")).to_be_visible()
+            page.locator('.clip[data-clip="a1"]').click()
+            expect(page.locator(".audio-mix-section")).to_be_visible()
+            expect(page.locator("#gainDbInput")).to_have_value("-6.0")
+            expect(page.locator('.clip[data-clip="a1"] .fade-in-grip')).to_be_visible()
+            expect(page.locator('.clip[data-clip="a1"] .fade-out-grip')).to_be_visible()
+
+            page.locator("#gainDbInput").fill("3")
+            page.get_by_role("button", name="Appliquer PATCH").click()
+            expect(page.locator('.clip[data-clip="a1"] small')).to_contain_text("+3.0 dB")
+
+            page.get_by_role("button", name="+ Point au playhead").click()
+            expect(page.locator('.clip[data-clip="a1"] .automation-point')).to_have_count(1)
+
+            vo_track = page.locator("#lane-vo").locator("..")
+            vo_track.locator(".solo-btn").click()
+            expect(vo_track.locator(".solo-btn")).to_have_class(re.compile("on"))
 
             assert errors == []
             browser.close()
