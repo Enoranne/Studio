@@ -1,4 +1,4 @@
-# PISTE Studio Local App — v0.18
+# PISTE Studio Local App — v0.19
 
 L’application locale relie l’interface de montage au moteur PISTE Studio via FastAPI.
 
@@ -13,67 +13,57 @@ L’application locale relie l’interface de montage au moteur PISTE Studio via
 - Overlays Viewer configurables ;
 - Undo persistant avec `Ctrl/Cmd+Z`.
 
-## Editorial Intelligence
+## Audio Editing & Mixing
 
-- Favorite / Reject persistants ;
-- Markers ;
-- Source Selector explicable ;
-- aucune modification automatique de la Storyline.
+### Clip audio
 
-## Media Intelligence
+Chaque clip possède désormais :
 
-- ffprobe / ffmpeg local ;
-- filmstrips backend ;
-- empreinte perceptuelle ;
-- prises proches ;
-- continuité structurée via tags.
+- rôle ;
+- gain dB ;
+- pan ;
+- fade in/out ;
+- volume automation.
 
-## Semantic Vision V0.18
+### Timeline
 
-La vision locale est optionnelle.
+Les clips audio montrent :
 
-### Références
+- waveform ;
+- ligne d’automation ;
+- keyframes ;
+- poignées de fade.
 
-Les tags déjà validés servent de références :
+### Playback
 
-- `character:malo`
-- `prop:fisher`
-- `decor:salon`
-- `look:warm-tungsten`
+La preview utilise Web Audio :
 
-Un rush doit avoir un profil vision READY avant de pouvoir recevoir des propositions.
+- GainNode ;
+- StereoPannerNode ;
+- bus par piste ;
+- master ;
+- Mute/Solo ;
+- meters L/R.
 
-### Propositions
+### Tesseract
 
-**Proposer continuité** compare le rush aux références de même facette.
+Le gain statique est matérialisé.
+Pan/fades/automation restent conservés dans le plan et le manifest, sans invention de champs Tesseract non confirmés.
 
-Chaque proposition reste `PENDING` jusqu’à une décision utilisateur :
+## Intelligence
 
-- Accepter → ajoute le tag ;
-- Rejeter → mémorise le refus.
-
-Aucune proposition ne modifie la Storyline.
-
-### Modèle local
-
-Installer l’extra :
-
-    pip install -e '.[vision]'
-
-Le modèle n’est pas téléchargé automatiquement. Si son cache est absent, l’interface peut demander une autorisation explicite de téléchargement. Seul le modèle est téléchargé ; les frames du projet restent locales.
+- Editorial Intelligence ;
+- Media Intelligence ;
+- Semantic Vision ;
+- aucune décision automatique sur la Storyline.
 
 ## Backend connecté
 
-- project.yaml, canon.yaml, locks.yaml ;
+- timeline schema v3 ;
+- project/canon/locks ;
 - catalogue SQLite ;
-- media_analysis ;
-- semantic_profiles ;
-- semantic_tag_proposals ;
-- plages éditoriales et marqueurs ;
-- cache filmstrip / vision local ;
-- timeline schema v2 ;
-- historique de checkpoints ;
-- publication V001+ ;
-- Tesseract vidéo + audio.
+- historiques/checkpoints ;
+- versions V001+ ;
+- Tesseract bridge.
 
-Aucun média du projet n’est envoyé vers un serveur distant par PISTE Studio.
+Aucun média n’est envoyé vers un serveur distant par PISTE Studio.
