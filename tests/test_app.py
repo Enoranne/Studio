@@ -9,6 +9,7 @@ from piste_studio.metadata import set_media_metadata, fetch_media_with_metadata
 from piste_studio.project import init_project
 from piste_studio.media_intelligence import _write_analysis
 from piste_studio.semantic_vision import store_semantic_profile
+from piste_studio.audio_intelligence import _write_analysis as _write_audio_loudness
 
 
 def make_project(tmp_path: Path) -> Path:
@@ -74,7 +75,7 @@ def test_timeline_persists_and_reloads(tmp_path):
     assert saved.status_code == 200, saved.text
     reloaded = client.get("/api/timeline?edit_name=teaser_30").json()["timeline"]
     assert reloaded["clips"][0]["mediaDbId"] == video_id
-    assert reloaded["schema_version"] == 3
+    assert reloaded["schema_version"] == 4
     assert reloaded["clips"][1]["audioDbId"] == audio_id
     assert reloaded["clips"][1]["gainDb"] == -6
     assert reloaded["clips"][1]["pan"] == 0.2
@@ -414,3 +415,106 @@ def test_semantic_vision_api_requires_resolution_before_tag_write(tmp_path):
     assert status.status_code == 200
     assert status.json()["provider"] == "local_clip"
     assert "dependencies_ready" in status.json()
+
+
+def test_audio_intelligence_api_normalize_clipping_ducking_and_crossfade(tmp_path):
+    root = make_project(tmp_path)
+    (root / "audio" / "music_a.wav").write_bytes(b"music-a")
+    (root / "audio" / "music_b.wav").write_bytes(b"music-b")
+    scan_media(root)
+    rows = [x for x in fetch_media_with_metadata(root) if x["kind"] == "audio"]
+    by_name = {Path(x["relative_path"]).name: x for x in rows}
+    for row in rows:
+        set_media_metadata(root, row["id"], title=Path(row["relative_path"]).stem, duration_seconds=12.0)
+
+    voice = by_name["voice.wav"]
+    music_a = by_name["music_a.wav"]
+    music_b = by_name["music_b.wav"]
+    _write_audio_loudness(
+        root, voice["id"], status="READY",
+        integrated_lufs=-20.0, true_peak_dbfs=-4.0,
+    )
+    _write_audio_loudness(
+        root, music_a["id"], status="READY",
+        integrated_lufs=-18.0, true_peak_dbfs=-3.0,
+    )
+    _write_audio_loudness(
+        root, music_b["id"], status="READY",
+        integrated_lufs=-18.0, true_peak_dbfs=-3.0,
+    )
+
+    timeline = {
+        "edit_name": "mix",
+        "duration_seconds": 30,
+        "tracks": [
+            {"id": "vo", "name": "VO", "kind": "audio"},
+            {"id": "music", "name": "MUSIC", "kind": "music"},
+        ],
+        "clips": [
+            {
+                "id": "v1", "track": "vo", "audioDbId": voice["id"],
+                "audioRole": "vo", "label": "VO", "start": 5, "duration": 3,
+                "sourceStart": 0, "gainDb": -6,
+            },
+            {
+                "id": "m1", "track": "music", "audioDbId": music_a["id"],
+                "audioRole": "music", "label": "Music A", "start": 3, "duration": 5,
+                "sourceStart": 0, "gainDb": -6,
+            },
+            {
+                "id": "m2", "track": "music", "audioDbId": music_b["id"],
+                "audioRole": "music", "label": "Music B", "start": 8, "duration": 4,
+                "sourceStart": 0, "gainDb": -6,
+            },
+        ],
+    }
+
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+
+    proposed = client.post(
+        "/api/audio/normalize/propose",
+        json={"media_id": voice["id"], "target_lufs": -16, "true_peak_ceiling": -1.5},
+    )
+    assert proposed.status_code == 200, proposed.text
+    assert proposed.json()["gain_adjustment_db"] == 2.5
+
+    duck = client.post(
+        "/api/audio/ducking/propose",
+        json={"timeline": timeline, "music_clip_id": "m1"},
+    )
+    assert duck.status_code == 200, duck.text
+    assert duck.json()["blockers"][0]["clip_id"] == "v1"
+    assert duck.json()["policy"]["automatic_apply"] is False
+
+    clipping = client.post(
+        "/api/audio/clipping",
+        json={"timeline": timeline, "true_peak_ceiling": -1},
+    )
+    assert clipping.status_code == 200, clipping.text
+    assert clipping.json()["method"] == "per_clip_estimate"
+
+    cross = client.post(
+        "/api/audio/crossfade/propose",
+        json={
+            "timeline": timeline,
+            "left_clip_id": "m1",
+            "right_clip_id": "m2",
+            "duration_seconds": .5,
+        },
+    )
+    assert cross.status_code == 200, cross.text
+    proposal = cross.json()
+    assert proposal["right_start"] == 7.5
+
+    applied = client.post(
+        "/api/audio/crossfade/apply",
+        json={"timeline": timeline, "proposal": proposal},
+    )
+    assert applied.status_code == 200, applied.text
+    after = applied.json()["timeline"]
+    assert after["schema_version"] == 4
+    m1 = next(x for x in after["clips"] if x["id"] == "m1")
+    m2 = next(x for x in after["clips"] if x["id"] == "m2")
+    assert m1["crossfadeWith"] == "m2"
+    assert m2["crossfadeWith"] == "m1"
