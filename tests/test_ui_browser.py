@@ -8,6 +8,8 @@ from playwright.sync_api import expect, sync_playwright
 
 from piste_studio.app import create_app
 from piste_studio.project import init_project
+from piste_studio.media import scan_media
+from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 
 
 def _free_port():
@@ -21,6 +23,18 @@ def _free_port():
 def test_real_browser_navigation_and_workspaces(tmp_path):
     root = tmp_path / "Project"
     init_project(root, "Browser Test")
+    (root / "rushes" / "malo_a.mp4").write_bytes(b"fake-a")
+    (root / "rushes" / "malo_b.mp4").write_bytes(b"fake-b")
+    scan_media(root)
+    for row in fetch_media_with_metadata(root):
+        set_media_metadata(
+            root,
+            row["id"],
+            title=Path(row["relative_path"]).stem,
+            duration_seconds=8.0,
+            rating=4,
+            tags=["malo", "enfance"],
+        )
     app = create_app(root)
     port = _free_port()
     server = uvicorn.Server(
@@ -105,6 +119,16 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             page.locator("#markerSaveBtn").click()
             expect(page.locator("#markerComposer")).to_be_hidden()
             expect(page.locator(".editorial-marker")).to_have_count(1)
+
+            expect(page.locator(".editorial-inspector-section")).to_be_visible()
+            page.get_by_role("button", name="Alternatives").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator(".suggestion-card")).to_have_count(1)
+            expect(page.locator(".selector-policy")).to_contain_text("Validation humaine")
+            page.get_by_role("button", name="Prévisualiser").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            page.get_by_role("button", name="×").last.click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
 
             assert errors == []
             browser.close()
