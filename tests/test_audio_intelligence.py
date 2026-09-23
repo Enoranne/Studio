@@ -133,7 +133,7 @@ def test_clipping_risk_uses_max_automation_gain(tmp_path):
         }]
     }
     report = ai.clipping_risk_report(root, timeline, true_peak_ceiling=-1)
-    assert report["risk_count"] == 1
+    assert report["risk_count"] == 0
     assert report["clips"][0]["estimated_true_peak_dbfs"] == -2.0
     # -2 dBTP remains below a -1 dBTP ceiling.
     assert report["clips"][0]["status"] == "OK"
