@@ -35,7 +35,7 @@ def make_project(tmp_path: Path) -> Path:
 
 def test_state_and_media_stream(tmp_path):
     root = make_project(tmp_path)
-    app = create_app(root, Path(__file__).parents[1] / "ui" / "index.html")
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
     client = TestClient(app)
     state = client.get("/api/state")
     assert state.status_code == 200
@@ -51,7 +51,7 @@ def test_state_and_media_stream(tmp_path):
 
 def test_timeline_persists_and_reloads(tmp_path):
     root = make_project(tmp_path)
-    app = create_app(root, Path(__file__).parents[1] / "ui" / "index.html")
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
     client = TestClient(app)
     media = client.get("/api/state").json()["media"]
     video_id = next(x["id"] for x in media if x["kind"] == "video")
@@ -77,7 +77,7 @@ def test_timeline_persists_and_reloads(tmp_path):
 
 def test_timeline_collision_rejected(tmp_path):
     root = make_project(tmp_path)
-    app = create_app(root, Path(__file__).parents[1] / "ui" / "index.html")
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
     client = TestClient(app)
     payload = {
         "edit_name": "teaser_30", "duration_seconds": 30,
@@ -94,7 +94,7 @@ def test_timeline_collision_rejected(tmp_path):
 
 def test_lock_check_uses_core_engine(tmp_path):
     root = make_project(tmp_path)
-    app = create_app(root, Path(__file__).parents[1] / "ui" / "index.html")
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
     client = TestClient(app)
     blocked = client.post("/api/locks/check", json={"operation": "trim", "start": 1, "end": 2, "target": "timeline"})
     assert blocked.status_code == 200
@@ -105,7 +105,7 @@ def test_lock_check_uses_core_engine(tmp_path):
 
 def test_scan_endpoint(tmp_path):
     root = make_project(tmp_path)
-    app = create_app(root, Path(__file__).parents[1] / "ui" / "index.html")
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
     client = TestClient(app)
     (root / "rushes" / "second.mov").write_bytes(b"second-video")
     r = client.post("/api/scan", json={})
@@ -116,7 +116,7 @@ def test_scan_endpoint(tmp_path):
 
 def test_publish_timeline_creates_version_and_tesseract_dry_run(tmp_path):
     root = make_project(tmp_path)
-    app = create_app(root, Path(__file__).parents[1] / "ui" / "index.html")
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
     client = TestClient(app)
     media = client.get("/api/state").json()["media"]
     video_id = next(x["id"] for x in media if x["kind"] == "video")
