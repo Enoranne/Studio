@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 import json
+import math
 
 from .db import connect
 from .versioning import slugify
@@ -10,6 +11,45 @@ from .versioning import slugify
 
 class TimelineError(ValueError):
     pass
+
+
+AUDIO_ROLES = {"dialogue", "vo", "music", "ambience", "sfx"}
+
+
+def _linear_to_db(value: float) -> float:
+    value = float(value)
+    if value <= 0:
+        return -60.0
+    return max(-60.0, min(12.0, 20.0 * math.log10(value)))
+
+
+def _db_to_linear(value: float) -> float:
+    value = max(-60.0, min(12.0, float(value)))
+    return 10.0 ** (value / 20.0)
+
+
+def _clean_volume_envelope(raw: object, clip_duration: float, cid: str) -> list[dict]:
+    if raw in (None, []):
+        return []
+    if not isinstance(raw, list):
+        raise TimelineError(f"volumeEnvelope doit être une liste pour {cid}.")
+    points: list[dict] = []
+    seen: set[float] = set()
+    for item in raw:
+        if not isinstance(item, dict):
+            raise TimelineError(f"Point d’enveloppe invalide pour {cid}.")
+        time = round(float(item.get("time", 0)), 6)
+        gain_db = round(float(item.get("gainDb", 0)), 3)
+        if time < 0 or time > clip_duration + 1e-6:
+            raise TimelineError(f"Point d’enveloppe hors clip pour {cid}.")
+        if gain_db < -60 or gain_db > 12:
+            raise TimelineError(f"Gain d’enveloppe hors plage -60..12 dB pour {cid}.")
+        if time in seen:
+            raise TimelineError(f"Deux points d’enveloppe au même instant pour {cid}.")
+        seen.add(time)
+        points.append({"time": time, "gainDb": gain_db})
+    points.sort(key=lambda x: x["time"])
+    return points
 
 
 def working_timeline_path(root: Path, edit_name: str = "teaser_30") -> Path:
@@ -191,16 +231,44 @@ def validate_timeline(root: Path, payload: dict) -> dict:
                 )
 
         gain = float(c.get("gain", 1) if c.get("gain") is not None else 1)
+        gain_db = (
+            float(c["gainDb"])
+            if c.get("gainDb") is not None
+            else _linear_to_db(gain)
+        )
+        pan = float(c.get("pan", 0) or 0)
         fade_in = float(c.get("fadeIn", 0) or 0)
         fade_out = float(c.get("fadeOut", 0) or 0)
-        if gain < 0 or gain > 1:
-            raise TimelineError(f"Gain hors plage 0..1 pour {cid}.")
+        role = str(
+            c.get("audioRole")
+            or (
+                track
+                if track in AUDIO_ROLES
+                else "sfx"
+            )
+        ).strip().lower()
+        if gain_db < -60 or gain_db > 12:
+            raise TimelineError(f"Gain hors plage -60..12 dB pour {cid}.")
+        if pan < -1 or pan > 1:
+            raise TimelineError(f"Pan hors plage -1..1 pour {cid}.")
         if (
             fade_in < 0
             or fade_out < 0
             or fade_in + fade_out > clip_duration + 1e-6
         ):
             raise TimelineError(f"Fades invalides pour {cid}.")
+        if c.get("audioDbId") is not None or c.get("audioId") is not None:
+            if role not in AUDIO_ROLES:
+                raise TimelineError(
+                    f"Rôle audio invalide pour {cid}: {role}"
+                )
+            volume_envelope = _clean_volume_envelope(
+                c.get("volumeEnvelope"),
+                clip_duration,
+                cid,
+            )
+        else:
+            volume_envelope = []
 
         clean = dict(c)
         clean.update(
@@ -217,6 +285,14 @@ def validate_timeline(root: Path, payload: dict) -> dict:
                 clean["mediaDbId"] = media_db_id
             if c.get("audioDbId") is not None:
                 clean["audioDbId"] = media_db_id
+        if c.get("audioDbId") is not None or c.get("audioId") is not None:
+            clean["gainDb"] = round(gain_db, 3)
+            clean["gain"] = round(_db_to_linear(gain_db), 6)
+            clean["pan"] = round(pan, 4)
+            clean["audioRole"] = role
+            clean["fadeIn"] = round(fade_in, 6)
+            clean["fadeOut"] = round(fade_out, 6)
+            clean["volumeEnvelope"] = volume_envelope
         clean_clips.append(clean)
 
     _validate_connections(clean_clips)
@@ -239,7 +315,7 @@ def validate_timeline(root: Path, payload: dict) -> dict:
                 )
 
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "edit_name": slugify(str(payload.get("edit_name") or "teaser_30")),
         "duration_seconds": duration,
         "storyline": storyline,
