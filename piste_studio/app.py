@@ -20,6 +20,7 @@ from .authoring import execute_authoring
 from .timeline import TimelineError, load_timeline, save_timeline, validate_timeline
 from .versioning import list_versions, create_timeline_version
 from .storyline import StorylineError, validate_locked_change
+from .history import HistoryError, create_checkpoint, history_status, undo_checkpoint
 
 
 def _media_payload(root: Path) -> list[dict]:
@@ -126,6 +127,35 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except (TimelineError, StorylineError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
         return {"ok": True, "timeline": clean}
+
+    @app.get("/api/history")
+    def get_history(edit_name: str = "teaser_30"):
+        return history_status(root, edit_name)
+
+    @app.post("/api/history/checkpoint")
+    def history_checkpoint(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        if not isinstance(timeline, dict):
+            raise HTTPException(422, "timeline doit être un objet.")
+        try:
+            return create_checkpoint(
+                root,
+                timeline,
+                edit_name=str(payload.get("edit_name") or timeline.get("edit_name") or "teaser_30"),
+                reason=str(payload.get("reason") or "edit"),
+            )
+        except (TimelineError, HistoryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/history/undo")
+    def history_undo(payload: dict = Body(default_factory=dict)):
+        try:
+            return undo_checkpoint(
+                root,
+                str(payload.get("edit_name") or "teaser_30"),
+            )
+        except (TimelineError, HistoryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.post("/api/locks/check")
     def lock_check(payload: dict = Body(...)):
