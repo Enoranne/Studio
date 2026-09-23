@@ -1,5 +1,27 @@
 # Changelog
 
+## V0.18 — Semantic Vision & Continuity
+
+- Provider de vision locale optionnel basé sur CLIP.
+- Dépendances vision séparées dans l’extra `.[vision]`.
+- Aucun téléchargement de modèle sans opt-in explicite.
+- Extraction locale d’images de référence via ffmpeg.
+- Embedding moyen normalisé par rush.
+- Profils sémantiques persistés dans SQLite.
+- Références visuelles issues de tags déjà validés.
+- Facettes `character:`, `prop:`, `decor:`, `look:`.
+- Proposition de tags par centroïde des références.
+- Seuils distincts selon la facette.
+- État PENDING / ACCEPTED / REJECTED.
+- Accept : écrit le tag dans les métadonnées.
+- Reject : mémorise le refus et empêche la réapparition silencieuse.
+- Aucune écriture automatique de tag.
+- Aucune modification automatique de Storyline.
+- UI Inspector Semantic Vision.
+- Tiroir de propositions avec références, seuil et similarité.
+- Command Palette : Analyser le rush / Proposer continuité.
+- Tests backend/API/UI/Chromium pour la chaîne référence → proposition → Accept.
+
 ## V0.17 — Media Intelligence
 
 - Analyse technique locale via ffprobe.
