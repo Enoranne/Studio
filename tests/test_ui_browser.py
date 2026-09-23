@@ -65,6 +65,39 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             expect(page.locator("body")).to_have_class(re.compile("workspace-edit"))
 
             expect(page.locator("#undoBtn")).to_be_visible()
+
+            viewer_before = page.locator("#viewer").bounding_box()
+            assert viewer_before is not None
+
+            page.locator('[data-focus-pane="viewer"]').click()
+            expect(page.locator("body")).to_have_class(re.compile("focus-viewer"))
+            expect(page.locator("#focusExit")).to_be_visible()
+            viewer_focus = page.locator("#viewer").bounding_box()
+            assert viewer_focus is not None
+            assert viewer_focus["height"] > viewer_before["height"]
+
+            page.keyboard.press("Escape")
+            expect(page.locator("body")).not_to_have_class(re.compile("focus-viewer"))
+
+            page.locator("#overlayBtn").click()
+            expect(page.locator("#overlayMenu")).to_be_visible()
+            page.locator("#overlayHud").uncheck()
+            expect(page.locator("#viewer")).to_have_class(re.compile("hide-hud"))
+            page.locator("#overlayHud").check()
+            expect(page.locator("#viewer")).not_to_have_class(re.compile("hide-hud"))
+            page.keyboard.press("Escape")
+            expect(page.locator("#overlayMenu")).to_be_hidden()
+
+            page.keyboard.press("Control+K")
+            expect(page.locator("#commandPalette")).to_be_visible()
+            page.locator("#commandSearch").fill("Espace · Review")
+            page.keyboard.press("Enter")
+            expect(page.locator("#commandPalette")).to_be_hidden()
+            expect(page.locator("body")).to_have_class(re.compile("workspace-review"))
+
+            page.locator('[data-workspace="edit"]').click()
+            expect(page.locator("body")).to_have_class(re.compile("workspace-edit"))
+
             assert errors == []
             browser.close()
     finally:
