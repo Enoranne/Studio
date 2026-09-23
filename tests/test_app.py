@@ -7,6 +7,7 @@ from piste_studio.config import write_yaml
 from piste_studio.media import scan_media
 from piste_studio.metadata import set_media_metadata, fetch_media_with_metadata
 from piste_studio.project import init_project
+from piste_studio.media_intelligence import _write_analysis
 
 
 def make_project(tmp_path: Path) -> Path:
@@ -255,3 +256,67 @@ def test_editorial_api_persists_ranges_markers_and_suggestions(tmp_path):
     assert body["policy"]["human_validation_required"] is True
     assert body["policy"]["automatic_replacement"] is False
     assert any(x["media_id"] == candidate["id"] for x in body["suggestions"])
+
+
+def test_media_intelligence_state_filmstrip_and_similarity_api(tmp_path):
+    root = make_project(tmp_path)
+    (root / "rushes" / "clip_alt.mp4").write_bytes(b"fake-alt")
+    scan_media(root)
+    rows = fetch_media_with_metadata(root)
+    videos = [x for x in rows if x["kind"] == "video"]
+    for row in videos:
+        set_media_metadata(
+            root,
+            row["id"],
+            title=Path(row["relative_path"]).stem,
+            duration_seconds=10.0,
+            rating=4,
+            tags=["malo", "test"],
+        )
+
+    cache = root / "cache" / "filmstrips"
+    cache.mkdir(parents=True, exist_ok=True)
+    for index, row in enumerate(fetch_media_with_metadata(root)):
+        if row["kind"] != "video":
+            continue
+        strip = cache / f"api_{index}.jpg"
+        strip.write_bytes(b"jpeg-bytes")
+        _write_analysis(
+            root,
+            row["id"],
+            status="READY",
+            technical={
+                "width": 1280,
+                "height": 720,
+                "fps": 24.0,
+                "filename_tokens": ["clip"],
+            },
+            signature=["ffffffffffffffffffffffffffffffffffff"] * 6,
+            filmstrip_path=strip.relative_to(root).as_posix(),
+        )
+
+    app = create_app(
+        root,
+        Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html",
+    )
+    client = TestClient(app)
+
+    state = client.get("/api/state").json()
+    vids = [x for x in state["media"] if x["kind"] == "video"]
+    assert len(vids) == 2
+    assert all(x["analysis"]["status"] == "READY" for x in vids)
+    assert all(x["filmstrip_url"] for x in vids)
+
+    strip_response = client.get(vids[0]["filmstrip_url"])
+    assert strip_response.status_code == 200
+    assert strip_response.content == b"jpeg-bytes"
+
+    similar = client.get(f"/api/media/{vids[0]['id']}/similar")
+    assert similar.status_code == 200, similar.text
+    assert similar.json()["similar"][0]["media_id"] == vids[1]["id"]
+    assert similar.json()["similar"][0]["visual_similarity"] == 1.0
+
+    status = client.get("/api/media/intelligence/status")
+    assert status.status_code == 200
+    assert "ffmpeg" in status.json()
+    assert "ffprobe" in status.json()
