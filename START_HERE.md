@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.21
+# Démarrage rapide — PISTE Studio v0.22
 
 ## 1. Installer
 
@@ -155,3 +155,16 @@ La vision locale fonctionne comme une aide à la continuité, pas comme une déc
 9. N’active le limiteur que volontairement si tu veux comparer un rendu limité.
 
 Les presets sont des repères configurables et ne remplacent jamais les spécifications du diffuseur ou du festival concerné.
+
+
+## Editorial Vision V0.22.1
+
+1. Sélectionne un rush vidéo dans le Browser.
+2. Dans **MEDIA INTELLIGENCE**, clique **Fenêtres IN/OUT**.
+3. Commence avec la sensibilité **Normale**.
+4. Examine les segments proposés entre les ruptures visuelles.
+5. Utilise **Prévisualiser** pour regarder une fenêtre sans l’adopter.
+6. Utilise **Charger IN/OUT** pour préparer cette plage dans SOURCE.
+7. Ajuste ensuite manuellement IN/OUT si nécessaire avant d’ajouter le plan.
+
+Une sensibilité plus forte propose potentiellement davantage de ruptures. PISTE Studio ne modifie jamais la Storyline à partir de cette détection.
