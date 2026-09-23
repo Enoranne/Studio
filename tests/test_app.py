@@ -167,3 +167,36 @@ def test_storyline_validate_endpoint_accepts_magnetic_connection(tmp_path):
     r = client.post("/api/storyline/validate", json={"before": timeline, "after": timeline})
     assert r.status_code == 200, r.text
     assert r.json()["timeline"]["storyline"]["mode"] == "magnetic"
+
+
+def test_history_api_checkpoint_and_undo(tmp_path):
+    root = make_project(tmp_path)
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    base = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 30,
+        "storyline": {"mode": "magnetic", "start": 5},
+        "tracks": [{"id": "video", "name": "VIDEO", "kind": "video"}],
+        "clips": [{"id": "v1", "track": "video", "start": 5, "duration": 4, "sourceStart": 0}],
+    }
+    assert client.post("/api/timeline", json=base).status_code == 200
+    cp = client.post(
+        "/api/history/checkpoint",
+        json={"edit_name": "teaser_30", "reason": "before move", "timeline": base},
+    )
+    assert cp.status_code == 200, cp.text
+    assert cp.json()["can_undo"] is True
+
+    changed = {
+        **base,
+        "storyline": {"mode": "magnetic", "start": 7},
+        "clips": [{"id": "v1", "track": "video", "start": 7, "duration": 4, "sourceStart": 0}],
+    }
+    assert client.post("/api/timeline", json=changed).status_code == 200
+
+    undo = client.post("/api/history/undo", json={"edit_name": "teaser_30"})
+    assert undo.status_code == 200, undo.text
+    assert undo.json()["timeline"]["storyline"]["start"] == 5
+    current = client.get("/api/timeline?edit_name=teaser_30").json()["timeline"]
+    assert current["storyline"]["start"] == 5
