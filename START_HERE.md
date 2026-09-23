@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.20
+# Démarrage rapide — PISTE Studio v0.21
 
 ## 1. Installer
 
@@ -137,3 +137,21 @@ La vision locale fonctionne comme une aide à la continuité, pas comme une déc
 7. Pour deux clips audio adjacents de même piste, utilise **Crossfade suivant**.
 8. Ajuste ensuite manuellement les fades et keyframes si nécessaire.
 9. Avant une livraison finale, mesure le master rendu : le rapport V0.20 reste une estimation par clip.
+
+
+## Audio Delivery V0.21
+
+1. Termine d’abord le mix avec les outils V0.19 / V0.20.
+2. Ouvre la Command Palette avec **Ctrl/Cmd+K**.
+3. Lance **Audio · Master Check**.
+4. Choisis un preset de référence ou règle directement :
+   - cible LUFS ;
+   - ceiling true peak ;
+   - tolérance loudness.
+5. Laisse **Limiteur master** décoché pour mesurer le mix tel qu’il est réellement.
+6. Clique **Mesurer le master**.
+7. Lis séparément le LUFS-I master, le true peak et le statut PASS/WARN.
+8. Télécharge le rapport JSON si tu dois conserver une preuve de contrôle.
+9. N’active le limiteur que volontairement si tu veux comparer un rendu limité.
+
+Les presets sont des repères configurables et ne remplacent jamais les spécifications du diffuseur ou du festival concerné.
