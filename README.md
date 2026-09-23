@@ -27,6 +27,17 @@ PISTE Studio propose des presets de référence configurables. Ils ne sont pas p
 
 Le limiteur master est **désactivé par défaut**. Il n’est ajouté au rendu que si l’utilisateur l’active volontairement. Il n’existe ni normalisation master automatique, ni correction silencieuse.
 
+### Préflight avant export
+
+Le rapport Master Check porte une empreinte du mix audio. Avant un export Tesseract, PISTE Studio distingue :
+
+- **PASS** : contrôle à jour et conforme aux valeurs choisies ;
+- **WARN** : contrôle à jour avec écarts ;
+- **STALE** : le mix audio a changé depuis le contrôle ;
+- **MISSING** : aucun contrôle exploitable.
+
+WARN, STALE et MISSING ouvrent un avertissement avec **Lancer Master Check** ou **Exporter quand même**. L’export reste donc sous contrôle de l’utilisateur et n’est pas arbitrairement bloqué.
+
 ## V0.20 — Audio Intelligence & Loudness
 
 La V0.20 ajoute une couche de contrôle et d’assistance audio au mixage V0.19.
@@ -170,7 +181,10 @@ Lancer :
 6. Sur MUSIC, utilise **Ducking VO** puis examine l’enveloppe proposée.
 7. Entre deux clips adjacents, utilise **Crossfade suivant**.
 8. Ajuste manuellement les keyframes/fades.
-9. Ouvre **Audio · Master Check**, mesure le master rendu et vérifie LUFS-I / true peak.\n10. Télécharge le rapport JSON si tu dois conserver une trace de conformité.\n11. N’active le limiteur que volontairement si le contexte de livraison le justifie.
+9. Ouvre **Audio · Master Check**, mesure le master rendu et vérifie LUFS-I / true peak.
+10. Télécharge le rapport JSON si tu dois conserver une trace de conformité.
+11. N’active le limiteur que volontairement si le contexte de livraison le justifie.
+12. À l’export, lis le préflight audio ; si le contrôle est STALE/WARN/MISSING, tu peux relancer le Master Check ou exporter volontairement malgré l’avertissement.
 
 ## Tests
 
