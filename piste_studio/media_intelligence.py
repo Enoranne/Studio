@@ -9,7 +9,7 @@ import shutil
 import subprocess
 
 from .db import connect
-from .metadata import fetch_media_with_metadata
+from .metadata import fetch_media_with_metadata, set_media_metadata
 
 ANALYZER_VERSION = "0.17-local-1"
 _TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
@@ -317,6 +317,8 @@ def analyze_media(
         or item.get("duration_seconds")
         or 0
     )
+    if duration > 0 and not item.get("duration_seconds"):
+        set_media_metadata(root, int(media_id), duration_seconds=duration)
     signature = (
         visual_signature(path, duration_seconds=duration)
         if duration > 0
