@@ -1,0 +1,167 @@
+let semanticVisionStatusCache=null;
+
+async function loadSemanticVisionStatus(force=false){
+  if(semanticVisionStatusCache&&!force)return semanticVisionStatusCache;
+  if(!backendConnected)return null;
+  try{
+    semanticVisionStatusCache=await api('/api/vision/status');
+    return semanticVisionStatusCache;
+  }catch(_){return null}
+}
+
+function semanticVisionSummary(m){
+  const p=m?.semanticProfile;
+  if(p?.status==='READY'){
+    return `<div class="vision-state ready"><span>◆ Vision locale</span><b>READY</b></div><div class="hint">${p.frame_count||0} image(s) de référence · modèle ${p.model_id||'local'}</div>`;
+  }
+  return '<div class="vision-state"><span>◇ Vision locale</span><b>NON ANALYSÉE</b></div><div class="hint">Aucun tag n’est écrit automatiquement.</div>';
+}
+
+function appendSemanticVisionSection(){
+  const m=getMedia(selectedMedia),root=$('#inspector');if(!m||!root||!m.dbId)return;
+  const section=document.createElement('div');
+  section.className='inspector-section semantic-vision-section';
+  section.innerHTML=`<div class="inspector-section-title">SEMANTIC VISION</div>
+    ${semanticVisionSummary(m)}
+    <div class="ins-actions">
+      <button class="btn" onclick="analyzeSemanticSelected(false)">${m.semanticProfile?.status==='READY'?'Réanalyser vision':'Analyser vision'}</button>
+      <button class="btn primary" onclick="openSemanticContinuity(${m.dbId})">Proposer continuité</button>
+    </div>
+    <div class="hint">Les propositions character / prop / decor / look viennent de références déjà validées. Accept obligatoire avant ajout au catalogue.</div>`;
+  root.appendChild(section);
+}
+
+const _v017RenderMediaInspectorSemantic=renderMediaInspector;
+renderMediaInspector=function(){
+  _v017RenderMediaInspectorSemantic();
+  appendSemanticVisionSection();
+}
+
+async function analyzeSemanticSelected(allowModelDownload=false){
+  const m=getMedia(selectedMedia);
+  if(!m?.dbId){toast('Sélectionne un rush vidéo catalogué',true);return}
+  if(!backendConnected){toast('Backend local requis',true);return}
+  try{
+    toast(allowModelDownload?'Chargement du modèle vision…':`Vision locale · ${m.label}…`);
+    await api(`/api/vision/analyze/${m.dbId}`,{
+      method:'POST',
+      body:JSON.stringify({
+        allow_model_download:!!allowModelDownload,
+        force_frames:false,
+      }),
+    });
+    const dbId=m.dbId;
+    await hydrateBackend();
+    const restored=media.find(x=>x.dbId===dbId);
+    if(restored){selectedMedia=restored.id;selectedClip=null;renderMedia();renderMediaInspector()}
+    semanticVisionStatusCache=null;
+    toast('Profil vision local créé');
+  }catch(err){
+    openVisionSetupDrawer(err.message,m,allowModelDownload);
+  }
+}
+
+async function openVisionSetupDrawer(message,m,downloadAttempted=false){
+  const drawer=$('#editorialDrawer'),body=$('#editorialDrawerBody');
+  drawer.hidden=false;
+  $('#editorialDrawerTitle').textContent='Vision locale';
+  const status=await loadSemanticVisionStatus(true);
+  const deps=status?.dependencies_ready?'Dépendances installées':'Dépendances vision absentes';
+  const cache=status?.model_cached===true?'Modèle en cache':status?.model_cached===false?'Modèle absent du cache':'Cache modèle inconnu';
+  const ff=status?.ffmpeg_ready?'ffmpeg prêt':'ffmpeg absent';
+  body.innerHTML=`<div class="selector-policy"><span>SEMANTIC VISION</span><b>${m?.label||'Rush sélectionné'}</b><small>Images traitées localement. Aucun média n’est envoyé vers un service externe.</small></div>
+    <div class="vision-setup-status"><span>${deps}</span><span>${cache}</span><span>${ff}</span></div>
+    <div class="warn">${message||status?.message||'Vision locale indisponible.'}</div>
+    <div class="vision-setup-note">L’option de téléchargement ne télécharge que le modèle configuré. Les images du projet restent locales.</div>
+    <div class="suggestion-actions">
+      ${status?.dependencies_ready&&status?.ffmpeg_ready&&status?.model_cached===false&&!downloadAttempted?'<button class="btn primary" onclick="analyzeSemanticSelected(true)">Autoriser le téléchargement du modèle</button>':''}
+    </div>`;
+}
+
+async function openSemanticContinuity(dbId=null){
+  const m=dbId?media.find(x=>x.dbId===+dbId):getMedia(selectedMedia);
+  if(!m?.dbId){toast('Sélectionne un rush vidéo',true);return}
+  if(!backendConnected){toast('Backend local requis',true);return}
+  if(!m.semanticProfile||m.semanticProfile.status!=='READY'){
+    openVisionSetupDrawer('Analyse ce rush avant de proposer des tags de continuité.',m,false);
+    return;
+  }
+  const drawer=$('#editorialDrawer'),body=$('#editorialDrawerBody');
+  drawer.hidden=false;
+  $('#editorialDrawerTitle').textContent=`Continuité · ${m.label}`;
+  body.innerHTML='<div class="editorial-loading">Comparaison aux références validées…</div>';
+  try{
+    const r=await api(`/api/vision/propose/${m.dbId}`,{
+      method:'POST',
+      body:JSON.stringify({reset_rejected:false}),
+    });
+    renderSemanticProposals(r,m);
+  }catch(err){
+    body.innerHTML=`<div class="warn">Vision sémantique indisponible : ${err.message}</div>`;
+  }
+}
+
+function semanticReferenceNames(evidence){
+  const ids=evidence?.reference_media_ids||[];
+  return ids.map(id=>media.find(x=>x.dbId===+id)?.label||`Média ${id}`);
+}
+
+function renderSemanticProposals(result,m){
+  const body=$('#editorialDrawerBody'),rows=result.proposals||[];
+  const pending=rows.filter(x=>x.status==='PENDING');
+  const resolved=rows.filter(x=>x.status!=='PENDING');
+  const policy='<small>Validation humaine requise · aucun tag ni montage modifié automatiquement</small>';
+  let html=`<div class="selector-policy"><span>RÉFÉRENCES VISUELLES VALIDÉES</span><b>${m.label}</b>${policy}</div>`;
+  if(!pending.length){
+    html+='<div class="editorial-empty large">Aucune nouvelle proposition au-dessus des seuils de continuité.</div>';
+  }else{
+    html+=pending.map(p=>{
+      const pct=Math.round((+p.confidence||0)*100);
+      const refs=semanticReferenceNames(p.evidence);
+      const threshold=Math.round((+p.evidence?.threshold||0)*100);
+      return `<article class="semantic-proposal-card">
+        <div class="semantic-proposal-main">
+          <div class="suggestion-head"><b>${p.tag}</b><span>${pct} %</span></div>
+          <div class="semantic-facet">${p.facet.toUpperCase()} · seuil ${threshold} %</div>
+          <div class="suggestion-reasons">
+            <span>${p.evidence?.reference_count||0} référence(s)</span>
+            ${refs.slice(0,3).map(x=>`<span>${x}</span>`).join('')}
+          </div>
+          <div class="vision-evidence">Meilleure référence : ${Math.round((+p.evidence?.best_reference_similarity||0)*100)} %</div>
+          <div class="suggestion-actions"><button class="btn primary" onclick="resolveSemanticProposalUI(${p.id},true,${m.dbId})">Accepter</button><button class="btn" onclick="resolveSemanticProposalUI(${p.id},false,${m.dbId})">Rejeter</button></div>
+        </div>
+      </article>`;
+    }).join('');
+  }
+  if(resolved.length){
+    html+=`<div class="semantic-resolved"><div class="inspector-section-title">HISTORIQUE</div>${resolved.map(p=>`<div class="semantic-resolved-row ${p.status.toLowerCase()}"><span>${p.tag}</span><b>${p.status}</b></div>`).join('')}</div>`;
+  }
+  body.innerHTML=html;
+}
+
+async function resolveSemanticProposalUI(id,accept,dbId){
+  try{
+    await api(`/api/vision/proposals/${id}/resolve`,{
+      method:'POST',
+      body:JSON.stringify({accept:!!accept}),
+    });
+    const keepDbId=+dbId;
+    await hydrateBackend();
+    const restored=media.find(x=>x.dbId===keepDbId);
+    if(restored){
+      selectedMedia=restored.id;selectedClip=null;renderMedia();renderMediaInspector();
+      await refreshSemanticProposals(restored);
+    }
+    toast(accept?'Tag de continuité accepté':'Proposition rejetée');
+  }catch(err){toast('Décision vision impossible : '+err.message,true)}
+}
+
+async function refreshSemanticProposals(m){
+  const body=$('#editorialDrawerBody');
+  if(!body||$('#editorialDrawer').hidden)return;
+  try{
+    const r=await api(`/api/vision/proposals/${m.dbId}`);
+    $('#editorialDrawerTitle').textContent=`Continuité · ${m.label}`;
+    renderSemanticProposals(r,m);
+  }catch(err){body.innerHTML=`<div class="warn">${err.message}</div>`}
+}
