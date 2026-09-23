@@ -1,0 +1,47 @@
+schema_version: 1
+project:
+  title: PISTE 0
+  subtitle: BONUS TRACK (REC)
+visual:
+  aspect_ratio: 16:9
+  look:
+    - warm tungsten
+    - amber / burnt orange
+    - Kodak 500T inspired
+    - 35mm grain
+    - muted cyan-olive balance
+  avoid:
+    - glossy modern advertising look
+    - flashy generic transitions
+    - excessive speed ramps
+editing:
+  principles:
+    - intimate
+    - memory-driven
+    - tactile
+    - restrained
+  avoid:
+    - exposition-heavy trailer language
+    - destroying natural pauses
+sound:
+  motifs:
+    - cassette hiss
+    - recorder buttons
+    - tape mechanism
+    - silence
+  ending_sequence:
+    - cassette hiss
+    - silence
+    - click
+characters:
+  MALO_CHILD:
+    protected_identity: true
+    importance: primary
+  RONAN_CHILD:
+    protected_identity: true
+    importance: secondary
+props:
+  FISHER_PRICE_RECORDER:
+    canonical: true
+  PHILIPS_D6920:
+    canonical: true
