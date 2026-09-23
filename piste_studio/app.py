@@ -39,6 +39,11 @@ from .media_intelligence import (
     list_media_analysis,
     media_similarity,
 )
+from .editorial_vision import (
+    EditorialVisionError,
+    EDITORIAL_VISION_VERSION,
+    suggest_editorial_windows,
+)
 from .semantic_vision import (
     SemanticVisionError,
     analyze_semantic_catalog,
@@ -110,7 +115,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.21")
+    app = FastAPI(title="PISTE Studio Local App", version="0.22")
     app.state.project_root = root
 
     @app.get("/")
@@ -129,7 +134,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.21", "project_root": str(root)}
+        return {"ok": True, "version": "0.22", "project_root": str(root)}
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
@@ -140,7 +145,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.21",
+            "app_version": "0.22",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},
@@ -275,6 +280,24 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         try:
             return {"media_id": media_id, "similar": media_similarity(root, media_id)}
         except MediaIntelligenceError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/media/{media_id}/editorial-windows")
+    def media_editorial_windows(
+        media_id: int,
+        threshold: float = 0.32,
+        min_duration: float = 0.75,
+        limit: int = 12,
+    ):
+        try:
+            return suggest_editorial_windows(
+                root,
+                media_id,
+                threshold=threshold,
+                min_window_seconds=min_duration,
+                limit=limit,
+            )
+        except EditorialVisionError as exc:
             raise HTTPException(422, str(exc)) from exc
 
     @app.get("/api/media/{media_id}/filmstrip")
