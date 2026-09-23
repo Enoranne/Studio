@@ -22,7 +22,7 @@
 
 ## V0.22 — Editorial Vision Refinement
 
-- fenêtres IN/OUT candidates issues de ruptures/changements visuels ;
+- ✅ **V0.22.1** — fenêtres IN/OUT candidates issues de ruptures/changements visuels, détection ffmpeg locale, sensibilité configurable, validation humaine ;
 - références visuelles ciblées sur une zone ou un frame plutôt qu’un rush complet ;
 - groupes de références et qualité de référence ;
 - détection de conflit entre tags sémantiques et Canon ;
