@@ -73,3 +73,18 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .editorial-marker{position:absolute;z-index:8;top:3px;width:8px;height:15px;padding:0;border:0;background:transparent;transform:translateX(-50%)}.editorial-marker:before{content:"";position:absolute;left:3px;top:0;width:2px;height:14px;border-radius:1px;background:#aa7952}.editorial-marker:after{content:"";position:absolute;left:0;top:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #aa7952}.editorial-marker.marker-decision:before{background:#d6a66e}.editorial-marker.marker-decision:after{border-top-color:#d6a66e}.editorial-marker.marker-beat:before{background:#8c78ba}.editorial-marker.marker-beat:after{border-top-color:#8c78ba}.editorial-marker.marker-warning:before{background:#d46e6e}.editorial-marker.marker-warning:after{border-top-color:#d46e6e}
 .persistent-range.favorite-band,.persistent-range.reject-band{display:block!important}
 @media(max-width:900px){.editorial-drawer{top:83px;right:6px;bottom:27px;width:min(390px,calc(100vw - 12px))}}
+
+
+/* V0.17 — Media Intelligence */
+.filmstrip-cache,.filmstrip-skimmer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.filmstrip-cache{z-index:0;opacity:.92}
+.filmstrip-skimmer{z-index:1;opacity:0;transition:opacity .08s linear}
+.filmstrip.scrubbing .filmstrip-skimmer{opacity:1}
+.filmstrip.scrubbing .filmstrip-cache{opacity:.22}
+.filmstrip-cells{z-index:2;pointer-events:none}
+.favorite-band,.reject-band,.range-band{z-index:4}
+.badge.intelligence{color:#b8a0dc}
+.badge.intelligence:before{content:"◆";font-size:5px;margin-right:3px}
+.media-tech-line{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.media-tech-line span{font-size:6px;color:#aab4bd;background:#161c22;border-radius:4px;padding:3px 5px}
+.media-intelligence-section .ins-actions{margin-top:8px}
