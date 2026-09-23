@@ -17,21 +17,19 @@
 - **V0.17** — Media Intelligence : ffprobe, filmstrips backend, empreinte perceptuelle, prises proches et continuité structurée.
 - **V0.18** — Semantic Vision & Continuity : embeddings locaux optionnels, références visuelles validées, propositions de tags acceptées/rejetées humainement.
 - **V0.19** — Audio Editing & Mixing : dB, pan, rôles, fades graphiques, volume automation, Web Audio, Solo/Mute et meters stéréo.
+- **V0.20** — Audio Intelligence & Loudness : LUFS, true peak, silences, normalisation non destructive, clipping estimé, ducking et crossfade.
 
-## V0.20 — Audio Intelligence & Loudness
+## V0.21 — Audio Delivery & Master Check
 
-- analyse LUFS intégrée côté backend ;
-- peak / true peak ;
-- normalisation non destructive ;
-- cible loudness configurable selon export ;
-- ducking VO/DIALOGUE → MUSIC proposé sous forme d’enveloppe ;
-- validation humaine avant application du ducking ;
-- crossfade audio ;
-- détection de silence / respiration utile ;
-- suggestions de niveau selon rôle ;
-- contrôle de clipping avant publication/export.
+- rendu audio/master temporaire via ffmpeg pour mesure finale ;
+- LUFS intégré du mix rendu ;
+- true peak master ;
+- validation de cible avant export ;
+- presets de livraison configurables, sans prétendre à une norme universelle ;
+- rapport de conformité audio exportable ;
+- éventuellement limiteur uniquement en option explicitement choisie.
 
-## V0.21 — Editorial Vision Refinement
+## V0.22 — Editorial Vision Refinement
 
 - fenêtres IN/OUT candidates issues de ruptures/changements visuels ;
 - références visuelles ciblées sur une zone ou un frame plutôt qu’un rush complet ;
@@ -39,7 +37,7 @@
 - détection de conflit entre tags sémantiques et Canon ;
 - comparaison de continuité plan précédent / plan suivant.
 
-## V0.22 — Motion & Delivery
+## V0.23 — Motion & Delivery
 
 - titres et overlays éditables ;
 - carton final ;
@@ -54,7 +52,7 @@
 - tests navigateur approfondis de drag/trim/ripple/fades ;
 - performances sur catalogues média importants ;
 - packaging desktop Tauri ;
-- premier test PISTE 0 → Tesseract réel → teaser exporté.
+- premier test PISTE 0 → vrai Tesseract → teaser exporté.
 
 ## Plus tard
 
