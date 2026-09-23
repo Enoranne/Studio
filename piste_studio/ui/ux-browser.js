@@ -1,7 +1,7 @@
-let viewerMode='program',browserFilter='all',indexMode='clips',activeWorkspace='edit';
+let viewerMode=PisteState.get('viewerMode'),browserFilter=PisteState.get('browserFilter'),indexMode=PisteState.get('indexMode'),activeWorkspace=PisteState.get('workspace');
 
 function setViewerMode(mode,{silent=false}={}){
-  viewerMode=mode==='source'?'source':'program';
+  viewerMode=PisteState.set('viewerMode',mode==='source'?'source':'program');
   document.body.classList.toggle('source-mode',viewerMode==='source');
   $$('.viewer-tab').forEach(b=>b.classList.toggle('active',b.dataset.monitor===viewerMode));
   $('#monitorMode').textContent=viewerMode==='source'?'Source sélectionnée':'Timeline';
@@ -15,7 +15,7 @@ function setViewerMode(mode,{silent=false}={}){
 }
 
 function showSourceMedia(m,time=0,play=false){
-  pausePlayback();viewerMode='source';document.body.classList.add('source-mode');
+  pausePlayback();viewerMode=PisteState.set('viewerMode','source');document.body.classList.add('source-mode');
   $$('.viewer-tab').forEach(b=>b.classList.toggle('active',b.dataset.monitor==='source'));
   $('#monitorMode').textContent='Source sélectionnée';
   $('#viewerSource').textContent=`SOURCE · ${m.file}`;
