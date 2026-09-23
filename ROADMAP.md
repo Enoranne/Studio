@@ -11,30 +11,36 @@
 - **V0.11** — timeline UI publiée en V001+, authoring Tesseract vidéo + audio.
 - **V0.12** — refonte UX : Assemble/Edit/Review, Browser filmstrip, SOURCE/PROGRAM, Inspector contextuel, Timeline Index.
 - **V0.13** — Storyline magnétique : reorder/ripple trim, connexions parent/enfant, validation serveur des effets domino contre les locks.
+- **V0.14** — hardening : checkpoint/Undo persistant, schema v2 de démonstration, Playwright/Chromium en CI, store d’état UI initial.
 
-## V0.14 — Review hardening & Editorial Source Selector
+## V0.15 — Editorial Source Selector
 
-- marqueurs éditoriaux persistants ;
 - persistance backend des plages Favorite/Reject ;
-- point de connexion graphique déplaçable ;
-- previews/filmstrips Tesseract directement dans le Viewer ;
-- checkpoint / rollback explicite ;
-- inspection automatique des rushes avant coupe ;
+- marqueurs éditoriaux persistants ;
 - vraies vignettes filmstrip générées côté backend ;
 - fenêtres IN/OUT candidates ;
 - raisons éditoriales par coupe ;
-- validation humaine avant matérialisation.
+- validation humaine avant matérialisation ;
+- point de connexion graphique déplaçable.
 
-## V0.15 — Audio & motion
+## V0.16 — Audio & motion
 
 - fades audio en enveloppes natives Tesseract ;
 - titres et overlays éditables ;
 - carton final ;
 - export festival / social.
 
+## Avant V1
+
+- refactor progressif des globals JS vers état/actions ;
+- recovery après crash ;
+- tests navigateur de drag/trim/ripple ;
+- performances sur catalogues média importants ;
+- packaging desktop Tauri ;
+- premier test PISTE 0 → Tesseract réel → teaser exporté.
+
 ## Plus tard
 
 - A/B compare synchronisé ;
 - teaser 15/30/45 s et bande-annonce 60/75/90 s ;
-- desktop shell Tauri ;
 - adaptateurs Resolve / Premiere si pertinent.
