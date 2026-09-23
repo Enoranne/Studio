@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.19
+# Démarrage rapide — PISTE Studio v0.20
 
 ## 1. Installer
 
@@ -124,3 +124,16 @@ La vision locale fonctionne comme une aide à la continuité, pas comme une déc
 6. Contrôle les meters L/R dans le Viewer.
 7. Enregistre la timeline : le format V3 conserve gain, pan, rôles, fades et automation.
 8. À l’authoring Tesseract, le gain statique est appliqué ; les autres paramètres restent préservés tant que le schéma Tesseract installé ne confirme pas leur automation native.
+
+
+## Audio Intelligence V0.20
+
+1. Sélectionne un clip audio.
+2. Clique **Analyser loudness** pour mesurer LUFS, true peak, LRA et silences.
+3. Choisis une cible LUFS et un ceiling TP.
+4. Clique **Normaliser** puis examine le delta proposé avant **Accepter**.
+5. Utilise **Clipping** pour voir les clips dont le true peak estimé dépasse le plafond choisi.
+6. Sur un clip MUSIC, utilise **Ducking VO** pour générer une enveloppe selon les chevauchements VO/DIALOGUE.
+7. Pour deux clips audio adjacents de même piste, utilise **Crossfade suivant**.
+8. Ajuste ensuite manuellement les fades et keyframes si nécessaire.
+9. Avant une livraison finale, mesure le master rendu : le rapport V0.20 reste une estimation par clip.
