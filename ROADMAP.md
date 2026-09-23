@@ -14,17 +14,19 @@
 - **V0.14** — hardening : checkpoint/Undo persistant, schema v2, Playwright/Chromium en CI, store d’état UI initial.
 - **V0.15** — UX Refinement : Viewer-first, Browser plus visuel, Focus Mode, Overlays et Command Palette.
 - **V0.16** — Editorial Intelligence : Favorite/Reject persistants, marqueurs, Source Selector explicable et validation humaine.
+- **V0.17** — Media Intelligence locale : ffprobe, filmstrips backend, empreinte perceptuelle, prises proches et continuité par tags structurés.
 
-## V0.17 — Media Intelligence
+## V0.18 — Semantic Vision & Continuity
 
-- vignettes / filmstrips pré-calculés côté backend ;
-- inspection visuelle et sémantique des rushes ;
-- fenêtres IN/OUT candidates dérivées du contenu ;
-- continuité personnage / accessoire / décor ;
-- détection de doublons ou prises proches ;
-- raisons éditoriales enrichies sans remplacer la décision humaine.
+- proposition automatique de tags personnage / accessoire / décor ;
+- analyse d’images échantillonnées avec modèle visuel explicitement configuré ;
+- validation humaine avant écriture des tags ;
+- comparaison de continuité personnage / accessoire / décor / look ;
+- fenêtres IN/OUT candidates dérivées de changements visuels ;
+- détection plus robuste des doublons et prises quasi-identiques ;
+- traitement local privilégié ou consentement explicite si un service externe est choisi.
 
-## V0.18 — Audio & motion
+## V0.19 — Audio & motion
 
 - fades audio en enveloppes natives Tesseract ;
 - titres et overlays éditables ;
