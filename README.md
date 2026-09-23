@@ -2,6 +2,30 @@
 
 PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média, continuité visuelle et mixage audio non destructif**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
 
+## V0.22 — Editorial Vision Refinement
+
+La première brique V0.22 aide à repérer des **fenêtres SOURCE candidates** à l’intérieur d’un rush.
+
+### Fenêtres IN/OUT par ruptures visuelles
+
+Depuis l’Inspector **MEDIA INTELLIGENCE** ou `Ctrl/Cmd+K` → **Vision · Fenêtres IN/OUT**, PISTE Studio :
+
+- analyse localement le rush avec ffmpeg ;
+- détecte les changements de scène selon un seuil configurable ;
+- transforme ces ruptures en segments chronologiques ;
+- affiche chaque segment avec son IN, son OUT, sa durée et la raison de la proposition ;
+- permet de **Prévisualiser** ou **Charger IN/OUT**.
+
+Trois sensibilités sont proposées :
+
+- **Faible** : moins de ruptures, changements plus francs ;
+- **Normale** : réglage par défaut ;
+- **Forte** : davantage de ruptures potentielles.
+
+La fonction ne coupe jamais automatiquement la Storyline. **Charger IN/OUT** ne fait que préparer la plage SOURCE, exactement comme le Source Selector existant.
+
+Le moteur reste local et déterministe : aucune vidéo n’est envoyée vers un service externe pour cette analyse.
+
 ## V0.21 — Audio Delivery & Master Check
 
 La V0.21 ferme le principal écart audio restant : PISTE Studio peut désormais contrôler **le mix réellement rendu**, après sommation des sources audibles de la timeline.
