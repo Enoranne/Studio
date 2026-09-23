@@ -9,14 +9,14 @@ ROOT = Path(__file__).parents[1]
 UI = ROOT / "piste_studio" / "ui"
 
 
-def test_v020_ui_structure_and_assets(tmp_path):
+def test_v021_ui_structure_and_assets(tmp_path):
     root = tmp_path / "Project"
     init_project(root, "UI Test")
     app = create_app(root, UI / "index.html")
     client = TestClient(app)
     html = client.get("/").text
 
-    assert "PISTE Studio — Local App v0.20" in html
+    assert "PISTE Studio — Local App v0.21" in html
     assert 'id="audioMeters"' in html
     assert 'id="editorialDrawer"' in html
     assert "Storyline magnétique" in html
@@ -43,7 +43,7 @@ def test_v020_ui_structure_and_assets(tmp_path):
         assert len(r.content) > 100
 
 
-def test_v020_ux_contains_audio_intelligence_patterns():
+def test_v021_ux_contains_audio_intelligence_patterns():
     ux = (UI / "ux-audio-intelligence.js").read_text(encoding="utf-8")
     assert "LUFS-I" in ux
     assert "TRUE PEAK" in ux
@@ -52,3 +52,12 @@ def test_v020_ux_contains_audio_intelligence_patterns():
     assert "openDuckingProposal" in ux
     assert "openCrossfadeProposal" in ux
     assert "human" not in ux.lower() or "Validation humaine" in ux
+
+
+def test_v021_ux_contains_master_delivery_patterns():
+    ux = (UI / "ux-audio-delivery.js").read_text(encoding="utf-8")
+    assert "Master Check" in ux
+    assert "LUFS-I MASTER" in ux
+    assert "TRUE PEAK" in ux
+    assert "limiteur" in ux.lower()
+    assert "Télécharger le rapport JSON" in ux
