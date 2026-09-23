@@ -11,6 +11,7 @@ from piste_studio.app import create_app
 from piste_studio.project import init_project
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
+from piste_studio.media_intelligence import _write_analysis
 
 
 def _free_port():
@@ -27,7 +28,8 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
     (root / "rushes" / "malo_a.mp4").write_bytes(b"fake-a")
     (root / "rushes" / "malo_b.mp4").write_bytes(b"fake-b")
     scan_media(root)
-    for row in fetch_media_with_metadata(root):
+    rows = fetch_media_with_metadata(root)
+    for row in rows:
         set_media_metadata(
             root,
             row["id"],
@@ -35,6 +37,25 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             duration_seconds=8.0,
             rating=4,
             tags=["malo", "enfance"],
+        )
+    cache = root / "cache" / "filmstrips"
+    cache.mkdir(parents=True, exist_ok=True)
+    for index, row in enumerate(fetch_media_with_metadata(root), start=1):
+        strip = cache / f"browser_{index}.jpg"
+        strip.write_bytes(b"\xff\xd8\xff\xd9")
+        _write_analysis(
+            root,
+            row["id"],
+            status="READY",
+            technical={
+                "width": 1280,
+                "height": 720,
+                "fps": 24.0,
+                "video_codec": "h264",
+                "filename_tokens": ["malo"],
+            },
+            signature=["ffffffffffffffffffffffffffffffffffff"] * 6,
+            filmstrip_path=strip.relative_to(root).as_posix(),
         )
     app = create_app(root)
     port = _free_port()
@@ -60,6 +81,8 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             assert errors == [], f"JavaScript page errors on load: {errors}"
 
             expect(page.locator("#view-edit")).to_have_class(re.compile("active"))
+            expect(page.locator(".filmstrip-cache")).to_have_count(2)
+            expect(page.locator(".badge.intelligence")).to_have_count(2)
 
             page.get_by_role("button", name="Canon & Locks").click()
             expect(page.locator("#view-canon")).to_have_class(re.compile("active"))
@@ -123,6 +146,14 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
 
             page.locator(".media-row").first.click()
             expect(page.locator(".editorial-inspector-section")).to_be_visible()
+            expect(page.locator(".media-intelligence-section")).to_be_visible()
+            page.get_by_role("button", name="Prises proches").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator(".suggestion-card")).to_have_count(1)
+            expect(page.locator(".selector-policy")).to_contain_text("Indice local")
+            page.locator("#editorialDrawer .pane-close").click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
+
             page.get_by_role("button", name="Alternatives").click()
             expect(page.locator("#editorialDrawer")).to_be_visible()
             expect(page.locator(".suggestion-card")).to_have_count(1)
