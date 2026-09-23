@@ -49,6 +49,21 @@ from .semantic_vision import (
     propose_semantic_tags,
     resolve_semantic_proposal,
 )
+from .audio_intelligence import (
+    AudioIntelligenceError,
+    analyze_audio,
+    analyze_audio_catalog,
+    apply_crossfade,
+    apply_envelope,
+    apply_gain_adjustment,
+    clipping_risk_report,
+    detect_audio_tools,
+    get_audio_analysis,
+    list_audio_analysis,
+    normalization_proposal,
+    propose_crossfade,
+    propose_ducking,
+)
 
 
 def _media_payload(root: Path) -> list[dict]:
@@ -58,6 +73,7 @@ def _media_payload(root: Path) -> list[dict]:
         ranges_by_media.setdefault(int(r["media_id"]), []).append(r)
     analyses = list_media_analysis(root)
     semantic_profiles = list_semantic_profiles(root)
+    audio_analyses = list_audio_analysis(root)
     for item in fetch_media_with_metadata(root):
         row = dict(item)
         p = (root / row["relative_path"]).resolve()
@@ -68,6 +84,7 @@ def _media_payload(root: Path) -> list[dict]:
         analysis = analyses.get(int(row["id"]))
         row["analysis"] = analysis
         row["semantic_profile"] = semantic_profiles.get(int(row["id"]))
+        row["audio_loudness"] = audio_analyses.get(int(row["id"]))
         filmstrip_rel = analysis.get("filmstrip_path") if analysis else None
         row["filmstrip_url"] = (
             f"/api/media/{row['id']}/filmstrip"
@@ -85,7 +102,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.19")
+    app = FastAPI(title="PISTE Studio Local App", version="0.20")
     app.state.project_root = root
 
     @app.get("/")
@@ -94,7 +111,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/ui/{filename}")
     def ui_asset(filename: str):
-        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-semantic-vision.js", "ux-audio-mix.js", "backend.js"}:
+        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-semantic-vision.js", "ux-audio-mix.js", "ux-audio-intelligence.js", "backend.js"}:
             raise HTTPException(404, "Ressource UI introuvable.")
         path = ui_file.parent / filename
         if not path.exists():
@@ -104,7 +121,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.19", "project_root": str(root)}
+        return {"ok": True, "version": "0.20", "project_root": str(root)}
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
@@ -115,7 +132,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.19",
+            "app_version": "0.20",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},
@@ -347,6 +364,157 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 "media": _media_payload(root),
             }
         except SemanticVisionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/audio/intelligence/status")
+    def audio_intelligence_status():
+        tools = detect_audio_tools()
+        return {"ready": tools.ready, "ffmpeg": bool(tools.ffmpeg), "analyzer_version": "0.20-loudness-1"}
+
+    @app.post("/api/audio/analyze")
+    def audio_analyze_catalog(payload: dict = Body(default_factory=dict)):
+        return analyze_audio_catalog(
+            root,
+            force=bool(payload.get("force", False)),
+            detect_silences=bool(payload.get("silences", True)),
+        )
+
+    @app.post("/api/audio/{media_id}/analyze")
+    def audio_analyze_one(media_id: int, payload: dict = Body(default_factory=dict)):
+        try:
+            return analyze_audio(
+                root,
+                media_id,
+                force=bool(payload.get("force", False)),
+                detect_silences=bool(payload.get("silences", True)),
+            )
+        except AudioIntelligenceError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/normalize/propose")
+    def audio_normalize_propose(payload: dict = Body(...)):
+        try:
+            return normalization_proposal(
+                root,
+                int(payload["media_id"]),
+                target_lufs=float(payload.get("target_lufs", -16.0)),
+                true_peak_ceiling=float(payload.get("true_peak_ceiling", -1.5)),
+            )
+        except (AudioIntelligenceError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/normalize/apply")
+    def audio_normalize_apply(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        if not isinstance(timeline, dict):
+            raise HTTPException(422, "timeline doit être un objet.")
+        try:
+            after = apply_gain_adjustment(
+                timeline,
+                str(payload["clip_id"]),
+                float(payload["gain_adjustment_db"]),
+            )
+            clean = validate_timeline(root, after)
+            create_checkpoint(
+                root,
+                timeline,
+                edit_name=str(timeline.get("edit_name") or "teaser_30"),
+                reason=f"Normalisation audio · {payload['clip_id']}",
+            )
+            save_timeline(root, clean)
+            return {"ok": True, "timeline": clean}
+        except (AudioIntelligenceError, TimelineError, HistoryError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/clipping")
+    def audio_clipping(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        if not isinstance(timeline, dict):
+            raise HTTPException(422, "timeline doit être un objet.")
+        try:
+            clean = validate_timeline(root, timeline)
+            return clipping_risk_report(
+                root,
+                clean,
+                true_peak_ceiling=float(payload.get("true_peak_ceiling", -1.0)),
+            )
+        except (AudioIntelligenceError, TimelineError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/ducking/propose")
+    def audio_ducking_propose(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        if not isinstance(timeline, dict):
+            raise HTTPException(422, "timeline doit être un objet.")
+        try:
+            clean = validate_timeline(root, timeline)
+            return propose_ducking(
+                clean,
+                str(payload["music_clip_id"]),
+                reduction_db=float(payload.get("reduction_db", 8.0)),
+                attack_seconds=float(payload.get("attack_seconds", 0.25)),
+                release_seconds=float(payload.get("release_seconds", 0.5)),
+            )
+        except (AudioIntelligenceError, TimelineError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/ducking/apply")
+    def audio_ducking_apply(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        if not isinstance(timeline, dict):
+            raise HTTPException(422, "timeline doit être un objet.")
+        try:
+            after = apply_envelope(
+                timeline,
+                str(payload["music_clip_id"]),
+                list(payload.get("envelope") or []),
+            )
+            clean = validate_timeline(root, after)
+            create_checkpoint(
+                root,
+                timeline,
+                edit_name=str(timeline.get("edit_name") or "teaser_30"),
+                reason=f"Ducking audio · {payload['music_clip_id']}",
+            )
+            save_timeline(root, clean)
+            return {"ok": True, "timeline": clean}
+        except (AudioIntelligenceError, TimelineError, HistoryError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/crossfade/propose")
+    def audio_crossfade_propose(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        if not isinstance(timeline, dict):
+            raise HTTPException(422, "timeline doit être un objet.")
+        try:
+            clean = validate_timeline(root, timeline)
+            return propose_crossfade(
+                clean,
+                str(payload["left_clip_id"]),
+                str(payload["right_clip_id"]),
+                duration_seconds=float(payload.get("duration_seconds", 0.5)),
+            )
+        except (AudioIntelligenceError, TimelineError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/crossfade/apply")
+    def audio_crossfade_apply(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        proposal = payload.get("proposal")
+        if not isinstance(timeline, dict) or not isinstance(proposal, dict):
+            raise HTTPException(422, "timeline et proposal sont requis.")
+        try:
+            after = apply_crossfade(timeline, proposal)
+            clean = validate_timeline(root, after)
+            create_checkpoint(
+                root,
+                timeline,
+                edit_name=str(timeline.get("edit_name") or "teaser_30"),
+                reason=f"Crossfade audio · {proposal.get('left_clip_id')} / {proposal.get('right_clip_id')}",
+            )
+            save_timeline(root, clean)
+            return {"ok": True, "timeline": clean}
+        except (AudioIntelligenceError, TimelineError, HistoryError, KeyError, TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
 
     @app.get("/api/timeline")
