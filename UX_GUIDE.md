@@ -219,3 +219,32 @@ Le ducking doit rester une automation de volume ordinaire :
 Une collision accidentelle et un crossfade ne sont pas la même chose.
 
 PISTE Studio continue de refuser les overlaps même piste, sauf lorsque deux clips déclarent explicitement une relation de crossfade réciproque.
+
+
+## 22. Master : mesurer le mix rendu
+
+Une estimation par clip ne doit jamais être présentée comme un true peak master.
+
+Le contrôle de livraison doit :
+- rendre réellement les sources audibles ;
+- respecter Mute/Solo, gain, automation, fades, pan et crossfades ;
+- mesurer ensuite le fichier obtenu ;
+- distinguer clairement mesure source, estimation par clip et mesure master.
+
+## 23. Presets de livraison : repères, pas vérité universelle
+
+Une cible de loudness dépend du contexte de diffusion.
+
+L’interface peut proposer des presets pratiques, mais doit :
+- les présenter comme références configurables ;
+- afficher leurs valeurs ;
+- laisser l’utilisateur modifier cible, ceiling et tolérance ;
+- éviter toute formulation laissant croire à une norme unique valable partout.
+
+## 24. Limiteur : action explicite
+
+Un limiteur modifie le signal.
+
+Il ne doit donc jamais être activé silencieusement dans un Master Check.
+
+L’option reste désactivée par défaut et son état doit apparaître dans le rapport exporté.
