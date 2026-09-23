@@ -1,7 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "edit_name": "teaser_30",
   "duration_seconds": 30.0,
+  "storyline": {
+    "mode": "free",
+    "start": 17.24
+  },
   "tracks": [
     {"id":"video","name":"VIDEO","kind":"video","muted":false,"locked":false},
     {"id":"titles","name":"TITLES","kind":"title","muted":false,"locked":false},
@@ -12,5 +16,5 @@
   "clips": [
     {"id":"title1","track":"titles","label":"PISTE 0","text":"PISTE 0","start":24.0,"duration":3.0,"sourceStart":0.0}
   ],
-  "updated_at": "2026-09-23T16:36:35.166199+00:00"
+  "updated_at": "2026-09-23T18:30:00+00:00"
 }
