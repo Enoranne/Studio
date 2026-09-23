@@ -18,16 +18,7 @@
 - **V0.18** — Semantic Vision & Continuity : embeddings locaux optionnels, références visuelles validées, propositions de tags acceptées/rejetées humainement.
 - **V0.19** — Audio Editing & Mixing : dB, pan, rôles, fades graphiques, volume automation, Web Audio, Solo/Mute et meters stéréo.
 - **V0.20** — Audio Intelligence & Loudness : LUFS, true peak, silences, normalisation non destructive, clipping estimé, ducking et crossfade.
-
-## V0.21 — Audio Delivery & Master Check
-
-- rendu audio/master temporaire via ffmpeg pour mesure finale ;
-- LUFS intégré du mix rendu ;
-- true peak master ;
-- validation de cible avant export ;
-- presets de livraison configurables, sans prétendre à une norme universelle ;
-- rapport de conformité audio exportable ;
-- éventuellement limiteur uniquement en option explicitement choisie.
+- **V0.21** — Audio Delivery & Master Check : rendu master ffmpeg, sommation réelle, LUFS-I/true peak master, presets configurables, rapport JSON exportable et limiteur opt-in.
 
 ## V0.22 — Editorial Vision Refinement
 
