@@ -1,4 +1,4 @@
-function setWorkspace(name){activeWorkspace=name;document.body.classList.remove('workspace-assemble','workspace-edit','workspace-review');document.body.classList.add(`workspace-${name}`);$$('.workspace-switch button').forEach(b=>b.classList.toggle('active',b.dataset.workspace===name));if(name==='assemble'){document.body.classList.remove('browser-collapsed');document.body.classList.add('index-collapsed')}else if(name==='edit'){document.body.classList.remove('browser-collapsed','inspector-collapsed','index-collapsed')}else{document.body.classList.remove('index-collapsed')}requestAnimationFrame(()=>{renderTracks();drawAllWaveforms()})}
+function setWorkspace(name){activeWorkspace=PisteState.set('workspace',name);document.body.classList.remove('workspace-assemble','workspace-edit','workspace-review');document.body.classList.add(`workspace-${name}`);$$('.workspace-switch button').forEach(b=>b.classList.toggle('active',b.dataset.workspace===name));if(name==='assemble'){document.body.classList.remove('browser-collapsed');document.body.classList.add('index-collapsed')}else if(name==='edit'){document.body.classList.remove('browser-collapsed','inspector-collapsed','index-collapsed')}else{document.body.classList.remove('index-collapsed')}requestAnimationFrame(()=>{renderTracks();drawAllWaveforms()})}
 function toggleBrowser(){document.body.classList.toggle('browser-collapsed');requestAnimationFrame(renderTracks)}
 function toggleInspector(){document.body.classList.toggle('inspector-collapsed');requestAnimationFrame(renderTracks)}
 function toggleIndex(){document.body.classList.toggle('index-collapsed');requestAnimationFrame(renderTracks)}
@@ -7,8 +7,8 @@ function updateLocalStatus(){const nv=media.filter(m=>m.url).length,na=audioAsse
 
 $$('.workspace-switch button').forEach(b=>b.onclick=()=>setWorkspace(b.dataset.workspace));
 $$('.viewer-tab').forEach(b=>b.onclick=()=>setViewerMode(b.dataset.monitor));
-$$('.filter-chip').forEach(b=>b.onclick=()=>{browserFilter=b.dataset.filter;renderMedia()});
-$$('.index-tabs button').forEach(b=>b.onclick=()=>{indexMode=b.dataset.index;renderIndex()});
+$('.filter-chip').forEach(b=>b.onclick=()=>{browserFilter=PisteState.set('browserFilter',b.dataset.filter);renderMedia()});
+$('.index-tabs button').forEach(b=>b.onclick=()=>{indexMode=PisteState.set('indexMode',b.dataset.index);renderIndex()});
 $('#toggleBrowserBtn').onclick=toggleBrowser;$('#toggleInspectorBtn').onclick=toggleInspector;$('#toggleIndexBtn').onclick=toggleIndex;
 
 document.addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea'))return;const k=e.key.toLowerCase();if(k==='1')setWorkspace('assemble');if(k==='2')setWorkspace('edit');if(k==='3')setWorkspace('review');if(k==='b')toggleBrowser();if(k==='i')toggleInspector();if(k==='f')markRange('favorite');if(k==='x')markRange('reject');if(k==='p')setViewerMode(viewerMode==='program'?'source':'program')});
