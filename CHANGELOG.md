@@ -1,5 +1,21 @@
 # Changelog
 
+## V0.16 — Editorial Intelligence
+
+- Plages Favorite/Reject persistées dans SQLite.
+- Affichage des plages persistantes dans les filmstrips Browser.
+- Suppression individuelle des plages depuis l’Inspector.
+- Marqueurs persistants Note / Décision / Beat / Vigilance.
+- Marqueurs visibles sur la règle de timeline.
+- Raccourci `M` et composeur de marqueur.
+- Editorial Source Selector depuis une source ou un plan STORY.
+- Suggestions classées par signaux explicites : tags, canon, safe, rating, Favorite/Reject, spoiler et statut.
+- Fenêtre source Favorite proposée en priorité lorsqu’elle existe.
+- Prévisualisation d’une suggestion sans modification de la Storyline.
+- Chargement explicite d’une plage candidate en SOURCE.
+- Politique serveur : validation humaine obligatoire, remplacement automatique désactivé.
+- Tests backend/API et Chromium étendus aux fonctions éditoriales.
+
 ## V0.15 — UX Refinement
 
 - Viewer plus dominant et surfaces UI simplifiées.
