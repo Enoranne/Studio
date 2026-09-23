@@ -21,16 +21,29 @@ from .timeline import TimelineError, load_timeline, save_timeline, validate_time
 from .versioning import list_versions, create_timeline_version
 from .storyline import StorylineError, validate_locked_change
 from .history import HistoryError, create_checkpoint, history_status, undo_checkpoint
+from .editorial import (
+    add_marker,
+    delete_editorial_range,
+    delete_marker,
+    list_editorial_ranges,
+    list_markers,
+    set_editorial_range,
+    suggest_alternatives,
+)
 
 
 def _media_payload(root: Path) -> list[dict]:
     out = []
+    ranges_by_media: dict[int, list[dict]] = {}
+    for r in list_editorial_ranges(root):
+        ranges_by_media.setdefault(int(r["media_id"]), []).append(r)
     for item in fetch_media_with_metadata(root):
         row = dict(item)
         p = (root / row["relative_path"]).resolve()
         row["filename"] = p.name
         row["exists"] = p.exists() and p.is_file()
         row["stream_url"] = f"/api/media/{row['id']}" if row["exists"] else None
+        row["editorial_ranges"] = ranges_by_media.get(int(row["id"]), [])
         out.append(row)
     return out
 
@@ -42,7 +55,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.15")
+    app = FastAPI(title="PISTE Studio Local App", version="0.16")
     app.state.project_root = root
 
     @app.get("/")
@@ -61,7 +74,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.15", "project_root": str(root)}
+        return {"ok": True, "version": "0.16", "project_root": str(root)}
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
@@ -72,7 +85,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.15",
+            "app_version": "0.16",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},
@@ -80,6 +93,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             "versions": list_versions(root),
             "timeline": load_timeline(root, edit_name),
             "history": history_status(root, edit_name),
+            "markers": list_markers(root, edit_name),
             "master": {"ok": master_ok, "message": master_message},
             "tesseract": tesseract,
         }
@@ -103,6 +117,73 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         if not path.exists() or not path.is_file():
             raise HTTPException(404, "Fichier média absent.")
         return FileResponse(path)
+
+    @app.post("/api/media/{media_id}/ranges")
+    def editorial_range_set(media_id: int, payload: dict = Body(...)):
+        try:
+            row = set_editorial_range(
+                root,
+                media_id,
+                kind=str(payload.get("kind") or ""),
+                source_in=float(payload.get("source_in", 0)),
+                source_out=float(payload.get("source_out", 0)),
+                note=payload.get("note"),
+            )
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {
+            "ok": True,
+            "range": row,
+            "ranges": list_editorial_ranges(root, media_id),
+        }
+
+    @app.delete("/api/editorial/ranges/{range_id}")
+    def editorial_range_delete(range_id: int):
+        if not delete_editorial_range(root, range_id):
+            raise HTTPException(404, "Plage éditoriale introuvable.")
+        return {"ok": True}
+
+    @app.get("/api/markers")
+    def editorial_markers(edit_name: str = "teaser_30"):
+        return {"markers": list_markers(root, edit_name)}
+
+    @app.post("/api/markers")
+    def editorial_marker_add(payload: dict = Body(...)):
+        try:
+            row = add_marker(
+                root,
+                edit_name=str(payload.get("edit_name") or "teaser_30"),
+                time_seconds=float(payload.get("time_seconds", 0)),
+                label=str(payload.get("label") or ""),
+                kind=str(payload.get("kind") or "note"),
+                note=payload.get("note"),
+                media_id=payload.get("media_id"),
+            )
+        except (ValueError, TypeError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"ok": True, "marker": row}
+
+    @app.delete("/api/markers/{marker_id}")
+    def editorial_marker_delete(marker_id: int):
+        if not delete_marker(root, marker_id):
+            raise HTTPException(404, "Marqueur introuvable.")
+        return {"ok": True}
+
+    @app.get("/api/editorial/suggest/{media_id}")
+    def editorial_suggest(
+        media_id: int,
+        limit: int = 5,
+        max_spoiler: int | None = None,
+    ):
+        try:
+            return suggest_alternatives(
+                root,
+                media_id,
+                limit=limit,
+                max_spoiler=max_spoiler,
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.get("/api/timeline")
     def get_timeline(edit_name: str = "teaser_30"):
