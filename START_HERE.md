@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.15
+# Démarrage rapide — PISTE Studio v0.16
 
 ## 1. Installer
 
@@ -67,3 +67,13 @@ Avant chaque reorder/ripple validé, PISTE Studio crée un checkpoint persistant
 - **Command Palette** : `Ctrl/Cmd+K`.
 - **Overlays Viewer** : choisir l’affichage du timecode, du mix et de la plage IN/OUT.
 - **Échap** : fermer un menu ou quitter le Focus.
+
+
+## Editorial Intelligence V0.16
+
+1. Dans SOURCE, règle IN / OUT.
+2. Utilise **F** pour enregistrer la plage comme Favorite ou **X** pour Reject.
+3. Utilise **M** dans la timeline pour poser une Note, Décision, Beat ou Vigilance.
+4. Depuis l’Inspector, clique **Alternatives** pour ouvrir l’Editorial Source Selector.
+5. Lis les raisons proposées et prévisualise les candidats.
+6. **Charger la plage** ne modifie que la sélection SOURCE ; la Storyline n’est jamais remplacée automatiquement.
