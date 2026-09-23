@@ -144,3 +144,26 @@ def test_publish_timeline_creates_version_and_tesseract_dry_run(tmp_path):
     plan = dry.json()["plan"]
     assert len(plan["cuts"]) == 1
     assert len(plan["audio_cuts"]) == 1
+
+
+def test_storyline_validate_endpoint_accepts_magnetic_connection(tmp_path):
+    root = make_project(tmp_path)
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    timeline = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 30,
+        "storyline": {"mode": "magnetic", "start": 5},
+        "tracks": [
+            {"id": "video", "name": "VIDEO", "kind": "video"},
+            {"id": "vo", "name": "VO", "kind": "audio"},
+        ],
+        "clips": [
+            {"id": "v1", "track": "video", "start": 5, "duration": 4, "sourceStart": 0},
+            {"id": "a1", "track": "vo", "start": 6, "duration": 1, "sourceStart": 0,
+             "parentClipId": "v1", "anchorOffset": 1, "connectionMode": "follow"},
+        ],
+    }
+    r = client.post("/api/storyline/validate", json={"before": timeline, "after": timeline})
+    assert r.status_code == 200, r.text
+    assert r.json()["timeline"]["storyline"]["mode"] == "magnetic"
