@@ -39,6 +39,16 @@ from .media_intelligence import (
     list_media_analysis,
     media_similarity,
 )
+from .semantic_vision import (
+    SemanticVisionError,
+    analyze_semantic_catalog,
+    analyze_semantic_media,
+    detect_semantic_vision,
+    list_semantic_profiles,
+    list_semantic_proposals,
+    propose_semantic_tags,
+    resolve_semantic_proposal,
+)
 
 
 def _media_payload(root: Path) -> list[dict]:
@@ -47,6 +57,7 @@ def _media_payload(root: Path) -> list[dict]:
     for r in list_editorial_ranges(root):
         ranges_by_media.setdefault(int(r["media_id"]), []).append(r)
     analyses = list_media_analysis(root)
+    semantic_profiles = list_semantic_profiles(root)
     for item in fetch_media_with_metadata(root):
         row = dict(item)
         p = (root / row["relative_path"]).resolve()
@@ -56,6 +67,7 @@ def _media_payload(root: Path) -> list[dict]:
         row["editorial_ranges"] = ranges_by_media.get(int(row["id"]), [])
         analysis = analyses.get(int(row["id"]))
         row["analysis"] = analysis
+        row["semantic_profile"] = semantic_profiles.get(int(row["id"]))
         filmstrip_rel = analysis.get("filmstrip_path") if analysis else None
         row["filmstrip_url"] = (
             f"/api/media/{row['id']}/filmstrip"
@@ -73,7 +85,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.17")
+    app = FastAPI(title="PISTE Studio Local App", version="0.18")
     app.state.project_root = root
 
     @app.get("/")
@@ -82,7 +94,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/ui/{filename}")
     def ui_asset(filename: str):
-        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "backend.js"}:
+        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-semantic-vision.js", "backend.js"}:
             raise HTTPException(404, "Ressource UI introuvable.")
         path = ui_file.parent / filename
         if not path.exists():
@@ -92,7 +104,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.17", "project_root": str(root)}
+        return {"ok": True, "version": "0.18", "project_root": str(root)}
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
@@ -103,7 +115,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.17",
+            "app_version": "0.18",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},
@@ -253,6 +265,89 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         if not path.exists() or not path.is_file():
             raise HTTPException(404, "Filmstrip absent du cache.")
         return FileResponse(path, media_type="image/jpeg")
+
+    @app.get("/api/vision/status")
+    def semantic_vision_status():
+        return asdict(detect_semantic_vision())
+
+    @app.post("/api/vision/analyze")
+    def semantic_vision_analyze_catalog(payload: dict = Body(default_factory=dict)):
+        try:
+            return analyze_semantic_catalog(
+                root,
+                allow_model_download=bool(
+                    payload.get("allow_model_download", False)
+                ),
+            )
+        except SemanticVisionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/vision/analyze/{media_id}")
+    def semantic_vision_analyze_media(
+        media_id: int,
+        payload: dict = Body(default_factory=dict),
+    ):
+        try:
+            return analyze_semantic_media(
+                root,
+                media_id,
+                allow_model_download=bool(
+                    payload.get("allow_model_download", False)
+                ),
+                force_frames=bool(payload.get("force_frames", False)),
+            )
+        except SemanticVisionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/vision/proposals/{media_id}")
+    def semantic_vision_proposals(media_id: int):
+        try:
+            return {
+                "media_id": media_id,
+                "policy": {
+                    "human_validation_required": True,
+                    "automatic_tag_write": False,
+                    "automatic_storyline_change": False,
+                },
+                "proposals": list_semantic_proposals(root, media_id),
+            }
+        except SemanticVisionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/vision/propose/{media_id}")
+    def semantic_vision_propose(
+        media_id: int,
+        payload: dict = Body(default_factory=dict),
+    ):
+        try:
+            return propose_semantic_tags(
+                root,
+                media_id,
+                reset_rejected=bool(
+                    payload.get("reset_rejected", False)
+                ),
+            )
+        except SemanticVisionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/vision/proposals/{proposal_id}/resolve")
+    def semantic_vision_resolve(
+        proposal_id: int,
+        payload: dict = Body(...),
+    ):
+        if "accept" not in payload:
+            raise HTTPException(422, "accept est requis.")
+        try:
+            return {
+                "proposal": resolve_semantic_proposal(
+                    root,
+                    proposal_id,
+                    accept=bool(payload["accept"]),
+                ),
+                "media": _media_payload(root),
+            }
+        except SemanticVisionError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.get("/api/timeline")
     def get_timeline(edit_name: str = "teaser_30"):
