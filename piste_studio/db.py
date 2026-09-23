@@ -33,6 +33,18 @@ CREATE TABLE IF NOT EXISTS media_metadata (
     FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS media_analysis (
+    media_id INTEGER PRIMARY KEY,
+    analyzer_version TEXT NOT NULL,
+    status TEXT NOT NULL,
+    technical_json TEXT NOT NULL DEFAULT '{}',
+    visual_signature_json TEXT NOT NULL DEFAULT '[]',
+    filmstrip_path TEXT,
+    analyzed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS edit_versions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     edit_name TEXT NOT NULL,
