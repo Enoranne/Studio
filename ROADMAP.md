@@ -5,33 +5,34 @@
 - **V0.01** — projet local, master SHA-256, canon, HARD/SOFT/OPEN, SQLite.
 - **V0.02** — Decision Engine, trailer-safe/spoiler, versions et PATCH.
 - **V0.03** — bridge Tesseract séparé, version pin, dry-run, bootstrap, preview/filmstrip/export.
-- **V0.04** — authoring vidéo Tesseract via checkout/commit, sourceRange/activeRange, remplacement atomique.
+- **V0.04** — authoring vidéo Tesseract transactionnel.
 - **V0.05–V0.09 UI** — Media Library, timeline multi-pistes, drag/trim, viewer multi-source, audio local, waveforms, gain/fades.
-- **V0.10** — application locale UI + FastAPI, projet réel comme source de vérité.
-- **V0.11** — timeline UI publiée en V001+, authoring Tesseract vidéo + audio, preview/export depuis l’application.
+- **V0.10** — application locale UI + FastAPI.
+- **V0.11** — timeline UI publiée en V001+, authoring Tesseract vidéo + audio.
+- **V0.12** — refonte UX : workspaces Assemble/Edit/Review, Browser filmstrip, SOURCE/PROGRAM, Inspector contextuel, Storyline principale, Timeline Index, panneaux repliables.
 
-## V0.12 — Audio & review hardening
+## V0.13 — Storyline & review hardening
 
-- matérialiser les fades audio en enveloppes natives Tesseract ;
-- vérifier le mix final et les éventuelles doubles lectures audio ;
-- comparer structure avant/après authoring ;
-- afficher preview/filmstrip directement dans l’UI ;
+- vrai comportement magnétique/ripple pour la Storyline ;
+- rattachement explicite des titres/VO/SFX à un plan ou à un point de storyline ;
+- marqueurs éditoriaux persistants ;
+- persistance backend des plages Favorite/Reject ;
+- afficher les previews/filmstrips Tesseract directement dans le Viewer ;
 - checkpoint / rollback explicite.
 
-## V0.13 — Editorial Source Selector
+## V0.14 — Editorial Source Selector
 
-- inspection des rushes avant coupe ;
-- filmstrips sources et waveform ;
+- inspection automatique des rushes avant coupe ;
+- vraies vignettes filmstrip générées côté backend ;
 - fenêtres IN/OUT candidates ;
 - raisons éditoriales par coupe ;
 - validation humaine avant matérialisation.
 
-## V0.14 — Titres & motion graphics
+## V0.15 — Audio & motion
 
-- titres éditables ;
-- overlays ;
+- fades audio en enveloppes natives Tesseract ;
+- titres et overlays éditables ;
 - carton final ;
-- motifs graphiques canon ;
 - export festival / social.
 
 ## Plus tard
