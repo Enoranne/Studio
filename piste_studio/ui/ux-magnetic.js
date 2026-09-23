@@ -57,7 +57,7 @@ function validateCandidate(candidate,original=clips){
     if(c.parentClipId){const p=candidate.find(x=>x.id===c.parentClipId&&x.track==='video');if(!p)return `Parent manquant pour ${c.label}`;if(Math.abs(c.start-(p.start+(+c.anchorOffset||0)))>1e-4)return `Connexion incohérente pour ${c.label}`}
     (byTrack[c.track]??=[]).push(c)
   }
-  for(const arr of Object.values(byTrack)){arr.sort((a,b)=>a.start-b.start);for(let i=1;i<arr.length;i++){if(arr[i].start<arr[i-1].start+arr[i-1].duration-1e-6)return `Collision : ${arr[i-1].label} / ${arr[i].label}`}}
+  for(const arr of Object.values(byTrack)){arr.sort((a,b)=>a.start-b.start);for(let i=1;i<arr.length;i++){if(arr[i].start<arr[i-1].start+arr[i-1].duration-1e-6&&!(typeof audioCrossfadeAllowed==='function'&&audioCrossfadeAllowed(arr[i-1],arr[i])))return `Collision : ${arr[i-1].label} / ${arr[i].label}`}}
   const story=storyClipsSorted(candidate);let cursor=getStorylineStart();for(const c of story){if(Math.abs(c.start-cursor)>1e-4)return 'Storyline non contiguë';cursor+=c.duration}
   return null
 }
