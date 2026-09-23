@@ -88,6 +88,8 @@ const commands=[
   {label:'Viewer · Overlays',hint:'',keywords:'overlay timecode mix in out',run:toggleOverlayMenu},
   {label:'Editorial · Ajouter un marqueur',hint:'M',keywords:'marker note decision beat vigilance',run:()=>typeof openMarkerComposer==='function'&&openMarkerComposer()},
   {label:'Editorial · Trouver des alternatives',hint:'',keywords:'source selector alternatives prise rush',run:()=>typeof openSourceSelector==='function'&&openSourceSelector()},
+  {label:'Média · Analyser le catalogue',hint:'',keywords:'analyze analyse ffmpeg filmstrip media intelligence',run:()=>typeof analyzeMediaCatalog==='function'&&analyzeMediaCatalog()},
+  {label:'Média · Prises proches',hint:'',keywords:'similar take duplicate proche visual',run:()=>typeof openSimilarTakes==='function'&&openSimilarTakes()},
 ];
 function filteredCommands(){
   const q=($('#commandSearch')?.value||'').trim().toLowerCase();
