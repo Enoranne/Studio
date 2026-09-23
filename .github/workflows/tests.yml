@@ -11,6 +11,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -e '.[dev]'
+      - name: Install ffmpeg for audio delivery tests
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install Chromium for UI tests
         run: python -m playwright install --with-deps chromium
       - name: Check UI JavaScript syntax
