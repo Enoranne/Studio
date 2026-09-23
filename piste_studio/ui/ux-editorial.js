@@ -151,7 +151,11 @@ async function saveMarker(){
 $('#markerSaveBtn').onclick=saveMarker;
 $('#markerLabel').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveMarker()}if(e.key==='Escape')closeMarkerComposer()});
 document.addEventListener('pointerdown',e=>{const box=$('#markerComposer');if(box&&!box.hidden&&!e.target.closest('#markerComposer')&&!e.target.closest('#addMarkerBtn'))closeMarkerComposer()});
-document.addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea'))return;if(e.key.toLowerCase()==='m'){e.preventDefault();openMarkerComposer()}});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!$('#editorialDrawer').hidden){closeEditorialDrawer();return}
+  if(e.target.matches('input,select,textarea'))return;
+  if(e.key.toLowerCase()==='m'){e.preventDefault();openMarkerComposer()}
+});
 
 const _v015RenderTracksForMarkers=renderTracks;
 renderTracks=function(){_v015RenderTracksForMarkers();requestAnimationFrame(renderEditorialMarkers)}
