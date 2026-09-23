@@ -395,7 +395,7 @@ def _load_document_schema(version_dir: Path, *, require_audio: bool = False) -> 
     path = version_dir / ".tesseract-work" / "document.schema.json"
     if not path.exists():
         raise TesseractBridgeError(
-            "Schéma document absent : exécutez d'abord \`tesseract bootstrap --execute\`."
+            "Schéma document absent : exécutez d'abord `tesseract bootstrap --execute`."
         )
     try:
         schema = json.loads(path.read_text(encoding="utf-8"))
