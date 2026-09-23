@@ -1,53 +1,53 @@
 # PISTE Studio
 
-PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions et PATCH**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
+PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH et historique de sécurité**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
 
-## V0.13 — Storyline magnétique
+## V0.14 — Hardening
 
-La V0.13 transforme la Storyline de la V0.12 en un véritable système de montage ripple avec connexions éditoriales :
+La V0.14 consolide les fondations avant de reprendre l’ajout de fonctions éditoriales.
 
-- déplacement d’un plan STORY = **réordonnancement magnétique** ;
-- les plans STORY se recalent sans trou à partir du point de départ de la Storyline ;
-- trim IN/OUT d’un plan STORY = **ripple trim** ;
-- les plans situés en aval se décalent automatiquement ;
-- TITLES / VO / MUSIC / SFX peuvent être reliés à un plan parent ;
-- un élément connecté conserve son anchorOffset quand son parent se déplace ;
-- l’Inspector permet d’attacher, changer de parent ou détacher un élément ;
-- supprimer un plan referme la Storyline ; ses anciens enfants sont détachés plutôt que supprimés ;
-- l’API valide la timeline transformée et vérifie les HARD/SOFT LOCKS avant validation ;
-- les anciennes timelines V0.12 ne sont pas modifiées silencieusement au chargement.
+### Fiabilité
 
-L’interface conserve les acquis V0.12 : workspaces ASSEMBLE / EDIT / REVIEW, Browser à filmstrips, Viewer SOURCE / PROGRAM, Inspector contextuel, Timeline Index, panneaux repliables, sélection IN/OUT, Favorite/Reject, Canon, Trailer-safe et Spoiler.
+- correction de la navigation réelle `Montage / Canon & Locks / Versions` ;
+- démo migrée vers le schéma timeline v2 ;
+- checkpoint persistant avant les opérations magnétiques ;
+- Undo persistant via `Ctrl/Cmd+Z` et bouton `Undo` ;
+- restauration de la timeline précédente côté backend ;
+- les checkpoints suivent les branches d’édition : après un Undo, une nouvelle opération abandonne la branche future ;
+- état d’historique exposé par l’API.
 
-### Modèle de connexion
+### Tests
 
-Un élément connecté stocke parentClipId, anchorOffset et connectionMode=follow. Si le parent se décale de +3 s, l’enfant suit de +3 s tout en conservant son offset relatif.
+La CI contrôle désormais trois niveaux :
 
-### Sécurité
+1. tests Python du moteur et de l’API ;
+2. `node --check` sur tous les modules JavaScript ;
+3. **Chromium réel via Playwright**, avec clics sur les vues et workspaces et surveillance des erreurs de page.
 
-La V0.13 distingue deux validations : une validation locale immédiate (bornes, collisions, durée source, pistes verrouillées, cohérence des connexions), puis une validation serveur du schéma de timeline et des locks du projet. Un ripple qui ferait traverser un HARD LOCK à un plan, un titre ou un son est refusé.
+Ce troisième niveau a déjà détecté une régression que les tests syntaxiques ne voyaient pas.
 
-### État technique
+### Architecture UI
 
-- master protégé par SHA-256 ;
-- canon YAML et locks HARD / SOFT / OPEN ;
-- catalogue média SQLite ;
-- application locale FastAPI + UI navigateur ;
-- Storyline magnétique + connexions parent/enfant ;
-- timeline multi-pistes, drag/drop, ripple trim, Source IN, gain et fades ;
-- publication de timeline en versions V001+ ;
-- bridge Tesseract version-pinné ;
-- authoring vidéo et audio transactionnel ;
-- preview, filmstrip et export ;
-- CI Python + contrôle syntaxique JavaScript.
+Un store central `PisteState` a été introduit pour commencer à réduire les variables globales. La migration reste volontairement progressive : workspace, mode SOURCE/PROGRAM, filtre Browser et mode Index y passent d’abord.
 
-### Limites V0.13
+### Storyline
 
-- Favorite/Reject reste un état UI de session, non persisté côté backend ;
-- le point de connexion est actuellement un offset temporel, pas encore un marqueur graphique déplaçable indépendant ;
-- les fades audio ne sont pas encore transformés en enveloppes natives Tesseract ;
-- les titres restent décrits dans timeline.json ;
-- le premier test avec le vrai CLI Tesseract et les vrais rushes PISTE 0 reste à effectuer sur la machine de l’utilisateur.
+Les acquis V0.13 restent actifs :
+
+- déplacement d’un plan STORY = réordonnancement magnétique ;
+- ripple trim IN/OUT ;
+- connexions parent/enfant pour TITLES / VO / MUSIC / SFX ;
+- maintien de l’`anchorOffset` ;
+- validation serveur des effets domino contre les locks ;
+- migration prudente des anciennes timelines.
+
+### Limites encore connues
+
+- Favorite/Reject n’est pas encore persisté côté backend ;
+- le point de connexion reste un offset temporel, pas encore un marqueur graphique manipulable ;
+- les fades audio ne sont pas encore matérialisés en enveloppes natives Tesseract ;
+- le premier test de bout en bout avec le **vrai CLI Tesseract et les vrais rushes PISTE 0** reste à effectuer sur la machine de l’utilisateur ;
+- le refactor du state JavaScript n’est qu’amorcé.
 
 ## Installation
 
@@ -61,17 +61,19 @@ Lancer l’application :
 
 ## Workflow
 
-1. ASSEMBLE : définir les plages source et construire la Storyline.
-2. EDIT : réordonner les plans, trimmer en ripple et connecter VO/SFX/TITLES.
-3. REVIEW : contrôler Viewer, Index, Locks et décisions.
-4. Enregistrer puis Publier pour créer V001+.
-5. Tesseract pour matérialiser la version publiée.
-6. Preview / Export.
+1. ASSEMBLE : parcourir les rushes et définir les plages source.
+2. EDIT : construire/réordonner la Storyline, ripple trim, connecter audio/titres.
+3. Chaque opération magnétique validée crée un checkpoint.
+4. Ctrl/Cmd+Z ou Undo restaure le checkpoint précédent.
+5. REVIEW : contrôler Viewer, Index, Locks et décisions.
+6. Enregistrer puis Publier pour créer V001+.
+7. Tesseract pour matérialiser la version publiée.
 
 ## Tests
 
     pip install -e '.[dev]'
-    pytest -q
+    python -m playwright install chromium
     find piste_studio/ui -name '*.js' -print0 | xargs -0 -n1 node --check
+    pytest -q
 
-Voir aussi START_HERE.md, ROADMAP.md, THIRD_PARTY.md et LICENSE_NOTE.md.
+Voir aussi `START_HERE.md`, `ROADMAP.md`, `README_APP.md`, `THIRD_PARTY.md` et `LICENSE_NOTE.md`.
