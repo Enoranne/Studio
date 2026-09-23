@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
+import hashlib
 import math
 import re
 import shutil
@@ -12,7 +13,7 @@ from .audio_intelligence import detect_audio_tools, measure_loudness
 from .metadata import fetch_media_with_metadata
 
 
-AUDIO_DELIVERY_VERSION = "0.21-master-1"
+AUDIO_DELIVERY_VERSION = "0.21-master-2"
 DEFAULT_TARGET_LUFS = -16.0
 DEFAULT_TRUE_PEAK_CEILING = -1.0
 DEFAULT_LOUDNESS_TOLERANCE = 1.0
@@ -76,6 +77,73 @@ def _safe_name(value: str) -> str:
     cleaned = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value or "mix")).strip("._")
     return cleaned or "mix"
 
+
+def audio_mix_fingerprint(timeline: dict) -> str:
+    """Hash only audio-delivery-relevant timeline state."""
+    tracks = []
+    for track in timeline.get("tracks", []):
+        ident = str(track.get("id") or "")
+        kind = str(track.get("kind") or ident).lower()
+        if kind not in {"audio", "vo", "dialogue", "music", "ambience", "sfx"}:
+            continue
+        tracks.append({
+            "id": ident,
+            "kind": kind,
+            "muted": bool(track.get("muted")),
+            "solo": bool(track.get("solo")),
+        })
+    tracks.sort(key=lambda item: item["id"])
+
+    clips = []
+    for clip in timeline.get("clips", []):
+        if clip.get("audioDbId") is None:
+            continue
+        envelope = [
+            {
+                "time": round(float(point.get("time") or 0.0), 6),
+                "gainDb": round(float(point.get("gainDb") or 0.0), 6),
+            }
+            for point in (clip.get("volumeEnvelope") or [])
+            if isinstance(point, dict)
+        ]
+        envelope.sort(key=lambda point: point["time"])
+        clips.append({
+            "id": str(clip.get("id") or ""),
+            "track": str(clip.get("track") or ""),
+            "audioDbId": int(clip["audioDbId"]),
+            "start": round(float(clip.get("start") or 0.0), 6),
+            "duration": round(float(clip.get("duration") or 0.0), 6),
+            "sourceStart": round(float(clip.get("sourceStart") or 0.0), 6),
+            "gainDb": round(float(clip.get("gainDb") or 0.0), 6),
+            "pan": round(float(clip.get("pan") or 0.0), 6),
+            "fadeIn": round(float(clip.get("fadeIn") or 0.0), 6),
+            "fadeOut": round(float(clip.get("fadeOut") or 0.0), 6),
+            "audioRole": str(clip.get("audioRole") or ""),
+            "crossfadeWith": (
+                str(clip.get("crossfadeWith"))
+                if clip.get("crossfadeWith") is not None
+                else None
+            ),
+            "crossfadeDuration": round(
+                float(clip.get("crossfadeDuration") or 0.0),
+                6,
+            ),
+            "volumeEnvelope": envelope,
+        })
+    clips.sort(key=lambda item: item["id"])
+
+    payload = {
+        "duration_seconds": round(float(timeline.get("duration_seconds") or 0.0), 6),
+        "tracks": tracks,
+        "clips": clips,
+    }
+    raw = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
 
 def _audio_tracks(timeline: dict) -> dict[str, dict]:
     out = {}
