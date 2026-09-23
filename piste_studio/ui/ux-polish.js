@@ -92,6 +92,8 @@ const commands=[
   {label:'Média · Prises proches',hint:'',keywords:'similar take duplicate proche visual',run:()=>typeof openSimilarTakes==='function'&&openSimilarTakes()},
   {label:'Vision · Analyser le rush',hint:'',keywords:'semantic clip local vision analyse',run:()=>typeof analyzeSemanticSelected==='function'&&analyzeSemanticSelected(false)},
   {label:'Vision · Proposer continuité',hint:'',keywords:'semantic continuity character prop decor look',run:()=>typeof openSemanticContinuity==='function'&&openSemanticContinuity()},
+  {label:'Audio · Ajouter un point de volume',hint:'',keywords:'audio automation keyframe gain volume',run:()=>typeof addAudioAutomationPoint==='function'&&addAudioAutomationPoint()},
+  {label:'Audio · Effacer automation',hint:'',keywords:'audio clear automation volume',run:()=>typeof clearAudioAutomation==='function'&&clearAudioAutomation()},
 ];
 function filteredCommands(){
   const q=($('#commandSearch')?.value||'').trim().toLowerCase();
