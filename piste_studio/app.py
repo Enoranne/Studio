@@ -17,8 +17,9 @@ from .metadata import fetch_media_with_metadata
 from .project import load_project, verify_master
 from .tesseract_bridge import detect_tesseract, execute_bootstrap, execute_preview, execute_filmstrip, execute_export, TesseractBridgeError
 from .authoring import execute_authoring
-from .timeline import TimelineError, load_timeline, save_timeline
+from .timeline import TimelineError, load_timeline, save_timeline, validate_timeline
 from .versioning import list_versions, create_timeline_version
+from .storyline import StorylineError, validate_locked_change
 
 
 def _media_payload(root: Path) -> list[dict]:
@@ -112,6 +113,19 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except TimelineError as exc:
             raise HTTPException(422, str(exc)) from exc
         return {"ok": True, "path": str(path.relative_to(root)), "timeline": load_timeline(root, payload.get("edit_name") or "teaser_30")}
+
+    @app.post("/api/storyline/validate")
+    def storyline_validate(payload: dict = Body(...)):
+        before = payload.get("before")
+        after = payload.get("after")
+        if not isinstance(before, dict) or not isinstance(after, dict):
+            raise HTTPException(422, "before et after doivent être des timelines.")
+        try:
+            clean = validate_timeline(root, after)
+            validate_locked_change(root, before, clean)
+        except (TimelineError, StorylineError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"ok": True, "timeline": clean}
 
     @app.post("/api/locks/check")
     def lock_check(payload: dict = Body(...)):
