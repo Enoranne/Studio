@@ -79,6 +79,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             "media": _media_payload(root),
             "versions": list_versions(root),
             "timeline": load_timeline(root, edit_name),
+            "history": history_status(root, edit_name),
             "master": {"ok": master_ok, "message": master_message},
             "tesseract": tesseract,
         }
