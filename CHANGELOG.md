@@ -1,5 +1,29 @@
 # Changelog
 
+## V0.19 — Audio Editing & Mixing
+
+- Timeline schema v3.
+- Migration automatique du gain legacy 0..1 vers gain dB.
+- Gain audio -60 à +12 dB.
+- Pan stéréo -1 à +1.
+- Rôles dialogue / VO / music / ambience / SFX.
+- Volume automation par keyframes.
+- Poignées graphiques de fade in / fade out.
+- Points d’automation manipulables directement sur les clips.
+- Preview Web Audio avec GainNode et StereoPannerNode.
+- Bus audio par piste + master.
+- Mute / Solo / Lock par piste.
+- Solo persisté dans la timeline.
+- Meters stéréo L/R dans le Viewer.
+- Inspector AUDIO MIX.
+- Audio automation dans la Command Palette.
+- Authoring Tesseract schema v3.
+- gainDb/pan/rôle/fades/enveloppe conservés dans le plan d’authoring.
+- Gain statique matérialisé dans Tesseract.
+- Automation Tesseract native explicitement différée jusqu’à confirmation du schéma installé.
+- Démo migrée en timeline schema v3.
+- Tests backend/API/UI/Chromium étendus au mixage audio.
+
 ## V0.18 — Semantic Vision & Continuity
 
 - Provider de vision locale optionnel basé sur CLIP.
