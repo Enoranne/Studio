@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PISTE Studio — Local App v0.14</title>
+<title>PISTE Studio — Local App v0.15</title>
 <link rel="stylesheet" href="/ui/style.css" />
 </head>
 <body class="workspace-edit">
@@ -11,7 +11,7 @@
   <header class="appbar">
     <div class="brand-row">
       <div class="brand-mark"><span></span></div>
-      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.14 · LOCAL</small></div>
+      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.15 · LOCAL</small></div>
       <div class="project-pill"><span id="projectName">PISTE 0</span><small id="projectSubtitle">BONUS TRACK (REC)</small></div>
     </div>
     <div class="workspace-switch" role="group" aria-label="Espace de travail">
@@ -57,7 +57,7 @@
         <aside class="browser-panel pane" id="browserPanel">
           <div class="pane-title">
             <div><strong>BROWSER</strong><small id="mediaCount">0</small></div>
-            <button class="pane-close" onclick="toggleBrowser()">×</button>
+            <div class="pane-title-actions"><button class="pane-tool focus-trigger" data-focus-pane="browser" type="button" title="Agrandir le Browser">⛶</button><button class="pane-close" onclick="toggleBrowser()">×</button></div>
           </div>
           <div class="browser-tools">
             <input id="mediaSearch" class="search" placeholder="Rechercher rush, tag, rôle…">
@@ -76,7 +76,7 @@
         <section class="viewer-panel pane">
           <div class="viewer-toolbar">
             <div class="viewer-tabs"><button class="viewer-tab" data-monitor="source">SOURCE</button><button class="viewer-tab active" data-monitor="program">PROGRAM</button></div>
-            <div class="viewer-meta"><span id="monitorMode">Timeline</span><span id="viewerSource">NO MEDIA</span></div>
+            <div class="viewer-meta"><span id="monitorMode">Timeline</span><span id="viewerSource">NO MEDIA</span><button class="viewer-tool" id="overlayBtn" type="button">Overlays</button><button class="viewer-tool focus-trigger" data-focus-pane="viewer" type="button" title="Agrandir le Viewer">⛶</button></div>
           </div>
           <div class="viewer-stage" id="viewer">
             <video id="video" playsinline muted></video>
@@ -94,7 +94,7 @@
         </section>
 
         <aside class="inspector-panel pane" id="inspectorPanel">
-          <div class="pane-title"><div><strong>INSPECTEUR</strong><small id="selectionKind">CLIP</small></div><button class="pane-close" onclick="toggleInspector()">×</button></div>
+          <div class="pane-title"><div><strong>INSPECTEUR</strong><small id="selectionKind">CLIP</small></div><div class="pane-title-actions"><button class="pane-tool focus-trigger" data-focus-pane="inspector" type="button" title="Agrandir l’Inspecteur">⛶</button><button class="pane-close" onclick="toggleInspector()">×</button></div></div>
           <div class="inspector" id="inspector"></div>
         </aside>
 
@@ -112,7 +112,7 @@
                 <button class="btn tiny" onclick="addAudio('music')">+ Music</button>
                 <button class="btn tiny" onclick="addAudio('sfx')">+ SFX</button>
               </div>
-              <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span></div>
+              <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span><button class="timeline-focus focus-trigger" data-focus-pane="timeline" type="button" title="Agrandir la Timeline">⛶</button></div>
               <div class="timeline-right"><label>Snap</label><select id="snap"><option value="0.1">0,1</option><option value="0.5" selected>0,5</option><option value="1">1,0</option></select><span class="lock-readout" id="hardLockLabel">LOCKS</span></div>
             </div>
             <div class="ruler" id="ruler"></div>
@@ -131,8 +131,22 @@
       <div class="cards" id="versionsCards"></div>
     </section>
   </main>
-  <footer class="statusbar"><span id="backendFoot">MASTER_PROTECTED = TRUE · mode local</span><span id="shortcutHelp">1 Assemble · 2 Edit · 3 Review · B Browser · I Inspector · F Favorite · X Reject</span></footer>
+  <footer class="statusbar"><span id="backendFoot">MASTER_PROTECTED = TRUE · mode local</span><span id="shortcutHelp">1 Assemble · 2 Edit · 3 Review · ⌘K Commandes · ~ Focus · F Favorite · X Reject</span></footer>
 </div>
+<div class="overlay-popover" id="overlayMenu" hidden>
+  <div class="popover-title">OVERLAYS VIEWER</div>
+  <label><input type="checkbox" id="overlayHud" checked> Timecode / version</label>
+  <label><input type="checkbox" id="overlayMix"> État du mix</label>
+  <label><input type="checkbox" id="overlayRange" checked> IN / OUT source</label>
+</div>
+<div class="command-backdrop" id="commandPalette" hidden>
+  <div class="command-panel" role="dialog" aria-modal="true" aria-label="Palette de commandes">
+    <div class="command-search-row"><span>⌘K</span><input id="commandSearch" placeholder="Rechercher une commande…" autocomplete="off"></div>
+    <div class="command-results" id="commandResults"></div>
+    <div class="command-footer"><span>↑↓ naviguer</span><span>Entrée exécuter</span><span>Échap fermer</span></div>
+  </div>
+</div>
+<div class="focus-exit" id="focusExit" hidden>~ Quitter le focus</div>
 <div class="toast" id="toast"></div>
 <script src="/ui/state.js"></script>
 <script src="/ui/editor.js"></script>
@@ -140,6 +154,7 @@
 <script src="/ui/ux-timeline.js"></script>
 <script src="/ui/ux-magnetic.js"></script>
 <script src="/ui/ux-shell.js"></script>
+<script src="/ui/ux-polish.js"></script>
 <script src="/ui/backend.js"></script>
 </body>
 </html>
