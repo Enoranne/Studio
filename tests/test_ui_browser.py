@@ -415,6 +415,24 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
             expect(page.locator("#masterCheckResult")).to_contain_text("-1.3 dBTP")
             expect(page.locator("#mixMeter")).to_contain_text("MASTER")
             expect(page.get_by_role("link", name="Télécharger le rapport JSON")).to_be_visible()
+            page.locator("#editorialDrawer .pane-close").click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
+
+            page.evaluate("""
+                openAudioExportAdvisory({
+                    status: 'STALE',
+                    can_export: true,
+                    previous_status: 'PASS',
+                    message: 'Le mix audio a changé depuis le dernier Master Check.',
+                    reasons: ['Relancer le Master Check est recommandé avant livraison.'],
+                    measurement: {integrated_lufs: -16.2, true_peak_dbfs: -1.3}
+                })
+            """)
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator("#editorialDrawer")).to_contain_text("STALE")
+            expect(page.get_by_role("button", name="Lancer Master Check")).to_be_visible()
+            expect(page.get_by_role("button", name="Exporter quand même")).to_be_visible()
+            expect(page.locator("#editorialDrawer")).to_contain_text("Export non bloqué")
 
             assert errors == []
             browser.close()
