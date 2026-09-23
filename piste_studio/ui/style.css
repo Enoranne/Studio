@@ -107,3 +107,32 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .semantic-resolved-row.accepted b{color:#7db48e}
 .semantic-resolved-row.rejected b{color:#b56f6f}
 .semantic-vision-section .btn.primary{background:#292233;color:#cbb5df}
+
+
+/* V0.19 — Audio Editing & Mixing */
+.audio-meters{--meter-l:0%;--meter-r:0%;position:absolute;right:10px;bottom:10px;z-index:14;display:grid;grid-template-columns:8px 58px;gap:3px 5px;align-items:center;padding:5px 6px;border-radius:6px;background:rgba(5,7,9,.72);backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.06)}
+.meter-label{font:5.8px ui-monospace,monospace;color:#77828b}
+.meter-track{position:relative;height:4px;border-radius:999px;background:#20262c;overflow:hidden}
+.meter-fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:linear-gradient(90deg,#617c6c 0%,#93b07b 70%,#c9a76d 88%,#c8736d 100%);transition:width .045s linear}
+.meter-l{width:var(--meter-l)}.meter-r{width:var(--meter-r)}
+.audio-meters:after{content:attr(data-peak-l) " / " attr(data-peak-r);grid-column:1/-1;font:5.4px ui-monospace,monospace;color:#59636d;text-align:right}
+.audio-mix-enhanced{overflow:visible}
+.audio-mix-overlay{position:absolute;inset:0;z-index:8;pointer-events:none}
+.automation-line{position:absolute;inset:3px 5px 4px;width:calc(100% - 10px);height:calc(100% - 7px);overflow:visible;pointer-events:none}
+.automation-line path{fill:none;stroke:rgba(231,190,145,.62);stroke-width:1.1;vector-effect:non-scaling-stroke}
+.fade-grip,.automation-point{position:absolute;z-index:11;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;border:1px solid #e6bc91;background:#211912;box-shadow:0 0 0 2px rgba(8,10,12,.6);pointer-events:auto;cursor:ew-resize;padding:0}
+.fade-grip{top:7px;background:#c98b59}
+.fade-out-grip{margin-left:0;margin-right:-4px}
+.automation-point{transform:translateY(-50%);cursor:move;background:#e1b07e}
+.fade-grip:hover,.automation-point:hover{box-shadow:0 0 0 3px rgba(224,172,119,.18)}
+.audio-mix-enhanced .waveform-canvas{opacity:.72}
+.audio-role-note{display:inline-flex;margin:4px 0 10px;padding:4px 6px;border-radius:5px;background:#151b20;color:#91a0aa;font-size:6px;letter-spacing:.3px}
+.automation-list{display:grid;gap:3px;margin-bottom:7px}
+.automation-row{display:grid;grid-template-columns:1fr 1fr 20px;align-items:center;padding:4px 5px;border-radius:4px;background:#12171c;font-size:6.3px;color:#87929c}
+.automation-row b{font-weight:600;color:#d0a77d}
+.automation-row button{border:0;background:transparent;color:#64707a}
+.track-controls .solo-btn.on{background:#604b21;color:#f1ca78;border-color:#7a6130}
+.track-controls .solo-btn{font-weight:700}
+.audio-mix-section .row input,.audio-mix-section .row select{font-variant-numeric:tabular-nums}
+.audio-mix-section .ins-actions{margin-top:8px}
+.viewer-stage.hide-mix #audioMeters{display:none!important}
