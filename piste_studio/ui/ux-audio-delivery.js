@@ -67,3 +67,28 @@ async function runMasterCheck(){
     toast('Master Check : '+err.message,true)
   }
 }
+
+
+function openAudioExportAdvisory(status){
+  const d=$('#editorialDrawer');if(!d)return;
+  const state=String(status?.status||'MISSING').toUpperCase();
+  const m=status?.measurement||{};
+  const reasons=(status?.reasons||[]).map(x=>`<em>${x}</em>`).join('');
+  d.hidden=false;
+  $('#editorialDrawerTitle').textContent='Préflight export audio';
+  $('#editorialDrawerBody').innerHTML=`
+    <div class="selector-policy"><span>AUDIO DELIVERY</span><b>${state}</b><small>Export non bloqué</small></div>
+    <div class="loudness-proposal">
+      <span>${status?.message||'État Master Check indisponible.'}</span>
+      ${m.integrated_lufs==null?'':`<span>LUFS-I : ${(+m.integrated_lufs).toFixed(1)} LUFS</span>`}
+      ${m.true_peak_dbfs==null?'':`<span>True peak : ${(+m.true_peak_dbfs).toFixed(1)} dBTP</span>`}
+      ${status?.previous_status&&state==='STALE'?`<span>Dernier contrôle : ${status.previous_status}</span>`:''}
+      ${reasons}
+    </div>
+    <div class="hint">PISTE Studio recommande un Master Check à jour avant livraison, mais ne bloque pas l’export.</div>
+    <div class="suggestion-actions">
+      <button class="btn primary" onclick="closeEditorialDrawer();openMasterCheck()">Lancer Master Check</button>
+      <button class="btn" onclick="closeEditorialDrawer();exportTesseract(true)">Exporter quand même</button>
+      <button class="btn" onclick="closeEditorialDrawer()">Annuler</button>
+    </div>`;
+}
