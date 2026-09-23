@@ -35,6 +35,7 @@ def test_v021_ui_structure_and_assets(tmp_path):
         "ux-semantic-vision.js",
         "ux-audio-mix.js",
         "ux-audio-intelligence.js",
+        "ux-audio-delivery.js",
         "backend.js",
     )
     for asset in assets:
