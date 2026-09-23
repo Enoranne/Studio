@@ -6,7 +6,7 @@
     indexMode: "clips",
     focusPane: null,
     overlayHud: true,
-    overlayMix: false,
+    overlayMix: true,
     overlayRange: true,
   };
   const listeners = new Set();
