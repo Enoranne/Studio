@@ -245,6 +245,8 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
 
             expect(page.locator("#audioMeters")).to_be_visible()
             page.locator('.clip[data-clip="a1"]').click()
+            page.wait_for_timeout(80)
+            assert errors == [], f"Audio inspector page errors: {errors}"
             expect(page.locator(".audio-mix-section")).to_be_visible()
             expect(page.locator("#gainDbInput")).to_have_value("-6.0")
             expect(page.locator('.clip[data-clip="a1"] .fade-in-grip')).to_be_visible()
