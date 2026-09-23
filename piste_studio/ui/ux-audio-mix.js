@@ -202,7 +202,7 @@ function appendAudioMixInspector(){
     ${audioEnvelopeList(c)}
     <div class="ins-actions"><button class="btn" onclick="addAudioAutomationPoint()">+ Point au playhead</button><button class="btn" onclick="clearAudioAutomation()">Effacer automation</button></div>
     <div class="hint">Les points de volume et les poignées de fade sont manipulables directement sur le clip. Preview Web Audio : gain, pan, fades et automation sont audibles.</div>`;
-  const action=root.querySelector('.ins-actions');if(action)root.insertBefore(section,action);else root.appendChild(section)
+  root.appendChild(section)
 }
 const _v018RenderInspectorAudio=renderInspector;
 renderInspector=function(){_v018RenderInspectorAudio();appendAudioMixInspector()}
