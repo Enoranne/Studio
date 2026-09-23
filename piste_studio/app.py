@@ -59,7 +59,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.11", "project_root": str(root)}
+        return {"ok": True, "version": "0.12", "project_root": str(root)}
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
