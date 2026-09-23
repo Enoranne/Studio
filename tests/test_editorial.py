@@ -13,6 +13,7 @@ from piste_studio.editorial import (
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.project import init_project
+from piste_studio.media_intelligence import _write_analysis
 
 
 def make_editorial_project(tmp_path: Path) -> Path:
@@ -29,7 +30,7 @@ def make_editorial_project(tmp_path: Path) -> Path:
         title="Malo Fisher",
         duration_seconds=12,
         rating=4,
-        tags=["malo", "enfance", "fisher"],
+        tags=["malo", "enfance", "fisher", "character:malo", "decor:salon"],
     )
     set_media_metadata(
         root,
@@ -37,7 +38,7 @@ def make_editorial_project(tmp_path: Path) -> Path:
         title="Malo Radio",
         duration_seconds=10,
         rating=5,
-        tags=["malo", "enfance", "radio"],
+        tags=["malo", "enfance", "radio", "character:malo", "decor:salon"],
     )
     set_media_metadata(
         root,
@@ -120,6 +121,22 @@ def test_source_selector_is_explainable_and_prefers_strong_match(tmp_path):
         source_in=1.5,
         source_out=5.5,
     )
+    _write_analysis(
+        root,
+        reference["id"],
+        status="READY",
+        technical={"filename_tokens": ["malo"]},
+        signature=["ffffffffffffffffffffffffffffffffffff"] * 6,
+        filmstrip_path=None,
+    )
+    _write_analysis(
+        root,
+        alternative["id"],
+        status="READY",
+        technical={"filename_tokens": ["malo"]},
+        signature=["ffffffffffffffffffffffffffffffffffff"] * 6,
+        filmstrip_path=None,
+    )
 
     result = suggest_alternatives(
         root, reference["id"], limit=5, max_spoiler=0
@@ -132,3 +149,6 @@ def test_source_selector_is_explainable_and_prefers_strong_match(tmp_path):
     assert "Tags communs" in reasons
     assert "Média canonique" in reasons
     assert "plage Favorite" in reasons
+    assert "visuellement proche" in reasons
+    assert "Continuité personnage" in reasons
+    assert "Continuité décor" in reasons
