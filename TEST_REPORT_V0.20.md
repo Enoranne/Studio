@@ -4,120 +4,143 @@ Date : 23 septembre 2026
 
 ## Résultat
 
-- Python/API/UI : **69 tests passés / 69** sur le dernier commit fonctionnel V0.20.
+- Python/API/UI : **69 tests passés / 69**.
 - JavaScript : tous les modules UI passent `node --check`.
 - Chromium réel via Playwright : succès.
-- Scénario navigateur : normalisation, clipping, ducking et crossfade acceptés sans `pageerror`.
+- Aucune `pageerror` dans le scénario V0.20 final.
 
-## Analyse loudness locale
+## Loudness
 
-PISTE Studio utilise ffmpeg localement pour mesurer les sources audio :
+Validé :
 
+- parsing du rapport ffmpeg loudnorm ;
 - LUFS intégré ;
 - true peak source ;
-- loudness range (LRA) ;
-- threshold loudness ;
-- plages de silence.
-
-Les analyses sont persistées dans SQLite avec version d’analyse.
+- loudness range ;
+- loudness threshold ;
+- persistance SQLite ;
+- détection de silences ;
+- dégradation explicite si ffmpeg manque.
 
 ## Normalisation non destructive
 
-La normalisation :
+Le moteur calcule :
 
-- part d’une cible LUFS choisie ;
-- respecte un ceiling true peak choisi ;
-- limite le gain proposé si nécessaire ;
-- ne réécrit pas le média source ;
-- applique le delta au gain du clip ;
-- translate également les keyframes existants ;
-- exige une acceptation humaine ;
-- crée un checkpoint avant application.
+- différence entre LUFS source et cible ;
+- headroom true peak ;
+- gain effectivement applicable ;
+- LUFS estimé après correction ;
+- true peak estimé après correction.
 
-Le scénario Chromium valide notamment :
+Cas testé :
 
-- source -20 LUFS ;
-- true peak -4 dBTP ;
-- cible -16 LUFS ;
-- ceiling -1.5 dBTP ;
-- gain théorique +4 dB ;
-- gain accepté +2.5 dB car limité par le true peak.
+- source : -20 LUFS ;
+- TP : -4 dBTP ;
+- cible : -16 LUFS ;
+- ceiling : -1.5 dBTP ;
+- gain théorique : +4 dB ;
+- gain proposé : +2.5 dB ;
+- proposition signalée comme limitée par true peak.
+
+L’acceptation modifie le gain du clip et décale ses keyframes éventuels sans toucher au fichier source.
 
 ## Clipping
 
-Le rapport de clipping V0.20 est explicitement une **estimation par clip** :
+Le rapport V0.20 est volontairement nommé **risque de clipping par clip**.
 
-source true peak + gain maximal du clip/automation.
+Méthode :
 
-Il ne prétend pas mesurer le true peak du master final ni l’addition de plusieurs sources simultanées.
+    true peak source + gain maximal du clip/automation
+
+Il ne prétend pas mesurer le true peak du master après sommation de plusieurs sources.
+
+Les tests valident les statuts OK / RISK selon le ceiling choisi.
 
 ## Ducking
 
-Sur un clip MUSIC, PISTE Studio détecte les chevauchements avec VO et DIALOGUE et propose :
+Le moteur :
 
-- réduction configurable ;
-- attack ;
-- release ;
-- enveloppe de volume éditable ;
-- liste des clips de parole ayant déclenché la proposition.
+- cible uniquement MUSIC ;
+- cherche les chevauchements VO / DIALOGUE ;
+- ignore SFX et autres rôles ;
+- fusionne les intervalles de parole ;
+- crée attack / réduction / release ;
+- retourne une enveloppe proposée ;
+- n’applique rien automatiquement.
 
-La proposition ne modifie rien avant acceptation humaine.
+Chromium valide :
 
-Le scénario Chromium valide l’acceptation et la création des points d’automation sur le clip MUSIC.
+- ouverture de Ducking VO ;
+- présence du clip VO comme déclencheur ;
+- acceptation ;
+- création visible des quatre keyframes attendus sur MUSIC.
 
 ## Crossfade
 
-V0.20 autorise un overlap audio sur une même piste uniquement lorsqu’il est explicitement déclaré comme crossfade réciproque.
+Le moteur V0.20 :
 
-Le crossfade :
-
-- concerne deux clips audio de la même piste ;
-- crée l’overlap nécessaire lorsque les clips sont adjacents ;
+- cible deux clips audio de même piste ;
+- accepte des clips adjacents ;
+- crée un overlap contrôlé ;
 - ajoute fade out / fade in ;
-- stocke `crossfadeWith` ;
-- stocke `crossfadeDuration` ;
-- passe par validation humaine.
+- écrit une relation réciproque `crossfadeWith` ;
+- écrit `crossfadeDuration`.
 
-Le scénario Chromium valide un crossfade de 0.50 s et les badges sur les deux clips.
+Timeline schema v4 :
 
-## Timeline schema v4
+- les overlaps même piste restent refusés par défaut ;
+- seul un crossfade réciproque explicite est autorisé.
 
-Le schema v4 conserve :
+Chromium valide :
 
-- gain dB ;
-- pan ;
-- rôle ;
-- fades ;
-- volume automation ;
-- Mute / Solo ;
-- relation de crossfade.
+- ouverture de Crossfade suivant ;
+- durée proposée 0,50 s ;
+- acceptation ;
+- présence des badges crossfade sur les deux clips.
 
-Les collisions arbitraires restent interdites.
+## Checkpoint / réversibilité
 
-## Limites assumées
+Les routes d’application serveur créent un checkpoint avant sauvegarde pour :
 
-V0.20 ne fournit pas encore :
+- normalisation ;
+- ducking ;
+- crossfade.
 
-- mesure LUFS du **master mixé final** ;
-- true peak master final ;
-- limiteur/mastering automatique ;
-- norme de diffusion imposée ;
-- détection sémantique de respiration ;
-- correction destructive des sources.
+Les médias source restent immuables.
 
-Ces points appartiennent à V0.21 Audio Delivery & Master Check.
+## Scénario Chromium final
 
-## Validation CI
+Le test navigateur couvre notamment :
 
-Dernier commit fonctionnel V0.20 validé :
+- toutes les fonctions V0.15–V0.19 déjà présentes ;
+- affichage LUFS et true peak source ;
+- proposition de normalisation limitée par true peak ;
+- acceptation de la normalisation ;
+- nouveau gain visible sur le clip ;
+- rapport Clipping ;
+- proposition Ducking VO ;
+- acceptation et automation visible ;
+- proposition Crossfade ;
+- acceptation et badges XF ;
+- absence d’erreur JavaScript.
 
-- workflow GitHub Actions : 35920871304 ;
-- 69 passed ;
-- 1 warning Starlette/TestClient sans incidence fonctionnelle ;
-- avertissement GitHub Actions Node.js 20 → 24 sur actions externes, sans incidence PISTE Studio.
+## Limites
+
+- pas encore de mesure du master final rendu ;
+- pas encore de true peak master après sommation ;
+- pas encore de rapport de conformité livraison ;
+- silence détecté != respiration sémantiquement pertinente ;
+- aucune norme LUFS universelle n’est imposée ;
+- aucun limiteur automatique ;
+- automation Tesseract native toujours dépendante du schéma réellement installé.
+
+## Avertissements CI
+
+- Starlette/TestClient : dépréciation autour de httpx ;
+- GitHub Actions : migration Node.js 20 → 24 pour certaines actions externes.
+
+Ces avertissements ne correspondent pas à une régression PISTE Studio.
 
 ## Conclusion
 
-V0.20 transforme le mixage V0.19 en chaîne audio assistée mais contrôlée : PISTE Studio mesure, estime et propose ; l’utilisateur reste responsable de l’application des changements.
-
-La prochaine étape logique est V0.21 : rendre temporairement le mix complet, mesurer ce master et comparer le résultat réel aux objectifs de livraison.
+V0.20 complète le rattrapage audio commencé en V0.19 : PISTE Studio sait désormais mesurer une source, raisonner sur une cible loudness, proposer une correction limitée par le true peak, détecter un risque de clipping, construire un ducking explicable et créer des crossfades réversibles, tout en maintenant l’utilisateur comme décisionnaire.
