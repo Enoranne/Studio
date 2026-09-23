@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.14
+# Démarrage rapide — PISTE Studio v0.15
 
 ## 1. Installer
 
@@ -56,3 +56,14 @@ Dans EDIT, déplacer un plan STORY réordonne la Storyline et recale l’aval. T
 ## Sécurité d’édition V0.14
 
 Avant chaque reorder/ripple validé, PISTE Studio crée un checkpoint persistant. Utilisez **Undo** ou **Ctrl/Cmd+Z** pour restaurer l’état précédent. Les tests CI ouvrent désormais l’interface dans Chromium et vérifient les clics de navigation en plus des tests Python et du contrôle syntaxique JavaScript.
+
+
+## UX V0.15
+
+- **ASSEMBLE** : sélectionner et préparer les sources avec un Browser dominant.
+- **EDIT** : montage principal avec Viewer, Inspector et Storyline.
+- **REVIEW** : lecture avec Viewer dominant et Index.
+- **Focus Mode** : survoler un panneau puis utiliser `~`, ou cliquer sur `⛶`.
+- **Command Palette** : `Ctrl/Cmd+K`.
+- **Overlays Viewer** : choisir l’affichage du timecode, du mix et de la plage IN/OUT.
+- **Échap** : fermer un menu ou quitter le Focus.
