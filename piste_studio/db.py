@@ -45,6 +45,38 @@ CREATE TABLE IF NOT EXISTS media_analysis (
     FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS semantic_profiles (
+    media_id INTEGER NOT NULL,
+    provider TEXT NOT NULL,
+    model_id TEXT NOT NULL,
+    embedding_json TEXT NOT NULL DEFAULT '[]',
+    frame_count INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL,
+    analyzed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(media_id, provider, model_id),
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS semantic_tag_proposals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    media_id INTEGER NOT NULL,
+    tag TEXT NOT NULL,
+    facet TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    provider TEXT NOT NULL,
+    model_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    evidence_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(media_id, tag, provider, model_id),
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_semantic_proposals_media
+ON semantic_tag_proposals(media_id, status);
+
 CREATE TABLE IF NOT EXISTS edit_versions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     edit_name TEXT NOT NULL,
