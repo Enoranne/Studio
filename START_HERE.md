@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.17
+# Démarrage rapide — PISTE Studio v0.18
 
 ## 1. Installer
 
@@ -90,3 +90,21 @@ Avant chaque reorder/ripple validé, PISTE Studio crée un checkpoint persistant
 7. **Alternatives** utilise ces signaux avec Favorite/Reject, Canon, Safe et Spoiler.
 
 Si ffmpeg/ffprobe n’est pas présent, le reste de PISTE Studio continue de fonctionner et l’analyse affiche explicitement que les outils sont indisponibles.
+
+
+## Semantic Vision V0.18
+
+1. Commence par valider quelques tags de référence sur des rushes fiables :
+   - `character:malo`
+   - `prop:fisher`
+   - `decor:salon`
+   - `look:warm-tungsten`
+2. Installe la vision locale si souhaité : `pip install -e '.[vision]'`.
+3. Sélectionne un rush puis clique **Analyser vision**.
+4. Si le modèle n’est pas déjà en cache, PISTE Studio demande une autorisation explicite avant téléchargement.
+5. Clique **Proposer continuité**.
+6. Examine le score, le seuil et les rushes de référence.
+7. **Accepter** écrit le tag ; **Rejeter** mémorise le refus.
+8. Aucune proposition ne modifie la Storyline.
+
+La vision locale fonctionne comme une aide à la continuité, pas comme une décision automatique d’identité.
