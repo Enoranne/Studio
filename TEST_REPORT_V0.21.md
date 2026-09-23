@@ -4,7 +4,7 @@ Date : 23 septembre 2026
 
 ## Résultat
 
-- Python/API/UI : **76 tests passés / 76**.
+- Python/API/UI : **79 tests passés / 79**.
 - JavaScript : tous les modules UI passent `node --check`.
 - Chromium réel via Playwright : succès.
 - Le scénario navigateur ouvre **Audio · Master Check**, vérifie que le limiteur est désactivé par défaut, exécute le contrôle et affiche le résultat master.
@@ -114,6 +114,37 @@ Validé dans Chromium :
 - mise à jour de l’overlay MIX du Viewer ;
 - lien de téléchargement du rapport JSON.
 
+## Durcissement export / fraîcheur du contrôle
+
+Le rapport Master Check stocke désormais une empreinte SHA-256 du mix audio pertinent.
+
+Le préflight d’export distingue :
+
+- **PASS** : rapport à jour et conforme ;
+- **WARN** : rapport à jour mais hors cible ou ceiling ;
+- **STALE** : état audio modifié depuis la mesure ;
+- **MISSING** : rapport absent ou inexploitable.
+
+Ces états restent **non bloquants** côté serveur. Dans l’interface, WARN / STALE / MISSING ouvrent un avertissement avec :
+
+- **Lancer Master Check** ;
+- **Exporter quand même** ;
+- **Annuler**.
+
+Le scénario Chromium valide notamment l’affichage STALE et la présence d’**Exporter quand même**.
+
+## Test ffmpeg réellement end-to-end
+
+La CI installe ffmpeg système explicitement.
+
+Un test génère deux fichiers WAV sinusoïdaux réels, puis exécute la chaîne complète :
+
+**WAV → timeline audio → automation/fades/pan → amix ffmpeg → PCM 48 kHz/24 bits → loudnorm → rapport Master Check**.
+
+Le test vérifie que LUFS intégré, true peak et LRA sont réellement mesurés, que le fichier master existe et que l’empreinte du rapport correspond au mix.
+
+Sur le run de référence, ce test est exécuté : **aucun skip**.
+
 ## Incidents détectés pendant l’intégration
 
 La CI a permis d’identifier puis corriger trois défauts d’intégration avant validation finale :
@@ -126,11 +157,11 @@ Les trois problèmes sont corrigés et couverts par la CI finale.
 
 ## CI finale
 
-Run GitHub Actions #318 :
+Run GitHub Actions #329 :
 
 - conclusion : **success** ;
 - syntaxe JavaScript : **success** ;
-- pytest : **76 passed** ;
+- pytest : **79 passed, 0 skipped** ;
 - Chromium / Playwright : **success**.
 
 ## Avertissements CI
