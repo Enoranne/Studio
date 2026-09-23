@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+build/
+dist/
+*.egg-info/
+.DS_Store
+
+# PISTE Studio project media / generated workspaces
+projects/
+**/master/
+**/rushes/
+**/audio/
+**/graphics/
+**/proxies/
+**/thumbnails/
+**/renders/
+*.tsrct
