@@ -92,10 +92,12 @@ def detect_semantic_vision(
 
     cached: bool | None = None
     try:
-        from transformers import AutoProcessor, CLIPModel
+        from huggingface_hub import snapshot_download
 
-        AutoProcessor.from_pretrained(model_id, local_files_only=True)
-        CLIPModel.from_pretrained(model_id, local_files_only=True)
+        snapshot_download(
+            repo_id=model_id,
+            local_files_only=True,
+        )
         cached = True
     except Exception:
         cached = False
