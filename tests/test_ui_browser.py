@@ -12,6 +12,7 @@ from piste_studio.project import init_project
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.media_intelligence import _write_analysis
+from piste_studio.semantic_vision import store_semantic_profile
 
 
 def _free_port():
@@ -29,14 +30,17 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
     (root / "rushes" / "malo_b.mp4").write_bytes(b"fake-b")
     scan_media(root)
     rows = fetch_media_with_metadata(root)
-    for row in rows:
+    for index, row in enumerate(rows):
+        tags = ["malo", "enfance"]
+        if index == 0:
+            tags += ["character:malo", "prop:fisher", "decor:salon"]
         set_media_metadata(
             root,
             row["id"],
             title=Path(row["relative_path"]).stem,
             duration_seconds=8.0,
             rating=4,
-            tags=["malo", "enfance"],
+            tags=tags,
         )
     cache = root / "cache" / "filmstrips"
     cache.mkdir(parents=True, exist_ok=True)
@@ -56,6 +60,12 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             },
             signature=["ffffffffffffffffffffffffffffffffffff"] * 6,
             filmstrip_path=strip.relative_to(root).as_posix(),
+        )
+        store_semantic_profile(
+            root,
+            row["id"],
+            embedding=[1.0, 0.01 * index, 0.0],
+            frame_count=4,
         )
     app = create_app(root)
     port = _free_port()
@@ -160,6 +170,21 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             expect(page.locator(".selector-policy")).to_contain_text("Validation humaine")
             page.get_by_role("button", name="Prévisualiser").click()
             expect(page.locator("#editorialDrawer")).to_be_visible()
+            page.locator("#editorialDrawer .pane-close").click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
+
+            page.locator(".media-row").nth(1).click()
+            expect(page.locator(".semantic-vision-section")).to_be_visible()
+            expect(page.locator(".vision-state.ready")).to_be_visible()
+            page.get_by_role("button", name="Proposer continuité").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator(".semantic-proposal-card")).to_have_count(3)
+            character_card = page.locator(".semantic-proposal-card").filter(
+                has_text="character:malo"
+            )
+            expect(character_card).to_be_visible()
+            character_card.get_by_role("button", name="Accepter").click()
+            expect(page.locator("#inspector")).to_contain_text("character:malo")
             page.locator("#editorialDrawer .pane-close").click()
             expect(page.locator("#editorialDrawer")).to_be_hidden()
 
