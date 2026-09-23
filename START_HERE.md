@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.13
+# Démarrage rapide — PISTE Studio v0.14
 
 ## 1. Installer
 
@@ -51,3 +51,8 @@ Le `.tsrct` est créé dans le dossier de version, jamais dans `master/`.
 ## Storyline magnétique
 
 Dans EDIT, déplacer un plan STORY réordonne la Storyline et recale l’aval. Trimmer un plan produit un ripple. Les titres, VO, musiques et SFX peuvent être reliés à un plan parent depuis l’Inspector ; ils suivent alors automatiquement son déplacement.
+
+
+## Sécurité d’édition V0.14
+
+Avant chaque reorder/ripple validé, PISTE Studio crée un checkpoint persistant. Utilisez **Undo** ou **Ctrl/Cmd+Z** pour restaurer l’état précédent. Les tests CI ouvrent désormais l’interface dans Chromium et vérifient les clics de navigation en plus des tests Python et du contrôle syntaxique JavaScript.
