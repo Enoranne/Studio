@@ -495,3 +495,63 @@ def report_path(root: Path, report_name: str) -> Path:
     if not path.exists() or not path.is_file():
         raise AudioDeliveryError("Rapport audio introuvable.")
     return path
+
+
+def master_check_status(root: Path, timeline: dict) -> dict:
+    edit_name = _safe_name(str(timeline.get("edit_name") or "mix"))
+    path = root / "reports" / "audio" / f"{edit_name}_master_check.json"
+    current_fingerprint = audio_mix_fingerprint(timeline)
+    if not path.exists() or not path.is_file():
+        return {
+            "status": "MISSING",
+            "can_export": True,
+            "current_audio_mix_fingerprint": current_fingerprint,
+            "message": "Aucun Master Check n’a été enregistré pour ce mix.",
+            "reasons": ["Contrôle audio master absent."],
+        }
+
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {
+            "status": "MISSING",
+            "can_export": True,
+            "current_audio_mix_fingerprint": current_fingerprint,
+            "message": "Le dernier rapport Master Check est illisible.",
+            "reasons": ["Rapport audio invalide ou corrompu."],
+        }
+
+    measured_fingerprint = report.get("audio_mix_fingerprint")
+    evaluation = report.get("evaluation") or {}
+    previous_status = str(evaluation.get("status") or "WARN").upper()
+    common = {
+        "can_export": True,
+        "report_name": path.name,
+        "report_relative_path": path.relative_to(root).as_posix(),
+        "checked_at": report.get("created_at"),
+        "measurement": report.get("measurement") or {},
+        "preset": report.get("preset") or {},
+        "previous_status": previous_status,
+        "current_audio_mix_fingerprint": current_fingerprint,
+        "measured_audio_mix_fingerprint": measured_fingerprint,
+    }
+    if measured_fingerprint != current_fingerprint:
+        return {
+            **common,
+            "status": "STALE",
+            "message": "Le mix audio a changé depuis le dernier Master Check.",
+            "reasons": ["Relancer le Master Check est recommandé avant livraison."],
+        }
+
+    status = "PASS" if previous_status == "PASS" else "WARN"
+    reasons = list(evaluation.get("reasons") or [])
+    return {
+        **common,
+        "status": status,
+        "message": (
+            "Master Check valide pour le mix audio courant."
+            if status == "PASS"
+            else "Le dernier Master Check signale des écarts audio."
+        ),
+        "reasons": reasons,
+    }
