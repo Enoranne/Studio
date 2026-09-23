@@ -94,6 +94,10 @@ const commands=[
   {label:'Vision · Proposer continuité',hint:'',keywords:'semantic continuity character prop decor look',run:()=>typeof openSemanticContinuity==='function'&&openSemanticContinuity()},
   {label:'Audio · Ajouter un point de volume',hint:'',keywords:'audio automation keyframe gain volume',run:()=>typeof addAudioAutomationPoint==='function'&&addAudioAutomationPoint()},
   {label:'Audio · Effacer automation',hint:'',keywords:'audio clear automation volume',run:()=>typeof clearAudioAutomation==='function'&&clearAudioAutomation()},
+  {label:'Audio · Analyser loudness',hint:'',keywords:'lufs loudness true peak analyse audio',run:()=>typeof analyzeSelectedAudioLoudness==='function'&&analyzeSelectedAudioLoudness()},
+  {label:'Audio · Normaliser',hint:'',keywords:'normalize normaliser lufs gain',run:()=>typeof openNormalizationProposal==='function'&&openNormalizationProposal()},
+  {label:'Audio · Vérifier clipping',hint:'',keywords:'clipping true peak headroom',run:()=>typeof openClippingReport==='function'&&openClippingReport()},
+  {label:'Audio · Ducking VO',hint:'',keywords:'ducking voice music dialogue',run:()=>typeof openDuckingProposal==='function'&&openDuckingProposal()},
 ];
 function filteredCommands(){
   const q=($('#commandSearch')?.value||'').trim().toLowerCase();
