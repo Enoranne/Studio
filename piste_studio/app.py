@@ -56,9 +56,10 @@ def _media_payload(root: Path) -> list[dict]:
         row["editorial_ranges"] = ranges_by_media.get(int(row["id"]), [])
         analysis = analyses.get(int(row["id"]))
         row["analysis"] = analysis
+        filmstrip_rel = analysis.get("filmstrip_path") if analysis else None
         row["filmstrip_url"] = (
             f"/api/media/{row['id']}/filmstrip"
-            if analysis and analysis.get("filmstrip_path")
+            if filmstrip_rel and (root / filmstrip_rel).exists()
             else None
         )
         out.append(row)
