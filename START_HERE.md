@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.12
+# Démarrage rapide — PISTE Studio v0.13
 
 ## 1. Installer
 
@@ -36,7 +36,7 @@ piste-studio-app --project /chemin/vers/PISTE_0
 
 L’application s’ouvre sur `http://127.0.0.1:8765/`.
 
-## 3. Workflow UI V0.12
+## 3. Workflow UI V0.13
 
 1. Place les vidéos dans `rushes/` et les sons dans `audio/`.
 2. Clique **Scanner projet**.
@@ -46,3 +46,8 @@ L’application s’ouvre sur `http://127.0.0.1:8765/`.
 6. Utilise **Preview** puis **Export**.
 
 Le `.tsrct` est créé dans le dossier de version, jamais dans `master/`.
+
+
+## Storyline magnétique
+
+Dans EDIT, déplacer un plan STORY réordonne la Storyline et recale l’aval. Trimmer un plan produit un ripple. Les titres, VO, musiques et SFX peuvent être reliés à un plan parent depuis l’Inspector ; ils suivent alors automatiquement son déplacement.
