@@ -86,6 +86,8 @@ const commands=[
   {label:'Montage · Enregistrer',hint:'',keywords:'save timeline',run:()=>$('#saveBackendBtn')?.click()},
   {label:'Montage · Publier',hint:'',keywords:'publish version',run:()=>typeof publishVersion==='function'&&publishVersion()},
   {label:'Viewer · Overlays',hint:'',keywords:'overlay timecode mix in out',run:toggleOverlayMenu},
+  {label:'Editorial · Ajouter un marqueur',hint:'M',keywords:'marker note decision beat vigilance',run:()=>typeof openMarkerComposer==='function'&&openMarkerComposer()},
+  {label:'Editorial · Trouver des alternatives',hint:'',keywords:'source selector alternatives prise rush',run:()=>typeof openSourceSelector==='function'&&openSourceSelector()},
 ];
 function filteredCommands(){
   const q=($('#commandSearch')?.value||'').trim().toLowerCase();
