@@ -88,3 +88,22 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .media-tech-line{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
 .media-tech-line span{font-size:6px;color:#aab4bd;background:#161c22;border-radius:4px;padding:3px 5px}
 .media-intelligence-section .ins-actions{margin-top:8px}
+
+
+/* V0.18 — Semantic Vision */
+.vision-state{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;padding:6px 7px;border-radius:6px;background:#12171c;color:#8e98a2;font-size:6.5px}
+.vision-state.ready{border-left:2px solid #8aa878;color:#b5c4ad}
+.vision-state b{font-size:5.8px;letter-spacing:.7px;color:#6e7983}
+.vision-state.ready b{color:#9ab389}
+.vision-setup-status{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0}
+.vision-setup-status span{font-size:6px;color:#9aa4ad;background:#171d23;border-radius:4px;padding:4px 6px}
+.vision-setup-note{font-size:6.5px;line-height:1.55;color:#69747e;margin:9px 0}
+.semantic-proposal-card{padding:10px 5px;border-bottom:1px solid #1f262d}
+.semantic-proposal-main{display:grid;gap:5px}
+.semantic-facet{font-size:5.8px;letter-spacing:.7px;color:#8f7bb0}
+.vision-evidence{font-size:6px;color:#707b85}
+.semantic-resolved{margin-top:12px;padding-top:9px;border-top:1px solid #252c33}
+.semantic-resolved-row{display:flex;align-items:center;justify-content:space-between;padding:5px 2px;font-size:6.5px;color:#818b95}
+.semantic-resolved-row.accepted b{color:#7db48e}
+.semantic-resolved-row.rejected b{color:#b56f6f}
+.semantic-vision-section .btn.primary{background:#292233;color:#cbb5df}
