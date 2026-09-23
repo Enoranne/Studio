@@ -200,3 +200,58 @@ def test_history_api_checkpoint_and_undo(tmp_path):
     assert undo.json()["timeline"]["storyline"]["start"] == 5
     current = client.get("/api/timeline?edit_name=teaser_30").json()["timeline"]
     assert current["storyline"]["start"] == 5
+
+
+def test_editorial_api_persists_ranges_markers_and_suggestions(tmp_path):
+    root = make_project(tmp_path)
+    (root / "rushes" / "alternative.mp4").write_bytes(b"alternative-video")
+    scan_media(root)
+    rows = fetch_media_with_metadata(root)
+    videos = [x for x in rows if x["kind"] == "video"]
+    for row in videos:
+        set_media_metadata(
+            root,
+            row["id"],
+            title=Path(row["relative_path"]).stem,
+            duration_seconds=10.0,
+            rating=4,
+            tags=["shared", "test"],
+        )
+
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    state = client.get("/api/state").json()
+    vids = [x for x in state["media"] if x["kind"] == "video"]
+    reference, candidate = vids[0], vids[1]
+
+    marked = client.post(
+        f"/api/media/{candidate['id']}/ranges",
+        json={"kind": "favorite", "source_in": 2, "source_out": 6},
+    )
+    assert marked.status_code == 200, marked.text
+    assert marked.json()["ranges"][0]["kind"] == "favorite"
+
+    marker = client.post(
+        "/api/markers",
+        json={
+            "edit_name": "teaser_30",
+            "time_seconds": 8.0,
+            "kind": "decision",
+            "label": "Respiration",
+        },
+    )
+    assert marker.status_code == 200, marker.text
+
+    refreshed = client.get("/api/state").json()
+    candidate_state = next(x for x in refreshed["media"] if x["id"] == candidate["id"])
+    assert candidate_state["editorial_ranges"][0]["source_in"] == 2
+    assert refreshed["markers"][0]["label"] == "Respiration"
+
+    suggestions = client.get(
+        f"/api/editorial/suggest/{reference['id']}?limit=3&max_spoiler=0"
+    )
+    assert suggestions.status_code == 200, suggestions.text
+    body = suggestions.json()
+    assert body["policy"]["human_validation_required"] is True
+    assert body["policy"]["automatic_replacement"] is False
+    assert any(x["media_id"] == candidate["id"] for x in body["suggestions"])
