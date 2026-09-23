@@ -128,3 +128,26 @@ L’interface doit distinguer :
 - **reconnaissance sémantique** : future analyse par modèle visuel.
 
 Ne jamais transformer une forte similarité perceptuelle en affirmation du type « même personnage », « même accessoire » ou « même décor » sans preuve sémantique correspondante.
+
+
+## 13. Référence visuelle avant reconnaissance
+
+PISTE Studio ne doit pas déduire l’identité d’un personnage ou d’un accessoire à partir de son nom seul.
+
+Une proposition sémantique spécifique doit être reliée à :
+- un ou plusieurs rushes de référence déjà tagués ;
+- un profil visuel compatible ;
+- un score et un seuil visibles ;
+- une validation humaine explicite.
+
+Le libellé `character:malo` signifie donc : « suffisamment proche des références validées Malo pour proposer ce tag », pas « identité prouvée par le modèle ».
+
+## 14. Consentement de calcul
+
+Les traitements média restent locaux par défaut.
+
+Un téléchargement de modèle peut être proposé, mais :
+- jamais silencieusement ;
+- uniquement après action explicite ;
+- sans upload des médias ;
+- avec une alternative de fonctionnement sans vision sémantique.
