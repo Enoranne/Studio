@@ -102,3 +102,17 @@ La CI doit vérifier dans Chromium :
 ## Référence de direction
 
 PISTE Studio peut reprendre des patterns éprouvés des NLE professionnels sans recopier leur habillage. L’objectif est une workstation de montage sobre, centrée sur l’intention, le canon et la sécurité éditoriale — pas un clone de Final Cut Pro, Premiere ou Resolve.
+
+
+## 11. Intelligence éditoriale explicable
+
+Une suggestion ne doit jamais se présenter comme une décision objective.
+
+Le Source Selector doit :
+- afficher ses signaux de classement ;
+- préserver les contraintes Canon / Safe / Spoiler ;
+- permettre la prévisualisation avant action ;
+- ne jamais remplacer automatiquement un plan ;
+- distinguer clairement recommandation, sélection humaine et modification effective de la Storyline.
+
+Une future analyse visuelle ou IA devra respecter les mêmes règles.
