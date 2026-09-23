@@ -30,6 +30,15 @@ from .editorial import (
     set_editorial_range,
     suggest_alternatives,
 )
+from .media_intelligence import (
+    MediaIntelligenceError,
+    analyze_catalog,
+    analyze_media,
+    detect_media_tools,
+    get_media_analysis,
+    list_media_analysis,
+    media_similarity,
+)
 
 
 def _media_payload(root: Path) -> list[dict]:
@@ -37,6 +46,7 @@ def _media_payload(root: Path) -> list[dict]:
     ranges_by_media: dict[int, list[dict]] = {}
     for r in list_editorial_ranges(root):
         ranges_by_media.setdefault(int(r["media_id"]), []).append(r)
+    analyses = list_media_analysis(root)
     for item in fetch_media_with_metadata(root):
         row = dict(item)
         p = (root / row["relative_path"]).resolve()
@@ -44,6 +54,13 @@ def _media_payload(root: Path) -> list[dict]:
         row["exists"] = p.exists() and p.is_file()
         row["stream_url"] = f"/api/media/{row['id']}" if row["exists"] else None
         row["editorial_ranges"] = ranges_by_media.get(int(row["id"]), [])
+        analysis = analyses.get(int(row["id"]))
+        row["analysis"] = analysis
+        row["filmstrip_url"] = (
+            f"/api/media/{row['id']}/filmstrip"
+            if analysis and analysis.get("filmstrip_path")
+            else None
+        )
         out.append(row)
     return out
 
@@ -55,7 +72,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.16")
+    app = FastAPI(title="PISTE Studio Local App", version="0.17")
     app.state.project_root = root
 
     @app.get("/")
@@ -74,7 +91,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.16", "project_root": str(root)}
+        return {"ok": True, "version": "0.17", "project_root": str(root)}
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
@@ -85,7 +102,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.16",
+            "app_version": "0.17",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},
@@ -184,6 +201,57 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/media/intelligence/status")
+    def media_intelligence_status():
+        tools = detect_media_tools()
+        return {
+            "ready": tools.ready,
+            "ffmpeg": bool(tools.ffmpeg),
+            "ffprobe": bool(tools.ffprobe),
+            "analyzer_version": "0.17-local-1",
+        }
+
+    @app.post("/api/media/analyze")
+    def media_analyze_catalog(payload: dict = Body(default_factory=dict)):
+        return analyze_catalog(
+            root,
+            force=bool(payload.get("force", False)),
+            make_filmstrips=bool(payload.get("filmstrips", True)),
+        )
+
+    @app.post("/api/media/{media_id}/analyze")
+    def media_analyze_one(media_id: int, payload: dict = Body(default_factory=dict)):
+        try:
+            return analyze_media(
+                root,
+                media_id,
+                make_filmstrip=bool(payload.get("filmstrip", True)),
+                force=bool(payload.get("force", False)),
+            )
+        except MediaIntelligenceError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/media/{media_id}/similar")
+    def media_similar(media_id: int):
+        try:
+            return {"media_id": media_id, "similar": media_similarity(root, media_id)}
+        except MediaIntelligenceError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/media/{media_id}/filmstrip")
+    def media_filmstrip(media_id: int):
+        analysis = get_media_analysis(root, media_id)
+        if not analysis or not analysis.get("filmstrip_path"):
+            raise HTTPException(404, "Filmstrip non généré.")
+        path = (root / analysis["filmstrip_path"]).resolve()
+        try:
+            path.relative_to(root)
+        except ValueError as exc:
+            raise HTTPException(400, "Chemin filmstrip hors projet.") from exc
+        if not path.exists() or not path.is_file():
+            raise HTTPException(404, "Filmstrip absent du cache.")
+        return FileResponse(path, media_type="image/jpeg")
 
     @app.get("/api/timeline")
     def get_timeline(edit_name: str = "teaser_30"):
