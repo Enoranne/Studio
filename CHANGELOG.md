@@ -1,5 +1,25 @@
 # Changelog
 
+## V0.21 — Audio Delivery & Master Check
+
+- Rendu master audio temporaire local via ffmpeg.
+- Sommation réelle des clips audibles de la timeline.
+- Respect du Mute/Solo des pistes.
+- Prise en compte du gain, de l’automation, des fades, du pan et des overlaps/crossfades.
+- Master PCM stéréo 48 kHz / 24 bits en cache.
+- Mesure LUFS intégré du master rendu.
+- Mesure true peak master après sommation.
+- Contrôle séparé loudness / true peak avec statut PASS ou WARN.
+- Tolérance loudness configurable.
+- Presets de livraison configurables présentés comme repères, jamais comme norme universelle.
+- Rapport JSON exportable dans `reports/audio/`.
+- Limiteur master désactivé par défaut et disponible uniquement sur choix explicite.
+- Aucune normalisation automatique du master.
+- Command Palette : **Audio · Master Check**.
+- Résultat synthétique affiché dans l’overlay MIX du Viewer.
+- API dédiée aux presets, au Master Check et au téléchargement du rapport.
+
+
 ## V0.20 — Audio Intelligence & Loudness
 
 - Analyse LUFS intégrée via ffmpeg loudnorm.
