@@ -555,6 +555,32 @@ def propose_ducking(
     }
 
 
+def apply_gain_adjustment(
+    timeline: dict,
+    clip_id: str,
+    adjustment_db: float,
+) -> dict:
+    out = json.loads(json.dumps(timeline))
+    clip = _audio_clip(out, clip_id)
+    delta = float(adjustment_db)
+    clip["gainDb"] = max(
+        -60.0,
+        min(12.0, float(clip.get("gainDb", 0) or 0) + delta),
+    )
+    if clip.get("volumeEnvelope"):
+        clip["volumeEnvelope"] = [
+            {
+                **point,
+                "gainDb": max(
+                    -60.0,
+                    min(12.0, float(point.get("gainDb", 0)) + delta),
+                ),
+            }
+            for point in clip["volumeEnvelope"]
+        ]
+    return out
+
+
 def apply_envelope(
     timeline: dict,
     clip_id: str,
@@ -641,4 +667,17 @@ def apply_crossfade(timeline: dict, proposal: dict) -> dict:
     right["crossfadeWith"] = str(left["id"])
     left["crossfadeDuration"] = duration
     right["crossfadeDuration"] = duration
+    if right.get("parentClipId"):
+        parent = next(
+            (
+                x for x in out.get("clips", [])
+                if str(x.get("id")) == str(right["parentClipId"])
+            ),
+            None,
+        )
+        if parent is not None:
+            right["anchorOffset"] = round(
+                float(right["start"]) - float(parent["start"]),
+                6,
+            )
     return out
