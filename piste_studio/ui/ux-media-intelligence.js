@@ -39,7 +39,7 @@ function mediaTechnicalSummary(m){
 function appendMediaIntelligenceSection(){
   const m=getMedia(selectedMedia),root=$('#inspector');if(!m||!root)return;
   const section=document.createElement('div');section.className='inspector-section media-intelligence-section';
-  section.innerHTML=`<div class="inspector-section-title">MEDIA INTELLIGENCE</div>${mediaTechnicalSummary(m)}<div class="ins-actions"><button class="btn" onclick="analyzeSelectedMedia()">${m.analysis?.status==='READY'?'Réanalyser':'Analyser ce rush'}</button><button class="btn primary" onclick="openSimilarTakes(${m.dbId||'null'})">Prises proches</button></div><div class="hint">Analyse locale via ffmpeg/ffprobe. Aucun média n’est envoyé vers un service externe.</div>`;
+  section.innerHTML=`<div class="inspector-section-title">MEDIA INTELLIGENCE</div>${mediaTechnicalSummary(m)}<div class="ins-actions"><button class="btn" onclick="analyzeSelectedMedia()">${m.analysis?.status==='READY'?'Réanalyser':'Analyser ce rush'}</button><button class="btn" onclick="openEditorialWindows(${m.dbId||'null'})">Fenêtres IN/OUT</button><button class="btn primary" onclick="openSimilarTakes(${m.dbId||'null'})">Prises proches</button></div><div class="hint">Analyse locale via ffmpeg/ffprobe. Aucun média n’est envoyé vers un service externe.</div>`;
   root.appendChild(section);
 }
 
