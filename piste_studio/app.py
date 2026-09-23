@@ -47,6 +47,16 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     def index():
         return FileResponse(ui_file, media_type="text/html")
 
+    @app.get("/ui/{filename}")
+    def ui_asset(filename: str):
+        if filename not in {"style.css", "editor.js", "backend.js"}:
+            raise HTTPException(404, "Ressource UI introuvable.")
+        path = ui_file.parent / filename
+        if not path.exists():
+            raise HTTPException(404, "Ressource UI absente du package.")
+        media_type = "text/css" if filename.endswith(".css") else "text/javascript"
+        return FileResponse(path, media_type=media_type)
+
     @app.get("/api/health")
     def health():
         return {"ok": True, "version": "0.11", "project_root": str(root)}
