@@ -13,6 +13,7 @@ from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.media_intelligence import _write_analysis
 from piste_studio.semantic_vision import store_semantic_profile
+from piste_studio.audio_intelligence import _write_analysis as _write_audio_loudness
 from piste_studio.timeline import save_timeline
 
 
@@ -52,6 +53,16 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
         title="Voice",
         duration_seconds=8.0,
         tags=["voice", "malo"],
+    )
+    _write_audio_loudness(
+        root,
+        audio["id"],
+        status="READY",
+        integrated_lufs=-20.0,
+        true_peak_dbfs=-4.0,
+        loudness_range_lu=4.5,
+        threshold_lufs=-30.0,
+        silence=[{"start": 1.0, "end": 1.5, "duration": 0.5}],
     )
     cache = root / "cache" / "filmstrips"
     cache.mkdir(parents=True, exist_ok=True)
@@ -262,6 +273,22 @@ def test_real_browser_navigation_and_workspaces(tmp_path):
             vo_track = page.locator("#lane-vo").locator("..")
             vo_track.locator(".solo-btn").click()
             expect(vo_track.locator(".solo-btn")).to_have_class(re.compile("on"))
+
+            expect(page.locator(".audio-intelligence-section")).to_be_visible()
+            expect(page.locator(".audio-intelligence-section")).to_contain_text("-20.0 LUFS")
+            expect(page.locator(".audio-intelligence-section")).to_contain_text("-4.0 dBTP")
+            page.get_by_role("button", name="Normaliser").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator(".loudness-proposal")).to_contain_text("+2.50 dB")
+            expect(page.locator(".loudness-proposal")).to_contain_text("limité par le ceiling true peak")
+            page.locator("#editorialDrawer").get_by_role("button", name="Accepter").click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
+            expect(page.locator('.clip[data-clip="a1"] small')).to_contain_text("+5.5 dB")
+
+            page.get_by_role("button", name="Clipping").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator(".selector-policy")).to_contain_text("ESTIMATION PAR CLIP")
+            page.locator("#editorialDrawer .pane-close").click()
 
             assert errors == []
             browser.close()
