@@ -97,7 +97,8 @@ const commands=[
   {label:'Audio · Analyser loudness',hint:'',keywords:'lufs loudness true peak analyse audio',run:()=>typeof analyzeSelectedAudioLoudness==='function'&&analyzeSelectedAudioLoudness()},
   {label:'Audio · Normaliser',hint:'',keywords:'normalize normaliser lufs gain',run:()=>typeof openNormalizationProposal==='function'&&openNormalizationProposal()},
   {label:'Audio · Vérifier clipping',hint:'',keywords:'clipping true peak headroom',run:()=>typeof openClippingReport==='function'&&openClippingReport()},
-  {label:'Audio · Ducking VO',hint:'',keywords:'ducking voice music dialogue',run:()=>typeof openDuckingProposal==='function'&&openDuckingProposal()},\n  {label:'Audio · Master Check',hint:'',keywords:'master delivery lufs true peak export rapport',run:()=>typeof openMasterCheck==='function'&&openMasterCheck()},
+  {label:'Audio · Ducking VO',hint:'',keywords:'ducking voice music dialogue',run:()=>typeof openDuckingProposal==='function'&&openDuckingProposal()},
+  {label:'Audio · Master Check',hint:'',keywords:'master delivery lufs true peak export rapport',run:()=>typeof openMasterCheck==='function'&&openMasterCheck()},
 ];
 function filteredCommands(){
   const q=($('#commandSearch')?.value||'').trim().toLowerCase();
