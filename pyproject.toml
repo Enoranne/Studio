@@ -20,4 +20,4 @@ include = ["piste_studio*"]
 dev = ["pytest>=8.0"]
 
 [tool.setuptools.package-data]
-piste_studio = ["ui/*.html"]
+piste_studio = ["ui/*"]
