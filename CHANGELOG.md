@@ -320,6 +320,34 @@
 
 ## V0.23 — Motion & Delivery
 
+### V0.23.3 — Point de connexion graphique déplaçable
+
+- Timeline schema **v6**.
+- Nouvelle propriété persistante `connectionPointOffset`.
+- Séparation claire entre :
+  - `anchorOffset` : position temporelle de l’enfant relativement au parent ;
+  - `connectionPointOffset` : point graphique où la connexion touche le parent.
+- Migration rétrocompatible : une connexion v5 sans point explicite dérive son point depuis `anchorOffset`, borné aux limites du parent.
+- Validation serveur du point dans `0..parent.duration`.
+- Nouveau moteur `move_connection_point(...)`.
+- Déplacer le point dans un même plan ne déplace pas le titre / VO / MUSIC / SFX.
+- Glisser le point au-delà d’une coupe peut changer `parentClipId` tout en conservant la position absolue du clip enfant.
+- Lors d’un changement de parent, `anchorOffset` est recalculé pour préserver exactement `child.start`.
+- Les reflows magnétiques conservent et bornent le point graphique.
+- Affichage SVG des lignes de connexion sur la timeline.
+- Toutes les connexions restent visibles de manière discrète.
+- La poignée de drag n’est active que pour l’élément connecté sélectionné.
+- Inspector **CONNEXION STORY** enrichi avec **Point sur parent (s)** et **Appliquer le point**.
+- Alternative numérique au drag pour précision et accessibilité.
+- Le badge de connexion affiche désormais parent + offset graphique.
+- Les changements via le sélecteur de parent passent eux aussi par validation backend, checkpoint et locks.
+- Validation HARD/SOFT LOCK du déplacement de connexion via `connection_point` et, selon le type, `graphics` ou `audio_change`.
+- Undo restaure le parent et le point précédents.
+- Suppression de l’ancien mini-trait de connexion devenu redondant.
+- Test API : changement de parent sans mouvement de l’enfant.
+- Test Chromium réel : drag de Plan A vers Plan B, persistance, sauvegarde puis Undo.
+- CI de référence : **127 tests passés / 127**.
+
 ### V0.23.2 — Carton final
 
 - Extension du modèle title v5 avec `titleRole = final_card`.
