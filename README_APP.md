@@ -152,6 +152,66 @@ Le gestionnaire **Référence ciblée** affiche désormais :
 
 Les propositions de continuité affichent aussi le nombre de groupes et la distribution **P/S/F**.
 
+## Editorial Vision V0.22.4
+
+Chaque proposition de tag sémantique est évaluée contre le Canon courant et le contexte de locks du montage actif.
+
+### Règles Canon
+
+Section optionnelle :
+
+```yaml
+semantic:
+  allowed_tags: []
+  forbidden_tags: []
+  closed_facets: []
+```
+
+Sources d’alignement supplémentaires :
+
+- clés de `characters` → `character:...` ;
+- clés de `props` → `prop:...` ;
+- clés de `decors` → `decor:...` ;
+- `visual.look` → `look:...`.
+
+`visual.avoid` est interprété comme source d’interdiction de look, ou comme tag structuré s’il contient déjà un facet.
+
+### Facet fermé
+
+Un facet fermé signifie que sa liste Canon est exhaustive.
+
+Exemple : si `character` est fermé et que seul `character:malo` est connu, `character:jasper` devient un conflit explicite.
+
+Sans fermeture, un tag absent reste **UNVERIFIED**.
+
+### Locks
+
+PISTE Studio cherche les clips utilisant le média concerné dans la timeline active.
+
+Un HARD/SOFT LOCK n’est relié à la sémantique que si :
+
+- `forbidden` est vide, donc toutes opérations ;
+- ou contient `semantic`, `semantic_tag`, `semantic_tag_accept`, `tag` ;
+- ou l’opération exacte `tag:<tag>` ;
+- ou `semantic:<facet>`.
+
+Un HARD LOCK produit une validation explicite obligatoire. Un SOFT LOCK produit un signal **REVIEW**.
+
+### Résolution
+
+Pour une proposition sans blocage :
+
+**Accepter** → comportement normal.
+
+Pour CONFLICT ou HARD_LOCK :
+
+1. **Examiner conflit** ;
+2. afficher toutes les raisons et leurs sources ;
+3. aucune modification à ce stade ;
+4. **Accepter malgré conflit** seulement si l’utilisateur le souhaite.
+
+L’override ajoute le tag au média mais ne modifie jamais le Canon ou les locks.
+
 ## Audio Delivery V0.21
 
 Le **Master Check** contrôle le mix rendu, après sommation des clips audio audibles de la timeline.
