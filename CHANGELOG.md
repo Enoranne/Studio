@@ -23,6 +23,8 @@
 - Sélecteur permettant de tester n’importe quel rush catalogué à cette position.
 - Command Palette : **Vision · Continuité voisins**.
 - Tests unitaires, API et Chromium dédiés.
+- Les candidats simulés héritent du contexte HARD/SOFT LOCK de la position du clip central.
+- CI de référence V0.22.5 : **112 tests passés / 112**.
 - V0.22 Editorial Vision Refinement complète.
 
 ### V0.22.4 — Canon Conflict Detection
