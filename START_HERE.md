@@ -249,3 +249,19 @@ Le candidat n’est pas inséré dans le montage. Le résultat sert uniquement �
 10. Enregistre la timeline.
 
 Les familles Sans / Serif / Mono sont intentionnellement génériques : elles améliorent la portabilité entre Viewer, machine locale et futurs exports.
+
+
+## Carton final V0.23.2
+
+1. Clique **+ Carton final** dans la timeline.
+2. Le carton se place automatiquement à la fin du montage.
+3. Remplace le texte par le titre/crédit souhaité.
+4. Ajuste la typographie comme pour un titre normal.
+5. Choisis la couleur du **Fond canvas**.
+6. Garde 100 % pour un vrai carton plein.
+7. Règle **Noir / fond seul final (s)** pour réserver une fin sans texte.
+8. Clique **Appliquer PATCH**.
+9. Lis la fin dans PROGRAM pour vérifier le rythme.
+10. Enregistre la timeline.
+
+La queue finale fait partie du même clip : le texte disparaît, mais le fond reste présent jusqu’au dernier frame.
