@@ -92,3 +92,16 @@ def test_v022_ux_contains_targeted_reference_patterns():
     assert "openTargetedReferenceManager" in semantic
     assert "targeted_reference_count" in semantic
     assert "Vision · Référence ciblée" in polish
+
+
+def test_v022_ux_contains_reference_group_quality_patterns():
+    ux = (UI / "ux-targeted-references.js").read_text(encoding="utf-8")
+    semantic = (UI / "ux-semantic-vision.js").read_text(encoding="utf-8")
+    assert "GROUPES DE RÉFÉRENCES" in ux
+    assert "Primaire · 1,5×" in ux
+    assert "Secondaire · 1,0×" in ux
+    assert "Faible · 0,5×" in ux
+    assert "Enregistrer groupe/qualité" in ux
+    assert "/api/vision/reference-groups" in ux
+    assert "reference_group_count" in semantic
+    assert "quality_distribution" in semantic
