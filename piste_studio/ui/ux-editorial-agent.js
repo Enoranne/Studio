@@ -6,6 +6,7 @@
     transcript: null,
     view: null,
     lastResult: null,
+    loadingMediaDbId: null,
   };
 
   function esc(value) {
@@ -153,7 +154,10 @@
 
   async function loadMedia(dbId) {
     if (!backendConnected || !dbId) return;
-    EA.mediaDbId = Number(dbId);
+    dbId = Number(dbId);
+    if (EA.loadingMediaDbId === dbId) return;
+    EA.loadingMediaDbId = dbId;
+    EA.mediaDbId = dbId;
     body().innerHTML = '<div class="card"><h3>Editorial Agent</h3><p>Chargement…</p></div>';
     try {
       const [tracks, transcript, view] = await Promise.all([
@@ -171,6 +175,8 @@
       EA.view = null;
       render();
       toast("Editorial Agent : " + err.message, true);
+    } finally {
+      EA.loadingMediaDbId = null;
     }
   }
 
@@ -298,7 +304,13 @@
     const pos = forceTime == null
       ? sourcePosition()
       : { dbId: forceDbId || EA.mediaDbId, time: Number(forceTime) };
-    if (!pos || Number(pos.dbId) !== Number(EA.mediaDbId)) return;
+    if (!pos) return;
+    if (Number(pos.dbId) !== Number(EA.mediaDbId)) {
+      if (EA.loadingMediaDbId !== Number(pos.dbId)) {
+        loadMedia(Number(pos.dbId));
+      }
+      return;
+    }
     const phrase = (EA.transcript?.phrases || EA.view?.transcript?.phrases || []).find(
       p => pos.time >= Number(p.start) && pos.time <= Number(p.end)
     );
