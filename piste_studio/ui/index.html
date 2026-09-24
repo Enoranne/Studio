@@ -82,6 +82,7 @@
           <div class="viewer-stage" id="viewer">
             <video id="video" playsinline muted></video>
             <div class="viewer-placeholder" id="viewerPlaceholder"><strong>PISTE 0</strong><span>Le Viewer affiche la source sélectionnée ou le montage sous le playhead.</span></div>
+            <div class="viewer-title-backdrop" id="viewerTitleBackdrop"></div>
             <div class="viewer-overlay top-left" id="viewerHud">V001 · 00:00.0</div>
             <div class="viewer-overlay bottom-left" id="mixMeter">MIX · —</div>
             <div class="audio-meters" id="audioMeters" data-peak-l="-60.0 dB" data-peak-r="-60.0 dB" title="Master L/R">
@@ -113,6 +114,7 @@
             <div class="timeline-toolbar">
               <div class="timeline-left">
                 <button class="btn tiny" onclick="addTitle()">+ Titre</button>
+                <button class="btn tiny" onclick="addFinalCard()">+ Carton final</button>
                 <button class="btn tiny" onclick="addAudio('vo')">+ VO</button>
                 <button class="btn tiny" onclick="addAudio('music')">+ Music</button>
                 <button class="btn tiny" onclick="addAudio('sfx')">+ SFX</button>
