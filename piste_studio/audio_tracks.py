@@ -223,6 +223,7 @@ def analyze_audio_tracks(
         and all(
             x.get("analyzer_version") == AUDIO_TRACK_INTELLIGENCE_VERSION
             and x.get("status") == "READY"
+            and x.get("source_sha256") == str(item.get("sha256") or "unknown")
             for x in existing
         )
         and not force
@@ -259,17 +260,19 @@ def analyze_audio_tracks(
             conn.execute(
                 """
                 INSERT INTO audio_track_analysis(
-                  media_id, track_index, stream_index, analyzer_version, status,
+                  media_id, track_index, stream_index, source_sha256,
+                  analyzer_version, status,
                   codec, channels, channel_layout, sample_rate, language, title,
                   is_default, mean_dbfs, peak_dbfs, silent,
                   detected_silence_seconds, selected_for_transcription
                 )
-                VALUES (?, ?, ?, ?, 'READY', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, 'READY', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     int(media_id),
                     int(stream["track_index"]),
                     int(stream["stream_index"]),
+                    str(item.get("sha256") or "unknown"),
                     AUDIO_TRACK_INTELLIGENCE_VERSION,
                     stream.get("codec"),
                     stream.get("channels"),
