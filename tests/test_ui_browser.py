@@ -16,6 +16,7 @@ from piste_studio.media_intelligence import _write_analysis
 from piste_studio.semantic_vision import store_semantic_profile, store_targeted_semantic_reference
 from piste_studio.audio_intelligence import _write_analysis as _write_audio_loudness
 from piste_studio.timeline import save_timeline
+from piste_studio.versioning import create_timeline_version
 from piste_studio.config import read_yaml, write_yaml
 
 
@@ -1000,6 +1001,204 @@ def test_graphical_connection_point_drag_changes_parent_without_moving_child(tmp
                 "() => { const c=getClip('t1'); return {start:c.start,parent:c.parentClipId,point:c.connectionPointOffset}; }"
             )
             assert restored == {"start": 2, "parent": "v1", "point": 2}
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
+
+
+
+def test_delivery_center_vertical_crop_preflight_and_export(
+    tmp_path,
+    monkeypatch,
+):
+    root = tmp_path / "DeliveryBrowser"
+    init_project(root, "Delivery Browser")
+    timeline_doc = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 10,
+        "storyline": {"mode": "magnetic", "start": 0},
+        "tracks": [
+            {"id": "video", "name": "VIDEO", "kind": "video"},
+        ],
+        "clips": [
+            {
+                "id": "v1",
+                "track": "video",
+                "label": "Plan",
+                "start": 0,
+                "duration": 10,
+                "sourceStart": 0,
+            },
+        ],
+    }
+    save_timeline(root, timeline_doc)
+    clean = __import__("json").loads(
+        (
+            root
+            / "edits"
+            / "teaser_30"
+            / "working"
+            / "timeline.json"
+        ).read_text(encoding="utf-8")
+    )
+    version = create_timeline_version(root, clean)
+    assert version.version_label == "V001"
+    (version.directory / "authoring-plan.json").write_text(
+        __import__("json").dumps(
+            {
+                "deliverable": {
+                    "canvas": {"width": 1920, "height": 1080}
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        app_module,
+        "master_check_status",
+        lambda root_arg, timeline: {
+            "status": "PASS",
+            "can_export": True,
+            "message": "Master Check valide pour le mix courant.",
+            "reasons": [],
+        },
+    )
+
+    def fake_execute_export(
+        root_arg,
+        edit_name,
+        version_name,
+        *,
+        output_name=None,
+        resolution="1080p",
+        fps=24,
+        format_name="mp4",
+    ):
+        path = (
+            root_arg
+            / "edits"
+            / edit_name
+            / version_name
+            / (output_name or "source.mp4")
+        )
+        path.write_bytes(b"fake-source")
+        return path
+
+    def fake_render_delivery(
+        root_arg,
+        source_path,
+        *,
+        edit_name,
+        version,
+        target_id,
+        framing_mode=None,
+        allow_crop=False,
+    ):
+        target = app_module.resolve_delivery_target(target_id)
+        folder = root_arg / "exports" / edit_name / version
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"{edit_name}_{version}_{target_id}.mp4"
+        path.write_bytes(b"browser-delivery")
+        return {
+            "path": path,
+            "relative_path": path.relative_to(root_arg).as_posix(),
+            "target": target,
+            "framing_mode": framing_mode or target["default_framing"],
+            "probe": {
+                "video_codec": "h264",
+                "width": target["width"],
+                "height": target["height"],
+                "pixel_format": "yuv420p",
+                "fps": 24.0,
+                "audio_codec": "aac",
+                "audio_sample_rate": 48000,
+                "audio_channels": 2,
+                "duration_seconds": 10.0,
+                "size_bytes": path.stat().st_size,
+            },
+            "ffmpeg_args": ["ffmpeg"],
+        }
+
+    monkeypatch.setattr(app_module, "execute_export", fake_execute_export)
+    monkeypatch.setattr(
+        app_module,
+        "render_delivery_variant",
+        fake_render_delivery,
+    )
+
+    app = create_app(root)
+    port = _free_port()
+    server = uvicorn.Server(
+        uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
+    )
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    for _ in range(100):
+        if server.started:
+            break
+        time.sleep(0.05)
+    assert server.started
+
+    errors = []
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.on("pageerror", lambda exc: errors.append(str(exc)))
+            page.goto(f"http://127.0.0.1:{port}/", wait_until="networkidle")
+            page.wait_for_timeout(160)
+
+            page.get_by_role("button", name="Export", exact=True).click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator("#editorialDrawerTitle")).to_have_text(
+                "Delivery Center"
+            )
+            expect(page.locator(".selector-policy")).to_contain_text(
+                "Festival / social"
+            )
+
+            page.locator("#deliveryTarget").select_option(
+                "social_vertical_1080x1920"
+            )
+            expect(page.locator("#deliveryFraming")).to_have_value("fit")
+            expect(page.locator("#deliveryPreflight")).to_contain_text(
+                "Version publiée"
+            )
+            expect(page.locator("#deliveryPreflight")).to_contain_text(
+                "PASS"
+            )
+            expect(page.locator("#deliveryExportBtn")).to_be_enabled()
+
+            page.locator("#deliveryFraming").select_option("fill")
+            expect(page.locator("#deliveryCropRow")).to_be_visible()
+            expect(page.locator("#deliveryPreflight")).to_contain_text(
+                "BLOCKED"
+            )
+            expect(page.locator("#deliveryExportBtn")).to_be_disabled()
+
+            page.locator("#deliveryAllowCrop").check()
+            expect(page.locator("#deliveryPreflight")).to_contain_text(
+                "68.4%"
+            )
+            expect(page.locator("#deliveryExportBtn")).to_be_enabled()
+            expect(page.locator("#deliveryExportBtn")).to_have_text(
+                "Exporter avec avertissements"
+            )
+
+            page.locator("#deliveryExportBtn").click()
+            expect(page.locator(".delivery-success")).to_be_visible()
+            expect(page.locator(".delivery-success")).to_contain_text(
+                "1080×1920"
+            )
+            expect(
+                page.get_by_role("link", name="Télécharger le livrable")
+            ).to_be_visible()
+            expect(
+                page.get_by_role("link", name="Rapport JSON")
+            ).to_be_visible()
             assert errors == []
             browser.close()
     finally:
