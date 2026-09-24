@@ -40,6 +40,7 @@ def test_v022_ui_structure_and_assets(tmp_path):
         "ux-audio-mix.js",
         "ux-audio-intelligence.js",
         "ux-audio-delivery.js",
+        "ux-delivery.js",
         "backend.js",
     )
     for asset in assets:
@@ -173,3 +174,22 @@ def test_v023_graphical_connection_point_patterns():
     assert ".connection-overlay" in css
     assert ".connection-line.selected" in css
     assert ".connection-point.selected" in css
+
+
+
+def test_v0234_delivery_center_patterns():
+    ux = (UI / "ux-delivery.js").read_text(encoding="utf-8")
+    html = (UI / "index.html").read_text(encoding="utf-8")
+    css = (UI / "style.css").read_text(encoding="utf-8")
+    assert "Delivery Center" in ux
+    assert "Festival / social" in ux
+    assert "FILL · plein cadre avec crop" in ux
+    assert "Autoriser explicitement le crop centré" in ux
+    assert "Préflight" in ux or "PRÉFLIGHT" in ux
+    assert "Exporter avec avertissements" in ux
+    assert "Télécharger le livrable" in ux
+    assert "Delivery · Festival / social" in ux
+    assert 'onclick="openDeliveryCenter()"' in html
+    assert '/ui/ux-delivery.js' in html
+    assert ".delivery-preflight-head" in css
+    assert ".delivery-crop-estimate" in css
