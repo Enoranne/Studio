@@ -8,6 +8,11 @@
     overlayHud: true,
     overlayMix: true,
     overlayRange: true,
+    contextDomain: "video",
+    helpMode: "guided",
+    uiDensity: "comfortable",
+    contextColors: true,
+    contextActions: true,
   };
   const listeners = new Set();
 

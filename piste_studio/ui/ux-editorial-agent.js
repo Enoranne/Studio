@@ -98,7 +98,7 @@
         <div class="agent-policy">Suggestions uniquement · aucune coupe automatique · validation humaine obligatoire.</div>
       </section>
 
-      <section class="agent-section">
+      <section class="agent-section" data-domain="audio">
         <div class="agent-title-row"><strong>1 · AUDIO TRACK INTELLIGENCE</strong>
           <button class="btn tiny" onclick="analyzeEditorialAudioTracks()">Analyser</button>
         </div>
@@ -114,7 +114,7 @@
         ` : '<div class="hint">Aucune analyse de pistes disponible.</div>'}
       </section>
 
-      <section class="agent-section">
+      <section class="agent-section" data-domain="transcript">
         <div class="agent-title-row"><strong>2–4 · TRANSCRIPT INTELLIGENCE</strong>
           <button class="btn tiny" onclick="transcribeEditorialMedia()">Transcrire</button>
         </div>
@@ -131,7 +131,7 @@
         </div>
       </section>
 
-      <section class="agent-section">
+      <section class="agent-section" data-domain="editorial">
         <div class="agent-title-row"><strong>VO → IMAGE · V0.27</strong>
           <button class="btn tiny" onclick="findVoiceVisualCandidates()">Comparer plans</button>
         </div>
@@ -149,20 +149,20 @@
         <div id="voiceVisualResult" class="agent-result"></div>
       </section>
 
-      <section class="agent-section">
+      <section class="agent-section" data-domain="video">
         <strong>5 · AI TIMELINE VIEW</strong>
         ${m?.filmstripUrl ? `<img class="agent-filmstrip" src="${m.filmstripUrl}" alt="Filmstrip">` : '<div class="hint">Filmstrip non généré.</div>'}
         <div class="agent-reference-row">${refs.slice(0,12).map(r => `<span>${esc(r.tag)} · ${esc(r.quality || "")}</span>`).join("") || "Aucune référence ciblée"}</div>
       </section>
 
-      <section class="agent-section">
+      <section class="agent-section" data-domain="editorial">
         <div class="agent-title-row"><strong>6 · TAKE COMPARATOR</strong>
           <button class="btn tiny" onclick="compareEditorialTakes()">Comparer rushes transcrits</button>
         </div>
         <div id="agentCompareResult" class="hint">Les meilleures prises restent une décision humaine.</div>
       </section>
 
-      <section class="agent-section">
+      <section class="agent-section" data-domain="editorial">
         <strong>7–9 · STRATÉGIE → EDL VIRTUELLE → APPLY</strong>
         <textarea id="agentBrief" rows="3" placeholder="Ex. teaser 45 s, enfance intime, montée progressive, éviter les spoilers…"></textarea>
         <div class="agent-form-row">
@@ -176,7 +176,7 @@
         <div id="agentProposalResult" class="agent-result">${EA.lastResult || ""}</div>
       </section>
 
-      <section class="agent-section">
+      <section class="agent-section" data-domain="delivery">
         <strong>10 · RENDERED MASTER CRITIC</strong>
         <input id="agentRenderPath" placeholder="edits/teaser_30/V001/teaser_30_V001.mp4"
           value="${esc(activeVersion ? `edits/${activeEditName}/${activeVersion}/${activeEditName}_${activeVersion}.mp4` : "")}">
@@ -184,7 +184,7 @@
         <div id="agentCriticResult" class="agent-result"></div>
       </section>
 
-      <section class="agent-section">
+      <section class="agent-section" data-domain="project">
         <div class="agent-title-row"><strong>RECETTE PISTE 0 · V0.26</strong>
           <div>
             <button class="btn tiny" onclick="runEditorialProductionRecipe(false)">État</button>

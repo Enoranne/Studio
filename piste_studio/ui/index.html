@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PISTE Studio — Local App v0.27.0</title>
+<title>PISTE Studio — Local App v0.28.0</title>
 <link rel="stylesheet" href="/ui/style.css" />
 </head>
 <body class="workspace-edit">
@@ -11,7 +11,7 @@
   <header class="appbar">
     <div class="brand-row">
       <div class="brand-mark"><span></span></div>
-      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.27.0 · LOCAL</small></div>
+      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.28.0 · LOCAL</small></div>
       <div class="project-pill"><span id="projectName">PISTE 0</span><small id="projectSubtitle">BONUS TRACK (REC)</small></div>
     </div>
     <div class="workspace-switch" role="group" aria-label="Espace de travail">
@@ -25,6 +25,8 @@
       <button class="icon-btn" id="toggleBrowserBtn" title="Afficher/masquer le Browser">B</button>
       <button class="icon-btn" id="toggleIndexBtn" title="Afficher/masquer l’Index">≡</button>
       <button class="icon-btn" id="toggleInspectorBtn" title="Afficher/masquer l’Inspecteur">I</button>
+      <button class="icon-btn" id="helpModeBtn" title="Aide contextuelle">?</button>
+      <button class="icon-btn" id="preferencesBtn" title="Préférences d’interface">⚙</button>
       <button class="btn ghost" id="undoBtn" onclick="undoLastEdit()" title="Annuler la dernière opération (Ctrl/Cmd+Z)">↶ Undo</button>
       <button class="btn ghost" id="saveBackendBtn">Enregistrer</button>
       <button class="btn primary" id="publishBtn" onclick="publishVersion()">Publier</button>
@@ -39,14 +41,18 @@
       <button class="nav-tab" data-view="versions">Versions</button>
     </div>
     <div class="sub-actions">
-      <button class="btn tiny" id="scanBtn">Scanner</button>
-      <button class="btn tiny" id="analyzeMediaBtn">Analyser</button>
-      <button class="btn tiny" id="bindBtn">Rushes</button>
-      <button class="btn tiny" id="bindAudioBtn">Audio</button>
-      <button class="btn tiny" onclick="previewTesseract()">Preview</button>
-      <button class="btn tiny" id="readinessBtn" onclick="openProductionReadiness()">Readiness</button>
-      <button class="btn tiny accent" id="editorialAgentBtn" onclick="openEditorialAgent()">Agent</button>
-      <button class="btn tiny" onclick="openDeliveryCenter()">Export</button>
+      <span class="context-chip" id="contextDomainChip" aria-live="polite">VIDEO</span>
+      <button class="universal-search-trigger" id="universalSearchBtn" type="button" aria-label="Recherche universelle">
+        <span>⌕</span><em>Rechercher action, aide, ressource…</em><kbd>⌘K</kbd>
+      </button>
+      <button class="btn tiny" id="scanBtn" data-domain="video">Scanner</button>
+      <button class="btn tiny" id="analyzeMediaBtn" data-domain="video">Analyser</button>
+      <button class="btn tiny" id="bindBtn" data-domain="video">Rushes</button>
+      <button class="btn tiny" id="bindAudioBtn" data-domain="audio">Audio</button>
+      <button class="btn tiny" onclick="previewTesseract()" data-domain="delivery">Preview</button>
+      <button class="btn tiny" id="readinessBtn" onclick="openProductionReadiness()" data-domain="delivery">Readiness</button>
+      <button class="btn tiny accent" id="editorialAgentBtn" onclick="openEditorialAgent()" data-domain="editorial">Agent</button>
+      <button class="btn tiny" onclick="openDeliveryCenter()" data-domain="delivery">Export</button>
       <input id="multiFileInput" type="file" accept="video/*" multiple hidden>
       <input id="singleFileInput" type="file" accept="video/*" hidden>
       <input id="multiAudioInput" type="file" accept="audio/*" multiple hidden>
@@ -73,7 +79,7 @@
             </div>
           </div>
           <div class="media-list filmstrip-browser" id="mediaList"></div>
-          <div class="browser-footer"><span>Survole = skim</span><span>F = favori · X = rejet</span></div>
+          <div class="browser-footer context-help help-guided-only"><span>Survole = skim</span><span>F = favori · X = rejet</span></div>
         </aside>
 
         <section class="viewer-panel pane">
@@ -103,6 +109,7 @@
 
         <aside class="inspector-panel pane" id="inspectorPanel">
           <div class="pane-title"><div><strong>INSPECTEUR</strong><small id="selectionKind">CLIP</small></div><div class="pane-title-actions"><button class="pane-tool focus-trigger" data-focus-pane="inspector" type="button" title="Agrandir l’Inspecteur">⛶</button><button class="pane-close" onclick="toggleInspector()">×</button></div></div>
+          <div class="context-quick-actions" id="contextQuickActions" aria-label="Actions contextuelles"></div>
           <div class="inspector" id="inspector"></div>
         </aside>
 
@@ -115,14 +122,14 @@
           <div class="timeline-main">
             <div class="timeline-toolbar">
               <div class="timeline-left">
-                <button class="btn tiny" onclick="addTitle()">+ Titre</button>
-                <button class="btn tiny" onclick="addFinalCard()">+ Carton final</button>
-                <button class="btn tiny" onclick="addAudio('vo')">+ VO</button>
-                <button class="btn tiny" onclick="addAudio('music')">+ Music</button>
-                <button class="btn tiny" onclick="addAudio('sfx')">+ SFX</button>
-                <button class="btn tiny" id="addMarkerBtn" onclick="openMarkerComposer()">+ Marker</button>
+                <button class="btn tiny" onclick="addTitle()" data-domain="editorial">+ Titre</button>
+                <button class="btn tiny" onclick="addFinalCard()" data-domain="editorial">+ Carton final</button>
+                <button class="btn tiny" onclick="addAudio('vo')" data-domain="audio">+ VO</button>
+                <button class="btn tiny" onclick="addAudio('music')" data-domain="audio">+ Music</button>
+                <button class="btn tiny" onclick="addAudio('sfx')" data-domain="audio">+ SFX</button>
+                <button class="btn tiny" id="addMarkerBtn" onclick="openMarkerComposer()" data-domain="editorial">+ Marker</button>
               </div>
-              <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span><button class="timeline-focus focus-trigger" data-focus-pane="timeline" type="button" title="Agrandir la Timeline">⛶</button></div>
+              <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span><span class="context-help help-guided-only timeline-help">Les médias source restent inchangés.</span><button class="timeline-focus focus-trigger" data-focus-pane="timeline" type="button" title="Agrandir la Timeline">⛶</button></div>
               <div class="timeline-right"><label>Snap</label><select id="snap"><option value="0.1">0,1</option><option value="0.5" selected>0,5</option><option value="1">1,0</option></select><span class="lock-readout" id="hardLockLabel">LOCKS</span></div>
             </div>
             <div class="ruler" id="ruler"></div>
@@ -141,7 +148,28 @@
       <div class="cards" id="versionsCards"></div>
     </section>
   </main>
-  <footer class="statusbar"><span id="backendFoot">MASTER_PROTECTED = TRUE · mode local</span><span id="shortcutHelp">1 Assemble · 2 Edit · 3 Review · ⌘K Commandes · ~ Focus · F Favorite · X Reject</span></footer>
+  <footer class="statusbar"><span id="backendFoot">MASTER_PROTECTED = TRUE · mode local</span><span id="actionStateBadge" class="action-state-badge" data-state="ready">PRÊT</span><span id="actionNarration" class="action-narration context-help">Aide contextuelle active · survole ou utilise un outil.</span><span id="shortcutHelp">1 Assemble · 2 Edit · 3 Review · ⌘K Rechercher · ~ Focus · F Favorite · X Reject</span></footer>
+</div>
+<div class="overlay-popover help-mode-menu" id="helpModeMenu" hidden>
+  <div class="popover-title">AIDE CONTEXTUELLE</div>
+  <label><input type="radio" name="helpMode" value="guided"> Guidée <small>micro-explications + actions</small></label>
+  <label><input type="radio" name="helpMode" value="minimal"> Minimale <small>conséquences importantes seulement</small></label>
+  <label><input type="radio" name="helpMode" value="off"> Désactivée <small>interface compacte</small></label>
+  <div class="help-resource-actions">
+    <button class="btn" id="openHelpCenterBtn" type="button">Aide / FAQ</button>
+    <button class="btn" id="openResourcesBtn" type="button">Ressources</button>
+  </div>
+</div>
+<div class="overlay-popover preferences-menu" id="preferencesMenu" hidden>
+  <div class="popover-title">PRÉFÉRENCES INTERFACE</div>
+  <div class="preference-group">
+    <span>Densité</span>
+    <label><input type="radio" name="uiDensity" value="comfortable"> Confort</label>
+    <label><input type="radio" name="uiDensity" value="compact"> Compact</label>
+  </div>
+  <label class="preference-toggle"><input type="checkbox" id="contextColorsToggle"> Nuances par domaine</label>
+  <label class="preference-toggle"><input type="checkbox" id="contextActionsToggle"> Actions contextuelles</label>
+  <small>Ces réglages concernent uniquement l’affichage local.</small>
 </div>
 <div class="overlay-popover" id="overlayMenu" hidden>
   <div class="popover-title">OVERLAYS VIEWER</div>
@@ -150,10 +178,17 @@
   <label><input type="checkbox" id="overlayRange" checked> IN / OUT source</label>
 </div>
 <div class="command-backdrop" id="commandPalette" hidden>
-  <div class="command-panel" role="dialog" aria-modal="true" aria-label="Palette de commandes">
-    <div class="command-search-row"><span>⌘K</span><input id="commandSearch" placeholder="Rechercher une commande…" autocomplete="off"></div>
+  <div class="command-panel universal-command-panel" role="dialog" aria-modal="true" aria-label="Recherche universelle">
+    <div class="command-search-row"><span>⌕</span><input id="commandSearch" placeholder="Action, menu, question, ressource…" autocomplete="off"></div>
+    <div class="command-filters" id="commandFilters">
+      <button class="active" data-command-filter="all">Tout</button>
+      <button data-command-filter="action">Actions</button>
+      <button data-command-filter="goto">Aller à</button>
+      <button data-command-filter="help">Aide</button>
+      <button data-command-filter="resource">Ressources</button>
+    </div>
     <div class="command-results" id="commandResults"></div>
-    <div class="command-footer"><span>↑↓ naviguer</span><span>Entrée exécuter</span><span>Échap fermer</span></div>
+    <div class="command-footer"><span>↑↓ naviguer</span><span>Entrée ouvrir/exécuter</span><span>Échap retour/fermer</span></div>
   </div>
 </div>
 <aside class="editorial-drawer" id="editorialDrawer" hidden>
@@ -179,6 +214,10 @@
 <script src="/ui/ux-magnetic.js"></script>
 <script src="/ui/ux-shell.js"></script>
 <script src="/ui/ux-polish.js"></script>
+<script src="/ui/ux-context.js"></script>
+<script src="/ui/ux-help.js"></script>
+<script src="/ui/ux-universal-search.js"></script>
+<script src="/ui/ux-preferences.js"></script>
 <script src="/ui/ux-editorial.js"></script>
 <script src="/ui/ux-media-intelligence.js"></script>
 <script src="/ui/ux-editorial-vision.js"></script>
