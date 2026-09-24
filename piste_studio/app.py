@@ -16,6 +16,7 @@ from .media import scan_media
 from .metadata import fetch_media_with_metadata
 from .project import load_project, verify_master
 from .readiness import build_production_readiness
+from .production_run import build_production_run_report, save_production_run_report
 from .tesseract_bridge import detect_tesseract, execute_bootstrap, execute_preview, execute_filmstrip, execute_export, TesseractBridgeError
 from .authoring import execute_authoring
 from .timeline import TimelineError, load_timeline, save_timeline, validate_timeline
@@ -168,6 +169,36 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     @app.get("/api/health")
     def health():
         return {"ok": True, "version": "0.24", "project_root": str(root)}
+
+    @app.get("/api/production-run")
+    def production_run(
+        edit_name: str = "teaser_30",
+        version: str | None = None,
+    ):
+        return build_production_run_report(
+            root,
+            edit_name=edit_name,
+            version=version,
+        )
+
+    @app.post("/api/production-run")
+    def production_run_save(payload: dict = Body(default_factory=dict)):
+        edit_name = str(payload.get("edit_name") or "teaser_30")
+        version = payload.get("version")
+        path = save_production_run_report(
+            root,
+            edit_name=edit_name,
+            version=str(version) if version else None,
+        )
+        return {
+            "ok": True,
+            "path": path.relative_to(root).as_posix(),
+            "report": build_production_run_report(
+                root,
+                edit_name=edit_name,
+                version=str(version) if version else None,
+            ),
+        }
 
     @app.get("/api/readiness")
     def production_readiness(
