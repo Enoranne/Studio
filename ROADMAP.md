@@ -26,7 +26,9 @@
 - ✅ **V0.22.2** — références visuelles ciblées sur un frame ou une zone ROI, indépendantes des tags globaux du rush, intégrées aux preuves de continuité ;
 - ✅ **V0.22.3** — groupes de références projet et qualité Primaire/Secondaire/Faible, pondération intra-groupe et équilibrage entre groupes ;
 - ✅ **V0.22.4** — détection de conflit entre tags sémantiques, Canon et contexte HARD/SOFT LOCK, avec acquittement humain explicite ;
-- comparaison de continuité plan précédent / plan suivant.
+- ✅ **V0.22.5** — continuité contextuelle plan précédent / plan courant / plan suivant, simulation d’un rush candidat sans mutation et distinction rupture explicite / preuve manquante.
+
+**V0.22 — Editorial Vision Refinement : TERMINÉE ✅**
 
 ## V0.23 — Motion & Delivery
 
