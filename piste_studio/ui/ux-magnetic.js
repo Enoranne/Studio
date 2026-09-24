@@ -160,9 +160,10 @@ async function commitBackendMagneticOperation(operation,args,message,before=clip
         timeline:backendTimelinePayload(before,storylineMode),
         operation,
         args,
+        edit_name:activeEditName,
+        checkpoint_reason:message,
       }),
     });
-    if(!(await checkpointBeforeMagnetic(before,message)))return false;
     const previousSelection=selectedClip;
     hydrateTimeline(response.timeline);
     storylineMode='magnetic';
