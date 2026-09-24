@@ -265,3 +265,21 @@ Les familles Sans / Serif / Mono sont intentionnellement génériques : elles am
 10. Enregistre la timeline.
 
 La queue finale fait partie du même clip : le texte disparaît, mais le fond reste présent jusqu’au dernier frame.
+
+
+## Point de connexion graphique V0.23.3
+
+1. Sélectionne un titre, une VO, une musique ou un SFX connecté.
+2. Repère la ligne qui descend vers la Storyline.
+3. La poignée active apparaît sur le plan parent.
+4. Glisse cette poignée horizontalement pour déplacer **l’attache seulement**.
+5. Le clip connecté reste à son timecode actuel.
+6. Si la poignée traverse une coupe, le parent peut changer.
+7. Pour une valeur précise, utilise **CONNEXION STORY → Point sur parent (s)**.
+8. Enregistre ensuite la timeline si le résultat te convient.
+
+Le badge du clip indique le plan parent et la position locale du point, par exemple :
+
+`↳ Plan B · +1.0s`
+
+Un déplacement bloqué par un lock est refusé avant mutation. `Ctrl/Cmd+Z` restaure le parent et le point précédents.
