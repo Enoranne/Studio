@@ -212,6 +212,78 @@ Pour CONFLICT ou HARD_LOCK :
 
 L’override ajoute le tag au média mais ne modifie jamais le Canon ou les locks.
 
+## Editorial Vision V0.22.5
+
+La continuité sémantique peut désormais être évaluée dans le contexte réel de la STORYLINE.
+
+### Entrée
+
+L’analyse reçoit :
+
+- `edit_name` ;
+- `clip_id` ;
+- éventuellement `candidate_media_id`.
+
+Sans candidat, elle analyse le média monté.
+
+Avec `candidate_media_id`, elle simule ce média à la place du clip central sans écrire la timeline.
+
+### Voisinage
+
+Les clips vidéo sont triés par position temporelle.
+
+Pour le clip central, PISTE Studio identifie :
+
+- précédent ;
+- cible ;
+- suivant.
+
+Les clips audio, titres et éléments connectés ne participent pas à ce voisinage visuel.
+
+### Signaux
+
+Pour chaque facet `character / prop / decor / look` :
+
+- tags communs → `FACET_CONTINUITY` ;
+- tags présents des deux côtés mais incompatibles → `FACET_RUPTURE` ;
+- voisin documenté / cible non documentée → `TARGET_EVIDENCE_MISSING` ;
+- cible documentée / voisin non documenté → `NEIGHBOR_EVIDENCE_MISSING`.
+
+Quand précédent et suivant partagent un tag :
+
+- cible partage ce tag → `BRIDGE_CONTINUITY` ;
+- cible ne le documente pas → `BRIDGE_EVIDENCE_GAP`.
+
+### Statuts
+
+- `RUPTURE` : contradiction structurée explicite ;
+- `REVIEW` : preuve attendue mais métadonnée insuffisante ;
+- `CONTINUOUS` : continuité explicite sans rupture ;
+- `INSUFFICIENT` : cible sans preuve structurée exploitable ;
+- `NO_SIGNAL` : données présentes mais aucune conclusion de voisinage.
+
+Une absence de tag n’est jamais assimilée à une absence visuelle.
+
+### Canon
+
+Les tags du plan ou candidat sont également passés au moteur Canon V0.22.4.
+
+Les conflits Canon restent informatifs dans ce drawer et n’entraînent aucune modification.
+
+### Interface
+
+Dans l’Inspector d’un clip vidéo :
+
+**CONTINUITÉ DE VOISINAGE → Analyser voisins**
+
+Le drawer montre un triptyque :
+
+**PRÉCÉDENT | PLAN/CANDIDAT | SUIVANT**
+
+Un sélecteur permet de tester un autre rush du catalogue à la même position.
+
+Aucun bouton de ce drawer ne remplace le clip automatiquement.
+
 ## Audio Delivery V0.21
 
 Le **Master Check** contrôle le mix rendu, après sommation des clips audio audibles de la timeline.
