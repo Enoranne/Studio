@@ -568,6 +568,14 @@ def _reference_row_to_dict(row) -> dict:
         item["embedding"] = json.loads(item.pop("embedding_json"))
     except Exception:
         item["embedding"] = []
+    try:
+        clean_quality, quality_weight = normalize_reference_quality(
+            item.get("quality")
+        )
+    except SemanticVisionError:
+        clean_quality, quality_weight = "secondary", 1.0
+    item["quality"] = clean_quality
+    item["quality_weight"] = quality_weight
     return item
 
 
@@ -1000,6 +1008,9 @@ def propose_semantic_tags(
                 "media_id": iid,
                 "reference_id": None,
                 "embedding": embedding,
+                "group_name": None,
+                "quality": "secondary",
+                "quality_weight": 1.0,
             })
             facets[tag] = facet
 
@@ -1022,6 +1033,9 @@ def propose_semantic_tags(
             "embedding": embedding,
             "timestamp_seconds": float(reference["timestamp_seconds"]),
             "roi": reference.get("roi") or {},
+            "group_name": reference.get("group_name"),
+            "quality": reference.get("quality") or "secondary",
+            "quality_weight": float(reference.get("quality_weight") or 1.0),
         })
         facets[tag] = str(reference["facet"])
 
@@ -1042,7 +1056,10 @@ def propose_semantic_tags(
                 continue
             facet = facets[tag]
             threshold = float(thresholds[facet])
-            centroid = _centroid([ref["embedding"] for ref in refs])
+            grouped_refs = _group_reference_centroids(refs)
+            centroid = _centroid(
+                [group["embedding"] for group in grouped_refs]
+            )
             similarity = cosine_similarity(target_embedding, centroid)
             best_ref, best_similarity = max(
                 (
@@ -1075,9 +1092,52 @@ def propose_semantic_tags(
             legacy_count = sum(
                 1 for ref in refs if ref.get("source") == "media_profile"
             )
+            quality_distribution = {
+                quality: sum(
+                    1
+                    for ref in refs
+                    if ref.get("source") == "targeted_reference"
+                    and ref.get("quality") == quality
+                )
+                for quality in REFERENCE_QUALITY_WEIGHTS
+            }
+            group_summaries = []
+            for group in grouped_refs:
+                members = group["members"]
+                targeted_members = [
+                    member
+                    for member in members
+                    if member.get("source") == "targeted_reference"
+                ]
+                group_summaries.append({
+                    "key": group["key"],
+                    "name": (
+                        targeted_members[0].get("group_name")
+                        if targeted_members
+                        and targeted_members[0].get("group_name")
+                        else None
+                    ),
+                    "reference_ids": [
+                        int(member["reference_id"])
+                        for member in targeted_members
+                        if member.get("reference_id") is not None
+                    ],
+                    "media_ids": sorted(
+                        {int(member["media_id"]) for member in members}
+                    ),
+                    "reference_count": len(members),
+                    "total_quality_weight": group["total_weight"],
+                })
             evidence = {
                 "method": (
-                    "targeted_and_media_reference_centroid"
+                    "grouped_weighted_reference_centroid"
+                    if any(
+                        ref.get("group_name")
+                        or ref.get("quality") != "secondary"
+                        for ref in refs
+                        if ref.get("source") == "targeted_reference"
+                    )
+                    else "targeted_and_media_reference_centroid"
                     if targeted_ids and legacy_count
                     else "targeted_reference_centroid"
                     if targeted_ids
@@ -1090,6 +1150,10 @@ def propose_semantic_tags(
                 "targeted_reference_count": len(targeted_ids),
                 "legacy_reference_count": legacy_count,
                 "reference_count": len(refs),
+                "reference_group_count": len(grouped_refs),
+                "reference_groups": group_summaries,
+                "quality_distribution": quality_distribution,
+                "quality_weighting": dict(REFERENCE_QUALITY_WEIGHTS),
                 "best_reference_media_id": int(best_ref["media_id"]),
                 "best_targeted_reference_id": (
                     int(best_ref["reference_id"])
