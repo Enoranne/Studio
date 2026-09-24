@@ -187,3 +187,34 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .connection-section input[type=number]{border-color:#564332}
 
 .clip.connected:before{display:none}
+
+
+/* V0.23.4 — Delivery Center */
+.delivery-target-summary{display:grid;gap:3px;margin:9px 0;padding:9px;border:1px solid #2b3138;border-radius:7px;background:#0b0f13}
+.delivery-target-summary>b{font-size:8px;color:#e1e5e9}
+.delivery-target-summary>span{font-size:6.5px;color:#a7b0b9}
+.delivery-target-summary>small{font-size:6.2px;color:#68737d}
+.delivery-preflight-head{display:flex;justify-content:space-between;align-items:center;margin:11px 0 6px;padding-bottom:5px;border-bottom:1px solid #232a31}
+.delivery-preflight-head span{font-size:6px;letter-spacing:.9px;color:#6e7984}
+.delivery-preflight-head b{font-size:7px;color:#d9dee3}
+.delivery-check{border-left:2px solid #4f5963;padding:6px 7px;margin:5px 0;background:#0c1014}
+.delivery-check>div{display:flex;align-items:center;justify-content:space-between}
+.delivery-check span{font-size:6.2px;letter-spacing:.6px;color:#818b95;text-transform:uppercase}
+.delivery-check b{font-size:6.5px}
+.delivery-check p{margin:3px 0 0;font-size:6.5px;line-height:1.45;color:#818b95}
+.delivery-check.delivery-pass{border-left-color:var(--good)}
+.delivery-check.delivery-pass b{color:var(--good)}
+.delivery-check.delivery-warn{border-left-color:var(--warn)}
+.delivery-check.delivery-warn b{color:var(--warn)}
+.delivery-check.delivery-blocked{border-left-color:var(--danger)}
+.delivery-check.delivery-blocked b{color:var(--danger)}
+.delivery-crop-estimate{display:grid;gap:2px;margin:7px 0;padding:7px;border:1px solid rgba(216,185,107,.25);background:rgba(216,185,107,.05);border-radius:6px}
+.delivery-crop-estimate b{font-size:6.5px;color:var(--warn)}
+.delivery-crop-estimate span{font-size:6.5px;color:#a99877}
+.delivery-crop-hidden{display:none}
+.delivery-success{margin-top:10px;padding:9px;border:1px solid rgba(107,201,151,.25);background:rgba(107,201,151,.05);border-radius:7px}
+.delivery-success>div:first-child{display:flex;justify-content:space-between;gap:8px}
+.delivery-success span{font-size:6px;color:#6f8278;letter-spacing:.8px}
+.delivery-success b{font-size:7px;color:#a9d9bc}
+.delivery-success p,.delivery-success small{font-size:6.5px;color:#839089}
+.delivery-success small{display:block;overflow-wrap:anywhere}
