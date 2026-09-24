@@ -85,6 +85,8 @@
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = title;
+      button.setAttribute("aria-label", "Action contextuelle : " + title);
+      button.title = "Action contextuelle · " + title;
       button.dataset.domain = itemDomain;
       button.addEventListener("click", event => {
         event.stopPropagation();
