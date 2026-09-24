@@ -807,7 +807,7 @@ def test_editable_title_overlay_preview_and_persistence(tmp_path):
             )
             saved = __import__("json").loads(timeline.read_text(encoding="utf-8"))
             title = next(x for x in saved["clips"] if x["id"] == "t1")
-            assert saved["schema_version"] == 5
+            assert saved["schema_version"] == 6
             assert title["text"] == "PISTE 0\nBONUS TRACK"
             assert title["titlePreset"] == "lower_third"
             assert title["fontFamily"] == "serif"
