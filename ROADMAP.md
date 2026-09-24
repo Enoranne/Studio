@@ -33,7 +33,7 @@
 ## V0.23 — Motion & Delivery
 
 - ✅ **V0.23.1** — titres et overlays éditables : timeline schema v5, presets centre/lower-third/haut/custom, style/position/fond/opacité, preview Viewer live et conservation intégrale dans le plan d’authoring ;
-- carton final ;
+- ✅ **V0.23.2** — carton final spécialisé : fond canvas plein, alignement automatique sur la fin de timeline, texte éditable et noir/fond seul final intégré ;
 - point de connexion graphique déplaçable ;
 - exports festival / social ;
 - presets de delivery.
