@@ -490,3 +490,50 @@ Le snap ne doit pas déplacer silencieusement cette borne.
 Pendant `blackTailSeconds`, seul le rendu du texte est masqué.
 
 Le clip final reste actif, son fond reste visible et son historique reste intact.
+
+
+## 51. L’attache graphique n’est pas le timing du clip
+
+Déplacer un point de connexion ne doit pas déplacer le média connecté.
+
+Le logiciel doit distinguer :
+- la relation temporelle enfant/parent ;
+- la position graphique de l’attache.
+
+Cette distinction doit être visible dans le modèle de données comme dans l’Inspector.
+
+## 52. Une seule poignée active
+
+Afficher toutes les lignes aide à comprendre la structure du montage.
+
+Afficher toutes les poignées actives créerait en revanche du bruit et des erreurs de manipulation.
+
+PISTE Studio affiche donc :
+- toutes les connexions discrètement ;
+- une poignée manipulable uniquement pour la sélection courante.
+
+## 53. Traverser une coupe peut changer le parent
+
+Une connexion graphique déplacée sur un autre plan peut exprimer une nouvelle dépendance éditoriale.
+
+Dans ce cas :
+- le clip enfant reste en place ;
+- le parent change ;
+- son offset temporel est recalculé ;
+- le nouveau point est persisté.
+
+Le changement doit rester undoable.
+
+## 54. Drag et précision numérique sont complémentaires
+
+Une manipulation graphique primaire doit disposer d’une alternative précise et accessible.
+
+Le drag sert à l’intuition et au placement rapide.
+
+Le champ **Point sur parent (s)** sert aux ajustements précis et aux usages sans drag.
+
+## 55. Une connexion est soumise aux locks
+
+Déplacer seulement une ligne graphique peut modifier la dépendance éditoriale du montage.
+
+Cette action doit donc passer par les mêmes checkpoints et contrôles HARD/SOFT LOCK qu’un autre changement structurel.
