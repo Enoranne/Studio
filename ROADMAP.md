@@ -34,7 +34,7 @@
 
 - ✅ **V0.23.1** — titres et overlays éditables : timeline schema v5, presets centre/lower-third/haut/custom, style/position/fond/opacité, preview Viewer live et conservation intégrale dans le plan d’authoring ;
 - ✅ **V0.23.2** — carton final spécialisé : fond canvas plein, alignement automatique sur la fin de timeline, texte éditable et noir/fond seul final intégré ;
-- point de connexion graphique déplaçable ;
+- ✅ **V0.23.3** — point de connexion graphique déplaçable : lignes d’attache visibles, poignée active sur l’élément sélectionné, changement de parent par drag sans déplacer le clip connecté, réglage numérique, locks/checkpoints/Undo et timeline schema v6 ;
 - exports festival / social ;
 - presets de delivery.
 
