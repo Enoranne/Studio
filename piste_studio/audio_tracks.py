@@ -370,6 +370,82 @@ def select_audio_track(
     }
 
 
+def audio_waveform_samples(
+    root: Path,
+    media_id: int,
+    *,
+    track_index: int | None = None,
+    samples: int = 240,
+) -> list[float]:
+    item = _media_item(root, media_id)
+    path = _media_path(root, item)
+    tracks = list_audio_tracks(root, media_id)
+    if not tracks:
+        tracks = analyze_audio_tracks(root, media_id).get("tracks") or []
+    if track_index is None:
+        selected = next(
+            (x for x in tracks if x.get("selected_for_transcription")),
+            None,
+        )
+        if selected is None:
+            recommended = recommend_audio_track(tracks)
+            track_index = recommended
+        else:
+            track_index = int(selected["track_index"])
+    if track_index is None:
+        return []
+
+    tools = detect_audio_track_tools()
+    if not tools.ffmpeg:
+        return []
+    samples = max(40, min(int(samples), 1200))
+    try:
+        proc = subprocess.run(
+            [
+                tools.ffmpeg,
+                "-hide_banner", "-loglevel", "error",
+                "-i", str(path),
+                "-map", f"0:a:{int(track_index)}",
+                "-ac", "1",
+                "-ar", "4000",
+                "-f", "s16le",
+                "pipe:1",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    except FileNotFoundError:
+        return []
+    if proc.returncode != 0 or not proc.stdout:
+        return []
+
+    raw = proc.stdout
+    count = len(raw) // 2
+    if count <= 0:
+        return []
+    values = [
+        int.from_bytes(
+            raw[i:i + 2],
+            byteorder="little",
+            signed=True,
+        )
+        for i in range(0, len(raw) - 1, 2)
+    ]
+    bucket = max(1, len(values) // samples)
+    peaks = []
+    for start in range(0, len(values), bucket):
+        chunk = values[start:start + bucket]
+        if not chunk:
+            continue
+        peaks.append(
+            round(max(abs(x) for x in chunk) / 32768.0, 4)
+        )
+        if len(peaks) >= samples:
+            break
+    return peaks
+
+
 def selected_audio_track(root: Path, media_id: int) -> dict | None:
     selected = _selected_track(root, media_id)
     if selected is None:
