@@ -363,14 +363,15 @@
   - ProRes 422 HQ via `prores_ks` profile 3 ;
   - yuv422p10le ;
   - PCM 24-bit / 48 kHz stéréo.
-- Inspection finale ffprobe :
+- Inspection finale ffprobe + conformité PASS/WARN :
   - codec vidéo ;
   - dimensions ;
   - pixel format ;
   - fps ;
   - informations couleur disponibles ;
   - codec/sample-rate/canaux audio ;
-  - durée et taille fichier.
+  - durée et taille fichier ;
+  - comparaison codec/dimensions/pixel format/fps/audio avec la cible annoncée.
 - Livrables stockés sous `exports/<edit>/<version>/`.
 - Rapports JSON sous `reports/delivery/`.
 - API :
@@ -383,7 +384,8 @@
 - Test ffmpeg réel d’un 16:9 vers un fichier vertical 1080×1920.
 - Test API complet préflight → export → fichier → rapport.
 - Test Chromium : FIT, blocage FILL, consentement crop, estimation, export et liens.
-- CI de référence : **135 tests passés / 135**.
+- Le Master Check utilisé pour un delivery Vxxx est évalué contre le snapshot publié Vxxx, même si le working cut a changé ensuite.
+- CI de référence : **137 tests passés / 137**.
 
 ### V0.23.3 — Point de connexion graphique déplaçable
 
