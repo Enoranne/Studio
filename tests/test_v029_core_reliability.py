@@ -4,10 +4,12 @@ from fastapi.testclient import TestClient
 import pytest
 
 from piste_studio.app import create_app
+from piste_studio.locks import add_lock
 from piste_studio.project import init_project
 from piste_studio.storyline import (
     StorylineError,
     apply_storyline_operation,
+    validate_locked_change,
 )
 from piste_studio.timeline import validate_timeline
 
@@ -178,3 +180,54 @@ def test_magnetic_ui_delegates_core_gestures_to_backend_kernel():
     assert "'trim'" in script
     assert "'connection_point'" in script
     assert "backendConnected" in script
+
+
+def test_storyline_insert_respects_existing_reorder_hard_lock(tmp_path):
+    root = tmp_path / "InsertLock"
+    init_project(root, "Insert lock")
+    add_lock(root, "Protected Story", 2.0, 4.5, "HARD", ["reorder"])
+    before = base_doc()
+    after = apply_storyline_operation(
+        before,
+        "insert",
+        {
+            "clip": {
+                "id": "v3",
+                "track": "video",
+                "start": 0,
+                "duration": 0.5,
+                "sourceStart": 0,
+            },
+            "target_time": 2.1,
+        },
+    )
+    with pytest.raises(StorylineError, match="HARD LOCK"):
+        validate_locked_change(root, before, after)
+
+
+def test_storyline_remove_respects_existing_reorder_hard_lock(tmp_path):
+    root = tmp_path / "RemoveLock"
+    init_project(root, "Remove lock")
+    add_lock(root, "Protected Story", 2.0, 4.5, "HARD", ["reorder"])
+    before = {
+        "edit_name": "kernel",
+        "duration_seconds": 30,
+        "storyline": {"mode": "magnetic", "start": 2},
+        "tracks": [{"id": "video", "name": "VIDEO", "kind": "video"}],
+        "clips": [
+            {
+                "id": "v1",
+                "track": "video",
+                "start": 2,
+                "duration": 3,
+                "sourceStart": 0,
+            }
+        ],
+    }
+    after = apply_storyline_operation(
+        before,
+        "remove",
+        {"clip_id": "v1"},
+    )
+    with pytest.raises(StorylineError, match="HARD LOCK"):
+        validate_locked_change(root, before, after)
