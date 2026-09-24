@@ -320,6 +320,72 @@
 
 ## V0.23 — Motion & Delivery
 
+### V0.23.5 — Presets de delivery
+
+- `DELIVERY_VERSION` passe à `0.23.5-delivery-2`.
+- Nouveau store projet : `delivery-presets.yaml`.
+- Les cinq profils intégrés restent **immuables** et toujours disponibles.
+- Un profil intégré ou personnalisé peut être **dupliqué** pour créer une variante.
+- Presets personnalisés :
+  - nom stable et ID sécurisé ;
+  - famille festival / online / social / custom ;
+  - largeur / hauteur paires ;
+  - fps 24 / 30 / 60 ;
+  - H.264 ou ProRes 422 HQ ;
+  - bitrate vidéo H.264 ;
+  - bitrate AAC ;
+  - source Tesseract 720p / 1080p / 4K ;
+  - cadrage par défaut NATIVE / FIT / FILL selon compatibilité.
+- Normalisation codec :
+  - H.264 → MP4 + yuv420p + AAC 48 kHz stéréo ;
+  - ProRes → MOV + yuv422p10le + PCM 24-bit 48 kHz stéréo.
+- `native` n’est conservé que lorsque les dimensions finales correspondent réellement au canvas source Tesseract choisi.
+- Un preset personnalisé peut être défini comme **défaut du projet**.
+- La suppression du preset par défaut rétablit `online_1080`.
+- IDs custom limités au format sûr `custom_[a-z0-9_]+`.
+- Les labels de duplication sont bornés à 100 caractères.
+- Export d’un preset sous document JSON portable :
+  - `kind = piste_studio_delivery_preset` ;
+  - schema versionné ;
+  - aucune dépendance au projet source.
+- Import JSON dans un autre projet avec génération d’un nouvel ID sans collision.
+- API CRUD complète :
+  - créer ;
+  - modifier ;
+  - dupliquer ;
+  - supprimer ;
+  - définir par défaut ;
+  - exporter ;
+  - importer.
+- Le Delivery Center affiche :
+  - INTÉGRÉ / PERSONNALISÉ ;
+  - DÉFAUT ;
+  - éditeur du preset custom ;
+  - actions Dupliquer / Définir par défaut / Exporter JSON / Importer JSON.
+- Un preset custom est résolu par le même moteur que les profils intégrés dans :
+  - préflight ;
+  - export ;
+  - nom de fichier ;
+  - conformité ffprobe.
+- Les garde-fous V0.23.4 restent inchangés :
+  - aucun crop silencieux ;
+  - FILL toujours soumis à consentement explicite ;
+  - warnings audio/titres/version conservés ;
+  - conformité finale PASS/WARN.
+- Tests :
+  - persistance YAML ;
+  - normalisation ;
+  - immutabilité built-in ;
+  - validation dimensions/FPS/bitrates ;
+  - défaut projet ;
+  - suppression ;
+  - export/import JSON ;
+  - preset custom dans le préflight ;
+  - canvas Tesseract 4K → 1080 impose FIT ;
+  - API lifecycle ;
+  - Chromium création/édition/défaut/réouverture/suppression.
+- CI de référence : **144 tests passés / 144**.
+
 ### V0.23.4 — Exports festival / social
 
 - Nouveau moteur `piste_studio/delivery.py`.
