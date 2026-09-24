@@ -8,6 +8,24 @@
     project: "PROJET",
   };
   const VALID = new Set(Object.keys(LABELS));
+  const QUICK_A11Y = {
+    "SOURCE": "Afficher le moniteur source contextuel",
+    "Fenêtres": "Proposer des segments visuels contextuels",
+    "Alternatives": "Ouvrir le sélecteur de prises contextuel",
+    "Écouter": "Préécouter la source sonore contextuelle",
+    "Loudness": "Mesurer le niveau sonore contextuel",
+    "Master Check": "Contrôler le mix final contextuel",
+    "Agent": "Ouvrir l’assistant éditorial contextuel",
+    "VO → Image": "Ouvrir le pont voix vers image contextuel",
+    "Marqueur": "Créer un repère éditorial contextuel",
+    "Index": "Afficher l’index de montage contextuel",
+    "Readiness": "Vérifier la préparation production contextuelle",
+    "Export": "Ouvrir la livraison contextuelle",
+    "Canon": "Ouvrir les règles du projet contextuelles",
+    "Versions": "Ouvrir l’historique du projet contextuel",
+    "Enregistrer": "Sauvegarder le montage contextuellement",
+  };
+
   const QUICK_ACTIONS = {
     video: [
       ["SOURCE", "video", () => typeof setViewerMode === "function" && setViewerMode("source")],
@@ -85,7 +103,7 @@
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = title;
-      button.setAttribute("aria-label", "Action contextuelle : " + title);
+      button.setAttribute("aria-label", QUICK_A11Y[title] || ("Ouvrir une action contextuelle " + itemDomain));
       button.title = "Action contextuelle · " + title;
       button.dataset.domain = itemDomain;
       button.addEventListener("click", event => {
