@@ -100,6 +100,28 @@ def _write_index(root: Path, edit_name: str, data: dict) -> None:
     tmp.replace(path)
 
 
+def _commit_timeline_and_index(
+    root: Path,
+    edit_name: str,
+    timeline: dict,
+    index: dict,
+    *,
+    rollback_timeline: dict | None,
+) -> None:
+    save_timeline(root, timeline)
+    try:
+        _write_index(root, edit_name, index)
+    except OSError as exc:
+        if rollback_timeline is not None:
+            try:
+                save_timeline(root, rollback_timeline)
+            except Exception:
+                pass
+        raise HistoryError(
+            "Écriture du journal impossible ; la timeline précédente a été restaurée."
+        ) from exc
+
+
 def _snapshot_path(root: Path, edit_name: str, filename: str) -> Path:
     directory = _history_dir(root, edit_name)
     path = directory / filename
@@ -331,8 +353,13 @@ def record_transaction(
         "next_sequence": next_sequence,
         "entries": entries,
     }
-    _write_index(root, edit, idx)
-    save_timeline(root, clean_after)
+    _commit_timeline_and_index(
+        root,
+        edit,
+        clean_after,
+        idx,
+        rollback_timeline=clean_before,
+    )
     return {
         "transaction": entry,
         "checkpoint": entry,
@@ -361,10 +388,16 @@ def undo_checkpoint(root: Path, edit_name: str = "teaser_30") -> dict:
             _write_snapshot(root, edit, after_name, clean_current)
             entry["after_snapshot"] = after_name
 
-    save_timeline(root, timeline)
+    previous_timeline = load_timeline(root, edit)
     idx["schema_version"] = HISTORY_SCHEMA_VERSION
     idx["cursor"] = cursor - 1
-    _write_index(root, edit, idx)
+    _commit_timeline_and_index(
+        root,
+        edit,
+        timeline,
+        idx,
+        rollback_timeline=previous_timeline,
+    )
     status = history_status(root, edit)
     return {
         "restored": entry,
@@ -391,10 +424,16 @@ def redo_checkpoint(root: Path, edit_name: str = "teaser_30") -> dict:
         )
 
     timeline = _read_snapshot(root, edit, after_name)
-    save_timeline(root, timeline)
+    previous_timeline = load_timeline(root, edit)
     idx["schema_version"] = HISTORY_SCHEMA_VERSION
     idx["cursor"] = cursor + 1
-    _write_index(root, edit, idx)
+    _commit_timeline_and_index(
+        root,
+        edit,
+        timeline,
+        idx,
+        rollback_timeline=previous_timeline,
+    )
     status = history_status(root, edit)
     return {
         "redone": entry,
