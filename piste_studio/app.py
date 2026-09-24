@@ -936,6 +936,188 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             raise HTTPException(422, str(exc)) from exc
         return {"ok": True, "path": str(path.relative_to(root))}
 
+    @app.get("/api/delivery/targets")
+    def get_delivery_targets():
+        return {
+            "version": DELIVERY_VERSION,
+            "targets": delivery_targets(),
+            "policy": {
+                "reference_targets_not_universal_specs": True,
+                "festival_sheet_overrides_builtin_target": True,
+                "no_silent_crop": True,
+            },
+        }
+
+    @app.post("/api/delivery/{version}/preflight")
+    def delivery_preflight(
+        version: str,
+        payload: dict = Body(default_factory=dict),
+    ):
+        edit_name = str(payload.get("edit_name") or "teaser_30")
+        timeline = load_timeline(root, edit_name)
+        if not isinstance(timeline, dict):
+            raise HTTPException(
+                422,
+                "Aucune timeline de travail disponible pour le préflight.",
+            )
+        audio = master_check_status(root, timeline)
+        if audio.get("report_name"):
+            audio["report_url"] = (
+                f"/api/audio/master/reports/{audio['report_name']}"
+            )
+        try:
+            return preflight_delivery(
+                root,
+                timeline,
+                edit_name=edit_name,
+                version=version,
+                target_id=str(
+                    payload.get("target_id") or "festival_prores_1080"
+                ),
+                framing_mode=payload.get("framing_mode"),
+                allow_crop=bool(payload.get("allow_crop", False)),
+                audio_status=audio,
+            )
+        except (DeliveryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/delivery/{version}/export")
+    def delivery_export(
+        version: str,
+        payload: dict = Body(default_factory=dict),
+    ):
+        edit_name = str(payload.get("edit_name") or "teaser_30")
+        target_id = str(
+            payload.get("target_id") or "festival_prores_1080"
+        )
+        framing_mode = payload.get("framing_mode")
+        allow_crop = bool(payload.get("allow_crop", False))
+        timeline = load_timeline(root, edit_name)
+        if not isinstance(timeline, dict):
+            raise HTTPException(
+                422,
+                "Aucune timeline de travail disponible pour l'export.",
+            )
+        audio = master_check_status(root, timeline)
+        if audio.get("report_name"):
+            audio["report_url"] = (
+                f"/api/audio/master/reports/{audio['report_name']}"
+            )
+        try:
+            target = resolve_delivery_target(target_id)
+            preflight = preflight_delivery(
+                root,
+                timeline,
+                edit_name=edit_name,
+                version=version,
+                target_id=target_id,
+                framing_mode=framing_mode,
+                allow_crop=allow_crop,
+                audio_status=audio,
+            )
+            if not preflight["can_export"]:
+                raise DeliveryError(
+                    preflight["checks"]["framing"]["message"]
+                )
+
+            source_suffix = (
+                ".mov"
+                if target["tesseract_format"] == "prores"
+                else ".mp4"
+            )
+            source_name = (
+                f".delivery_source_{target_id}{source_suffix}"
+            )
+            source_path = execute_export(
+                root,
+                edit_name,
+                version,
+                output_name=source_name,
+                resolution=str(target["tesseract_resolution"]),
+                fps=int(target["fps"]),
+                format_name=str(target["tesseract_format"]),
+            )
+            rendered = render_delivery_variant(
+                root,
+                source_path,
+                edit_name=edit_name,
+                version=version,
+                target_id=target_id,
+                framing_mode=framing_mode,
+                allow_crop=allow_crop,
+            )
+            source_relative = source_path.relative_to(root).as_posix()
+            report = write_delivery_report(
+                root,
+                edit_name=edit_name,
+                version=version,
+                preflight=preflight,
+                render=rendered,
+                source_relative_path=source_relative,
+            )
+        except (
+            DeliveryError,
+            TesseractBridgeError,
+            ValueError,
+        ) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+        filename = rendered["path"].name
+        return {
+            "ok": True,
+            "version": DELIVERY_VERSION,
+            "path": rendered["relative_path"],
+            "file_url": (
+                f"/api/delivery/files/{edit_name}/{version}/{filename}"
+            ),
+            "report_url": (
+                f"/api/delivery/reports/{report['report_name']}"
+            ),
+            "preflight": preflight,
+            "target": rendered["target"],
+            "framing_mode": rendered["framing_mode"],
+            "probe": rendered["probe"],
+            "report": report,
+        }
+
+    @app.get("/api/delivery/reports/{report_name}")
+    def get_delivery_report(report_name: str):
+        try:
+            path = delivery_report_path(root, report_name)
+        except DeliveryError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return FileResponse(
+            path,
+            media_type="application/json",
+            filename=path.name,
+        )
+
+    @app.get("/api/delivery/files/{edit_name}/{version}/{filename}")
+    def get_delivery_file(
+        edit_name: str,
+        version: str,
+        filename: str,
+    ):
+        try:
+            path = delivery_file_path(
+                root,
+                edit_name,
+                version,
+                filename,
+            )
+        except DeliveryError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        media_type = (
+            "video/quicktime"
+            if path.suffix.lower() == ".mov"
+            else "video/mp4"
+        )
+        return FileResponse(
+            path,
+            media_type=media_type,
+            filename=path.name,
+        )
+
     @app.post("/api/tesseract/{version}/export")
     def tesseract_export(version: str, payload: dict = Body(default_factory=dict)):
         edit_name = str(payload.get("edit_name") or "teaser_30")
