@@ -1,0 +1,14 @@
+[package]
+name = "piste-studio-desktop"
+version = "0.24.1"
+description = "Desktop shell for PISTE Studio"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
