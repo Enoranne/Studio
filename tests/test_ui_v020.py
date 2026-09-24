@@ -193,3 +193,20 @@ def test_v0234_delivery_center_patterns():
     assert '/ui/ux-delivery.js' in html
     assert ".delivery-preflight-head" in css
     assert ".delivery-crop-estimate" in css
+
+
+
+def test_v0235_delivery_preset_patterns():
+    ux = (UI / "ux-delivery.js").read_text(encoding="utf-8")
+    css = (UI / "style.css").read_text(encoding="utf-8")
+    assert "V0.23.5 · DELIVERY" in ux
+    assert "PRESET PERSONNALISÉ" in ux
+    assert "Dupliquer" in ux
+    assert "Définir par défaut" in ux
+    assert "Enregistrer le preset" in ux
+    assert "Exporter JSON" in ux
+    assert "Importer JSON" in ux
+    assert "Preset intégré immuable" in ux
+    assert "24,30,60" not in ux or "deliveryPresetFps" in ux
+    assert ".delivery-preset-editor" in css
+    assert ".delivery-preset-head" in css
