@@ -1012,6 +1012,7 @@ def propose_semantic_tags(
     model_id: str = DEFAULT_MODEL_ID,
     thresholds: dict[str, float] | None = None,
     reset_rejected: bool = False,
+    edit_name: str = "teaser_30",
 ) -> dict:
     thresholds = {
         **FACET_THRESHOLDS,
@@ -1253,6 +1254,7 @@ def propose_semantic_tags(
             media_id,
             provider=provider,
             model_id=model_id,
+            edit_name=edit_name,
         ),
     }
 
