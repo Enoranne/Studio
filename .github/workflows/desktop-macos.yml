@@ -38,6 +38,10 @@ jobs:
         working-directory: desktop
         run: npm install
 
+      - name: Generate desktop icons
+        working-directory: desktop
+        run: npx tauri icon app-icon.svg
+
       - name: Build macOS app and DMG
         working-directory: desktop
         run: npx tauri build --bundles app,dmg
