@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-import tomllib
+import re
 
 from fastapi.testclient import TestClient
 import pytest
@@ -251,8 +251,11 @@ def test_v029_version_is_aligned_across_python_desktop_ui_and_smoke_test():
     expected = "0.29.0"
     assert __version__ == expected
 
-    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    assert pyproject["project"]["version"] == expected
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    project_block = pyproject.split("[project]", 1)[1].split("[", 1)[0]
+    match = re.search(r'^version\\s*=\\s*"([^"]+)"', project_block, re.MULTILINE)
+    assert match is not None
+    assert match.group(1) == expected
 
     package = json.loads(
         (ROOT / "desktop" / "package.json").read_text(encoding="utf-8")
