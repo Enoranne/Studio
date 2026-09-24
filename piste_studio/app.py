@@ -25,7 +25,11 @@ from .tesseract_bridge import detect_tesseract, execute_bootstrap, execute_previ
 from .authoring import execute_authoring
 from .timeline import TimelineError, load_timeline, save_timeline, validate_timeline
 from .versioning import list_versions, create_timeline_version
-from .storyline import StorylineError, validate_locked_change
+from .storyline import (
+    StorylineError,
+    apply_storyline_operation,
+    validate_locked_change,
+)
 from .timeline_continuity import TimelineContinuityError, analyze_timeline_continuity
 from .history import HistoryError, create_checkpoint, history_status, undo_checkpoint
 from .editorial import (
@@ -1335,6 +1339,34 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except (TimelineError, StorylineError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
         return {"ok": True, "timeline": clean}
+
+    @app.post("/api/storyline/operate")
+    def storyline_operate(payload: dict = Body(...)):
+        timeline = payload.get("timeline")
+        operation = str(payload.get("operation") or "").strip()
+        args = payload.get("args") or {}
+        if not isinstance(timeline, dict):
+            raise HTTPException(422, "timeline doit être un objet.")
+        if not operation:
+            raise HTTPException(422, "operation est requise.")
+        if not isinstance(args, dict):
+            raise HTTPException(422, "args doit être un objet.")
+        try:
+            before = validate_timeline(root, timeline)
+            candidate = apply_storyline_operation(
+                before,
+                operation,
+                args,
+            )
+            clean = validate_timeline(root, candidate)
+            validate_locked_change(root, before, clean)
+        except (TimelineError, StorylineError, ValueError, TypeError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {
+            "ok": True,
+            "operation": operation,
+            "timeline": clean,
+        }
 
     @app.get("/api/history")
     def get_history(edit_name: str = "teaser_30"):
