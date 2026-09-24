@@ -103,6 +103,8 @@ CREATE TABLE IF NOT EXISTS semantic_references (
     model_id TEXT NOT NULL,
     embedding_json TEXT NOT NULL DEFAULT '[]',
     image_path TEXT,
+    group_name TEXT,
+    quality TEXT NOT NULL DEFAULT 'secondary',
     status TEXT NOT NULL DEFAULT 'READY',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -169,9 +171,29 @@ CREATE TABLE IF NOT EXISTS audit_log (
 """
 
 
+def _migrate_semantic_references(conn: sqlite3.Connection) -> None:
+    columns = {
+        row["name"]
+        for row in conn.execute("PRAGMA table_info(semantic_references)").fetchall()
+    }
+    if "group_name" not in columns:
+        conn.execute("ALTER TABLE semantic_references ADD COLUMN group_name TEXT")
+    if "quality" not in columns:
+        conn.execute(
+            "ALTER TABLE semantic_references "
+            "ADD COLUMN quality TEXT NOT NULL DEFAULT 'secondary'"
+        )
+    conn.execute(
+        "UPDATE semantic_references SET quality='secondary' "
+        "WHERE quality IS NULL OR TRIM(quality)=''"
+    )
+    conn.commit()
+
+
 def connect(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate_semantic_references(conn)
     return conn
