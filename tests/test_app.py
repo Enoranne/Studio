@@ -229,26 +229,6 @@ def test_editorial_api_persists_ranges_markers_and_suggestions(tmp_path):
 
     app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
     client = TestClient(app)
-    groups = client.get(
-        f"/api/vision/reference-groups?media_id={video['id']}"
-    )
-    assert groups.status_code == 200
-    group = groups.json()["groups"][0]
-    assert group["group_name"] == "Fisher principal"
-    assert group["reference_count"] == 1
-    assert group["total_quality_weight"] == 1.5
-    assert groups.json()["policy"]["group_balanced"] is True
-
-    updated = client.patch(
-        f"/api/vision/references/{ref['id']}",
-        json={"group_name": "Fisher secondaire", "quality": "low"},
-    )
-    assert updated.status_code == 200, updated.text
-    updated_ref = updated.json()["reference"]
-    assert updated_ref["group_name"] == "Fisher secondaire"
-    assert updated_ref["quality"] == "low"
-    assert updated_ref["quality_weight"] == 0.5
-
     state = client.get("/api/state").json()
     vids = [x for x in state["media"] if x["kind"] == "video"]
     reference, candidate = vids[0], vids[1]
@@ -600,6 +580,26 @@ def test_targeted_semantic_reference_api(tmp_path, monkeypatch):
     assert listed.status_code == 200
     assert listed.json()["references"][0]["id"] == ref["id"]
     assert listed.json()["policy"]["automatic_media_tag_write"] is False
+
+    groups = client.get(
+        f"/api/vision/reference-groups?media_id={video['id']}"
+    )
+    assert groups.status_code == 200
+    group = groups.json()["groups"][0]
+    assert group["group_name"] == "Fisher principal"
+    assert group["reference_count"] == 1
+    assert group["total_quality_weight"] == 1.5
+    assert groups.json()["policy"]["group_balanced"] is True
+
+    updated = client.patch(
+        f"/api/vision/references/{ref['id']}",
+        json={"group_name": "Fisher secondaire", "quality": "low"},
+    )
+    assert updated.status_code == 200, updated.text
+    updated_ref = updated.json()["reference"]
+    assert updated_ref["group_name"] == "Fisher secondaire"
+    assert updated_ref["quality"] == "low"
+    assert updated_ref["quality_weight"] == 0.5
 
     state = client.get("/api/state").json()
     media_state = next(x for x in state["media"] if x["id"] == video["id"])
