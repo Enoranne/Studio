@@ -1238,7 +1238,9 @@ def test_delivery_center_vertical_crop_preflight_and_export(
                 "Preset navigateur 9x16"
             )
 
-            page.get_by_role("button", name="Supprimer").click()
+            page.locator("#editorialDrawerBody").get_by_role(
+                "button", name="Supprimer"
+            ).click()
             expect(page.locator("#deliveryTarget")).to_have_value(
                 "online_1080"
             )
