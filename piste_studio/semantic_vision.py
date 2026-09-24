@@ -416,30 +416,71 @@ def store_targeted_semantic_reference(
         else:
             relative_image = image.as_posix()
 
+    clean_timestamp = round(float(timestamp_seconds), 6)
+    roi_json = json.dumps(
+        clean_roi,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     conn = connect(root / "media.sqlite")
     try:
-        cursor = conn.execute(
+        existing = conn.execute(
             """
-            INSERT INTO semantic_references(
-              media_id, tag, facet, timestamp_seconds, roi_json,
-              provider, model_id, embedding_json, image_path, status
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            SELECT id FROM semantic_references
+            WHERE media_id=? AND tag=? AND facet=? AND timestamp_seconds=?
+              AND roi_json=? AND provider=? AND model_id=?
+            ORDER BY id LIMIT 1
             """,
             (
                 int(media_id),
                 clean_tag,
                 facet,
-                round(float(timestamp_seconds), 6),
-                json.dumps(clean_roi, ensure_ascii=False),
+                clean_timestamp,
+                roi_json,
                 provider,
                 model_id,
-                json.dumps(clean_embedding),
-                relative_image,
-                status,
             ),
-        )
-        reference_id = int(cursor.lastrowid)
+        ).fetchone()
+        if existing is not None:
+            reference_id = int(existing["id"])
+            conn.execute(
+                """
+                UPDATE semantic_references
+                SET embedding_json=?, image_path=?, status=?,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE id=?
+                """,
+                (
+                    json.dumps(clean_embedding),
+                    relative_image,
+                    status,
+                    reference_id,
+                ),
+            )
+        else:
+            cursor = conn.execute(
+                """
+                INSERT INTO semantic_references(
+                  media_id, tag, facet, timestamp_seconds, roi_json,
+                  provider, model_id, embedding_json, image_path, status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    int(media_id),
+                    clean_tag,
+                    facet,
+                    clean_timestamp,
+                    roi_json,
+                    provider,
+                    model_id,
+                    json.dumps(clean_embedding),
+                    relative_image,
+                    status,
+                ),
+            )
+            reference_id = int(cursor.lastrowid)
         conn.commit()
     finally:
         conn.close()
