@@ -8,6 +8,37 @@
     project: "PROJET",
   };
   const VALID = new Set(Object.keys(LABELS));
+  const QUICK_ACTIONS = {
+    video: [
+      ["SOURCE", "video", () => typeof setViewerMode === "function" && setViewerMode("source")],
+      ["Fenêtres", "video", () => typeof openEditorialWindows === "function" && openEditorialWindows()],
+      ["Alternatives", "editorial", () => typeof openSourceSelector === "function" && openSourceSelector()],
+    ],
+    audio: [
+      ["Écouter", "audio", () => typeof previewAudioAsset === "function" && previewAudioAsset()],
+      ["Loudness", "audio", () => typeof analyzeSelectedAudioLoudness === "function" && analyzeSelectedAudioLoudness()],
+      ["Master Check", "audio", () => typeof openMasterCheck === "function" && openMasterCheck()],
+    ],
+    transcript: [
+      ["Agent", "editorial", () => typeof openEditorialAgent === "function" && openEditorialAgent()],
+      ["VO → Image", "editorial", () => typeof openEditorialAgent === "function" && openEditorialAgent()],
+    ],
+    editorial: [
+      ["Agent", "editorial", () => typeof openEditorialAgent === "function" && openEditorialAgent()],
+      ["Marqueur", "editorial", () => typeof openMarkerComposer === "function" && openMarkerComposer()],
+      ["Index", "editorial", () => typeof toggleIndex === "function" && toggleIndex()],
+    ],
+    delivery: [
+      ["Readiness", "delivery", () => typeof openProductionReadiness === "function" && openProductionReadiness()],
+      ["Master Check", "audio", () => typeof openMasterCheck === "function" && openMasterCheck()],
+      ["Export", "delivery", () => typeof openDeliveryCenter === "function" && openDeliveryCenter()],
+    ],
+    project: [
+      ["Canon", "project", () => document.querySelector('.nav-tab[data-view="canon"]')?.click()],
+      ["Versions", "project", () => document.querySelector('.nav-tab[data-view="versions"]')?.click()],
+      ["Enregistrer", "project", () => document.getElementById("saveBackendBtn")?.click()],
+    ],
+  };
 
   function selectedClipDomain() {
     if (typeof clips === "undefined" || typeof selectedClip === "undefined") return null;
@@ -40,6 +71,30 @@
     return "video";
   }
 
+  function renderQuickActions(domain) {
+    const host = document.getElementById("contextQuickActions");
+    if (!host) return;
+    host.innerHTML = "";
+    const actions = QUICK_ACTIONS[domain] || [];
+    if (!actions.length) return;
+    const label = document.createElement("span");
+    label.className = "context-quick-label";
+    label.textContent = "UTILE ICI";
+    host.appendChild(label);
+    actions.forEach(([title, itemDomain, run]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = title;
+      button.dataset.domain = itemDomain;
+      button.addEventListener("click", event => {
+        event.stopPropagation();
+        run();
+        window.PisteHelp?.narrate(title + " · action contextuelle " + (LABELS[domain] || domain));
+      });
+      host.appendChild(button);
+    });
+  }
+
   function applyPaneAccent(domain) {
     document.querySelectorAll(".pane.context-active").forEach(el => el.classList.remove("context-active"));
     if (domain === "video" || domain === "audio") {
@@ -62,6 +117,7 @@
       chip.title = reason ? `Contexte actif · ${reason}` : `Contexte actif · ${LABELS[next]}`;
     }
     applyPaneAccent(next);
+    renderQuickActions(next);
     if (window.PisteState?.get("contextDomain") !== next) {
       window.PisteState?.set("contextDomain", next);
     }
@@ -75,6 +131,10 @@
   window.PisteContext = { set, refresh, infer: inferDomain, labels: { ...LABELS } };
 
   document.addEventListener("click", event => {
+    const domainTarget = event.target.closest("[data-domain]");
+    if (domainTarget?.dataset?.domain && VALID.has(domainTarget.dataset.domain)) {
+      requestAnimationFrame(() => set(domainTarget.dataset.domain, "outil actif"));
+    }
     const lib = event.target.closest(".libtab");
     if (lib?.dataset?.lib) {
       requestAnimationFrame(() => set(lib.dataset.lib === "audio" ? "audio" : "video", "bibliothèque"));
