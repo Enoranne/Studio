@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS audio_track_analysis (
     media_id INTEGER NOT NULL,
     track_index INTEGER NOT NULL,
     stream_index INTEGER NOT NULL,
+    source_sha256 TEXT NOT NULL,
     analyzer_version TEXT NOT NULL,
     status TEXT NOT NULL,
     codec TEXT,
