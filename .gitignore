@@ -18,3 +18,8 @@ projects/
 **/cache/
 **/renders/
 *.tsrct
+
+# Desktop packaging outputs
+desktop/node_modules/
+desktop/src-tauri/target/
+desktop/src-tauri/binaries/piste-studio-backend-*
