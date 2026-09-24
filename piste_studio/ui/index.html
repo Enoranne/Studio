@@ -26,6 +26,7 @@
       <button class="icon-btn" id="toggleIndexBtn" title="Afficher/masquer l’Index">≡</button>
       <button class="icon-btn" id="toggleInspectorBtn" title="Afficher/masquer l’Inspecteur">I</button>
       <button class="icon-btn" id="helpModeBtn" title="Aide contextuelle">?</button>
+      <button class="icon-btn" id="preferencesBtn" title="Préférences d’interface">⚙</button>
       <button class="btn ghost" id="undoBtn" onclick="undoLastEdit()" title="Annuler la dernière opération (Ctrl/Cmd+Z)">↶ Undo</button>
       <button class="btn ghost" id="saveBackendBtn">Enregistrer</button>
       <button class="btn primary" id="publishBtn" onclick="publishVersion()">Publier</button>
@@ -147,13 +148,28 @@
       <div class="cards" id="versionsCards"></div>
     </section>
   </main>
-  <footer class="statusbar"><span id="backendFoot">MASTER_PROTECTED = TRUE · mode local</span><span id="actionNarration" class="action-narration context-help">Aide contextuelle active · survole ou utilise un outil.</span><span id="shortcutHelp">1 Assemble · 2 Edit · 3 Review · ⌘K Rechercher · ~ Focus · F Favorite · X Reject</span></footer>
+  <footer class="statusbar"><span id="backendFoot">MASTER_PROTECTED = TRUE · mode local</span><span id="actionStateBadge" class="action-state-badge" data-state="ready">PRÊT</span><span id="actionNarration" class="action-narration context-help">Aide contextuelle active · survole ou utilise un outil.</span><span id="shortcutHelp">1 Assemble · 2 Edit · 3 Review · ⌘K Rechercher · ~ Focus · F Favorite · X Reject</span></footer>
 </div>
 <div class="overlay-popover help-mode-menu" id="helpModeMenu" hidden>
   <div class="popover-title">AIDE CONTEXTUELLE</div>
   <label><input type="radio" name="helpMode" value="guided"> Guidée <small>micro-explications + actions</small></label>
   <label><input type="radio" name="helpMode" value="minimal"> Minimale <small>conséquences importantes seulement</small></label>
   <label><input type="radio" name="helpMode" value="off"> Désactivée <small>interface compacte</small></label>
+  <div class="help-resource-actions">
+    <button class="btn" id="openHelpCenterBtn" type="button">Aide / FAQ</button>
+    <button class="btn" id="openResourcesBtn" type="button">Ressources</button>
+  </div>
+</div>
+<div class="overlay-popover preferences-menu" id="preferencesMenu" hidden>
+  <div class="popover-title">PRÉFÉRENCES INTERFACE</div>
+  <div class="preference-group">
+    <span>Densité</span>
+    <label><input type="radio" name="uiDensity" value="comfortable"> Confort</label>
+    <label><input type="radio" name="uiDensity" value="compact"> Compact</label>
+  </div>
+  <label class="preference-toggle"><input type="checkbox" id="contextColorsToggle"> Nuances par domaine</label>
+  <label class="preference-toggle"><input type="checkbox" id="contextActionsToggle"> Actions contextuelles</label>
+  <small>Ces réglages concernent uniquement l’affichage local.</small>
 </div>
 <div class="overlay-popover" id="overlayMenu" hidden>
   <div class="popover-title">OVERLAYS VIEWER</div>
@@ -201,6 +217,7 @@
 <script src="/ui/ux-context.js"></script>
 <script src="/ui/ux-help.js"></script>
 <script src="/ui/ux-universal-search.js"></script>
+<script src="/ui/ux-preferences.js"></script>
 <script src="/ui/ux-editorial.js"></script>
 <script src="/ui/ux-media-intelligence.js"></script>
 <script src="/ui/ux-editorial-vision.js"></script>
