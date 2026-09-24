@@ -42,6 +42,61 @@ Le résultat est une suggestion, pas une décision de montage.
 - **Prévisualiser** ne change pas le montage ;
 - **Charger IN/OUT** modifie uniquement la plage SOURCE sélectionnée.
 
+## Editorial Vision V0.22.2
+
+Les références de continuité peuvent désormais cibler un frame ou une zone précise.
+
+### Création
+
+Dans **SEMANTIC VISION** :
+
+1. ouvrir **Référence ciblée** ;
+2. choisir `character / prop / decor / look` ;
+3. saisir la valeur ;
+4. reprendre le frame affiché ou saisir un timecode ;
+5. choisir **Frame entier** ou **Zone de l’image** ;
+6. pour une zone, renseigner X, Y, largeur et hauteur en pourcentage ;
+7. créer la référence.
+
+Le crop est effectué localement avec ffmpeg avant l’embedding.
+
+### Stockage
+
+Une référence contient notamment :
+
+- média source ;
+- tag structuré ;
+- facet ;
+- timecode source ;
+- ROI normalisé ;
+- provider et modèle ;
+- embedding ;
+- chemin du JPEG extrait.
+
+L’API n’expose pas l’embedding brut à l’interface.
+
+### Continuité
+
+Les références ciblées sont ajoutées au calcul des centroïdes de référence.
+
+Les preuves d’une proposition distinguent :
+
+- références ciblées ;
+- références legacy issues de profils de rush entier ;
+- meilleure référence globale ;
+- meilleure référence ciblée éventuelle.
+
+Une référence provenant du média cible lui-même est exclue afin d’éviter une auto-validation triviale.
+
+### Sécurité
+
+Créer `prop:fisher` sur une zone :
+
+- n’ajoute pas `prop:fisher` aux tags du rush ;
+- ne modifie aucun clip ;
+- ne modifie pas la Storyline ;
+- n’accepte aucune proposition automatiquement.
+
 ## Audio Delivery V0.21
 
 Le **Master Check** contrôle le mix rendu, après sommation des clips audio audibles de la timeline.
