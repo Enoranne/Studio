@@ -213,6 +213,7 @@
     if (detailEntry) {
       if (event.key === "Escape") {
         event.preventDefault();
+        event.stopPropagation();
         detailEntry = null;
         window.renderCommandPalette();
       }
