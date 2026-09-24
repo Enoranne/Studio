@@ -191,10 +191,15 @@ def _semantic_lock_findings(
                 "kind": "HARD_LOCK" if level == "HARD" else "SOFT_LOCK",
                 "severity": "BLOCKING" if level == "HARD" else "WARNING",
                 "message": (
-                    f"Le média est utilisé dans {level} LOCK "
-                    f"« {lock.get('name') or 'zone'} » "
-                    f"[{lock_start:.2f}s–{lock_end:.2f}s] "
-                    "qui couvre les opérations sémantiques."
+                    (
+                        "La position du plan évalué intersecte "
+                        if context_clip_id is not None
+                        else "Le média est utilisé dans "
+                    )
+                    + f"{level} LOCK "
+                    + f"« {lock.get('name') or 'zone'} » "
+                    + f"[{lock_start:.2f}s–{lock_end:.2f}s] "
+                    + "qui couvre les opérations sémantiques."
                 ),
                 "source": "locks.yaml",
                 "lock_name": lock.get("name"),
