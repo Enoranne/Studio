@@ -365,7 +365,7 @@ async function applyConnectionPointFromInspector(){
 const _v012RenderTracks=renderTracks;
 renderTracks=function(){
   _v012RenderTracks();
-  $('.clip').forEach(el=>{
+  $$('.clip').forEach(el=>{
     const c=getClip(el.dataset.clip);if(!c?.parentClipId)return;
     el.classList.add('connected');
     const tag=document.createElement('span');
