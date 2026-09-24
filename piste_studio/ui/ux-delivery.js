@@ -131,11 +131,14 @@ async function runDeliveryExport(){
       method:'POST',
       body:JSON.stringify(currentDeliveryPayload()),
     });
-    const p=r.probe||{},target=r.target||{};
+    const p=r.probe||{},target=r.target||{},conformance=r.conformance||{};
+    const conformState=String(conformance.status||'—').toUpperCase();
     if(result)result.innerHTML=`
       <div class="delivery-success">
         <div><span>LIVRABLE</span><b>${target.label||target.id}</b></div>
         <p>${p.width||'—'}×${p.height||'—'} · ${p.fps||'—'} fps · vidéo ${p.video_codec||'—'} · audio ${p.audio_codec||'—'} · ${p.audio_sample_rate||'—'} Hz</p>
+        <div class="delivery-conformance ${conformState==='PASS'?'delivery-pass':'delivery-warn'}"><span>CONFORMITÉ</span><b>${conformState}</b></div>
+        ${(conformance.reasons||[]).map(x=>`<em class="delivery-conformance-reason">${x}</em>`).join('')}
         <small>${r.path}</small>
         <div class="suggestion-actions">
           ${r.file_url?`<a class="btn primary" href="${r.file_url}" download>Télécharger le livrable</a>`:''}
