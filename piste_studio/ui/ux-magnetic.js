@@ -34,7 +34,18 @@ function connectChild(c,parentId=null){
 function detachChild(c){if(!c)return;delete c.parentClipId;delete c.anchorOffset;delete c.connectionPointOffset;delete c.connectionMode}
 async function changeConnection(parentId){
   const c=getClip(selectedClip);if(!c||c.track==='video')return;
-  const before=cloneClips(),candidate=cloneClips(),child=candidate.find(x=>x.id===c.id);
+  const before=cloneClips();
+  if(backendConnected){
+    const ok=await commitBackendMagneticOperation(
+      parentId?'attach':'detach',
+      parentId?{child_id:c.id,parent_id:parentId}:{child_id:c.id},
+      parentId?'Connexion STORY modifiée':'Élément détaché',
+      before,
+    );
+    if(!ok)renderInspector();
+    return
+  }
+  const candidate=cloneClips(),child=candidate.find(x=>x.id===c.id);
   if(!child)return;
   if(!parentId)detachChild(child);
   else{
@@ -133,6 +144,29 @@ async function checkpointBeforeMagnetic(before,reason){
   if(localUndoStack.length>50)localUndoStack.shift();
   return true
 }
+async function commitBackendMagneticOperation(operation,args,message,before=clips){
+  if(!backendConnected)return null;
+  try{
+    const response=await api('/api/storyline/operate',{
+      method:'POST',
+      body:JSON.stringify({
+        timeline:backendTimelinePayload(before,storylineMode),
+        operation,
+        args,
+      }),
+    });
+    if(!(await checkpointBeforeMagnetic(before,message)))return false;
+    const previousSelection=selectedClip;
+    hydrateTimeline(response.timeline);
+    storylineMode='magnetic';
+    selectedClip=previousSelection&&getClip(previousSelection)?previousSelection:(clips[0]?.id||null);
+    renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));toast(message);
+    return true
+  }catch(err){
+    toast('Opération magnétique bloquée : '+err.message,true);
+    return false
+  }
+}
 async function commitMagneticCandidate(candidate,message,before=clips){
   const err=validateCandidate(candidate,before);if(err){toast(err,true);return false}
   if(!(await validateMagneticWithBackend(before,candidate)))return false;
@@ -184,7 +218,29 @@ endClipInteraction=async function(){
   }
   const state=interaction;interaction=null;$('#interactionReadout').textContent='Storyline magnétique · drag · ripple trim';
   if(!state.valid){toast(state.error||'Opération invalide',true);renderTracks();return}
-  const before=cloneClips(),candidate=cloneClips(),target=candidate.find(c=>c.id===state.clipId);if(!target)return;
+  const before=cloneClips();
+  if(backendConnected){
+    if(state.mode==='move'){
+      await commitBackendMagneticOperation(
+        'move',
+        {clip_id:state.clipId,target_time:Math.max(0,state.desiredTarget)},
+        'Storyline réordonnée',
+        before,
+      );
+    }else{
+      const delta=state.mode==='left'
+        ?(state.preview.sourceStart||0)-(state.start.sourceStart||0)
+        :state.preview.duration-state.start.duration;
+      await commitBackendMagneticOperation(
+        'trim',
+        {clip_id:state.clipId,edge:state.mode,delta,min_duration:MIN_CLIP},
+        'Ripple trim appliqué',
+        before,
+      );
+    }
+    return
+  }
+  const candidate=cloneClips(),target=candidate.find(c=>c.id===state.clipId);if(!target)return;
   const story=storyClipsSorted(candidate);
   if(state.mode==='move'){
     const others=story.filter(c=>c.id!==target.id),targetTime=Math.max(0,state.desiredTarget),idx=others.filter(c=>targetTime>=c.start+c.duration/2).length,order=others.map(c=>c.id);order.splice(idx,0,target.id);reflowCandidate(candidate,order)
@@ -340,7 +396,22 @@ async function endConnectionPointDrag(){
   const state=connectionPointDrag;connectionPointDrag=null;
   $('#interactionReadout').textContent='Storyline magnétique · drag · ripple trim';
   if(!state.preview){renderTracks();return}
-  const before=state.before,candidate=cloneClips(before);
+  const before=state.before;
+  if(backendConnected){
+    const original=before.find(c=>c.id===state.childId);
+    if(original
+      && original.parentClipId===state.preview.parentId
+      && Math.abs((+original.connectionPointOffset||0)-(+state.preview.pointOffset||0))<1e-6
+    ){renderTracks();return}
+    await commitBackendMagneticOperation(
+      'connection_point',
+      {child_id:state.childId,target_time:state.preview.time},
+      'Point de connexion déplacé',
+      before,
+    );
+    return
+  }
+  const candidate=cloneClips(before);
   try{setConnectionPointOnCandidate(candidate,state.childId,state.preview.time)}
   catch(err){toast(err.message||String(err),true);renderTracks();return}
   const original=before.find(c=>c.id===state.childId),next=candidate.find(c=>c.id===state.childId);
@@ -356,7 +427,17 @@ async function applyConnectionPointFromInspector(){
   const value=+$('#connectionPointInput')?.value;
   if(!Number.isFinite(value)){toast('Point de connexion invalide',true);return}
   const time=parent.start+Math.max(0,Math.min(parent.duration,value));
-  const before=cloneClips(),candidate=cloneClips();
+  const before=cloneClips();
+  if(backendConnected){
+    await commitBackendMagneticOperation(
+      'connection_point',
+      {child_id:c.id,target_time:time},
+      'Point de connexion ajusté',
+      before,
+    );
+    return
+  }
+  const candidate=cloneClips();
   try{setConnectionPointOnCandidate(candidate,c.id,time)}
   catch(err){toast(err.message||String(err),true);return}
   await commitMagneticCandidate(candidate,'Point de connexion ajusté',before)
