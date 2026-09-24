@@ -969,9 +969,9 @@ def test_graphical_connection_point_drag_changes_parent_without_moving_child(tmp
             }
 
             handle = page.locator(".connection-point.selected").bounding_box()
-            lane = page.locator("#lane-video").bounding_box()
-            assert handle is not None and lane is not None
-            target_x = lane["x"] + lane["width"] * (6.0 / 30.0)
+            target_clip = page.locator('.clip[data-clip="v2"]').bounding_box()
+            assert handle is not None and target_clip is not None
+            target_x = target_clip["x"] + target_clip["width"] * (1.0 / 5.0)
             target_y = handle["y"] + handle["height"] / 2
             page.mouse.move(
                 handle["x"] + handle["width"] / 2,
