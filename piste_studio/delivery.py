@@ -9,9 +9,10 @@ import shutil
 import subprocess
 
 from .versioning import slugify
+from .config import read_yaml, write_yaml
 
 
-DELIVERY_VERSION = "0.23.4-delivery-1"
+DELIVERY_VERSION = "0.23.5-delivery-2"
 
 
 class DeliveryError(ValueError):
@@ -159,8 +160,327 @@ def delivery_targets() -> list[dict]:
     ]
 
 
-def resolve_delivery_target(target_id: str) -> dict:
-    targets = {item["id"]: item for item in delivery_targets()}
+CUSTOM_PRESETS_SCHEMA_VERSION = 1
+CUSTOM_PRESETS_FILENAME = "delivery-presets.yaml"
+ALLOWED_DELIVERY_FPS = {24, 30, 60}
+ALLOWED_FAMILIES = {"festival", "online", "social", "custom"}
+ALLOWED_TESSERACT_RESOLUTIONS = {"720p", "1080p", "4k"}
+
+
+def _preset_store_path(root: Path) -> Path:
+    return root.expanduser().resolve() / CUSTOM_PRESETS_FILENAME
+
+
+def _preset_store(root: Path) -> dict:
+    path = _preset_store_path(root)
+    if not path.exists():
+        return {
+            "schema_version": CUSTOM_PRESETS_SCHEMA_VERSION,
+            "default_preset_id": "online_1080",
+            "presets": [],
+        }
+    try:
+        doc = read_yaml(path)
+    except (OSError, ValueError) as exc:
+        raise DeliveryError(f"Presets delivery illisibles : {exc}") from exc
+    if int(doc.get("schema_version") or 0) != CUSTOM_PRESETS_SCHEMA_VERSION:
+        raise DeliveryError("Version de fichier delivery-presets.yaml non supportée.")
+    presets = doc.get("presets")
+    if not isinstance(presets, list):
+        raise DeliveryError("delivery-presets.yaml : 'presets' doit être une liste.")
+    return {
+        "schema_version": CUSTOM_PRESETS_SCHEMA_VERSION,
+        "default_preset_id": str(
+            doc.get("default_preset_id") or "online_1080"
+        ),
+        "presets": presets,
+    }
+
+
+def _write_preset_store(root: Path, doc: dict) -> None:
+    write_yaml(
+        _preset_store_path(root),
+        {
+            "schema_version": CUSTOM_PRESETS_SCHEMA_VERSION,
+            "default_preset_id": str(
+                doc.get("default_preset_id") or "online_1080"
+            ),
+            "presets": list(doc.get("presets") or []),
+        },
+    )
+
+
+def _custom_preset_id(label: str, existing: set[str]) -> str:
+    stem = slugify(str(label or "preset")).replace("-", "_")
+    stem = re.sub(r"[^a-z0-9_]+", "_", stem).strip("_") or "preset"
+    candidate = f"custom_{stem}"
+    suffix = 2
+    while candidate in existing:
+        candidate = f"custom_{stem}_{suffix}"
+        suffix += 1
+    return candidate
+
+
+def _derive_aspect_ratio(width: int, height: int) -> str:
+    from math import gcd
+
+    g = gcd(int(width), int(height))
+    return f"{int(width) // g}:{int(height) // g}"
+
+
+def _normalize_custom_preset(
+    payload: dict,
+    *,
+    preset_id: str,
+    created_at: str | None = None,
+) -> dict:
+    if not isinstance(payload, dict):
+        raise DeliveryError("Preset delivery invalide.")
+
+    label = str(payload.get("label") or "").strip()
+    if not label or len(label) > 100:
+        raise DeliveryError("Le nom du preset doit contenir 1 à 100 caractères.")
+
+    family = str(payload.get("family") or "custom").lower()
+    if family not in ALLOWED_FAMILIES:
+        raise DeliveryError("Famille invalide : festival, online, social ou custom.")
+
+    try:
+        width = int(payload.get("width"))
+        height = int(payload.get("height"))
+    except (TypeError, ValueError) as exc:
+        raise DeliveryError("Largeur et hauteur entières requises.") from exc
+    if width < 320 or width > 7680 or height < 240 or height > 7680:
+        raise DeliveryError("Dimensions autorisées : 320..7680 × 240..7680.")
+    if width % 2 or height % 2:
+        raise DeliveryError("Les dimensions de delivery doivent être paires.")
+
+    try:
+        fps = int(payload.get("fps"))
+    except (TypeError, ValueError) as exc:
+        raise DeliveryError("FPS invalide.") from exc
+    if fps not in ALLOWED_DELIVERY_FPS:
+        raise DeliveryError("FPS autorisés en V0.23.5 : 24, 30 ou 60.")
+
+    codec = str(payload.get("video_codec") or "libx264").lower()
+    if codec not in {"libx264", "prores_ks"}:
+        raise DeliveryError("Codec vidéo invalide : H.264 ou ProRes attendu.")
+
+    framing_modes = ["native"]
+    default_framing = str(payload.get("default_framing") or "native").lower()
+    if width != 1920 or height != 1080 or default_framing in {"fit", "fill"}:
+        framing_modes = ["fit", "fill"]
+        if default_framing not in framing_modes:
+            default_framing = "fit"
+    elif default_framing != "native":
+        default_framing = "native"
+
+    tesseract_resolution = str(
+        payload.get("tesseract_resolution") or "1080p"
+    ).lower()
+    if tesseract_resolution not in ALLOWED_TESSERACT_RESOLUTIONS:
+        raise DeliveryError("Résolution source Tesseract invalide.")
+
+    now = datetime.now(timezone.utc).isoformat()
+    common = {
+        "id": preset_id,
+        "label": label,
+        "family": family,
+        "width": width,
+        "height": height,
+        "aspect_ratio": _derive_aspect_ratio(width, height),
+        "fps": fps,
+        "tesseract_resolution": tesseract_resolution,
+        "framing_modes": framing_modes,
+        "default_framing": default_framing,
+        "reference_only": False,
+        "custom": True,
+        "created_at": created_at or now,
+        "updated_at": now,
+        "notes": [str(x).strip() for x in (payload.get("notes") or []) if str(x).strip()][:8],
+    }
+
+    if codec == "prores_ks":
+        return {
+            **common,
+            "container": "mov",
+            "video_codec": "prores_ks",
+            "prores_profile": 3,
+            "pixel_format": "yuv422p10le",
+            "audio_codec": "pcm_s24le",
+            "audio_sample_rate": 48000,
+            "audio_channels": 2,
+            "tesseract_format": "prores",
+        }
+
+    try:
+        video_bitrate = float(payload.get("video_bitrate_mbps") or 8)
+        audio_bitrate = int(payload.get("audio_bitrate_kbps") or 256)
+    except (TypeError, ValueError) as exc:
+        raise DeliveryError("Débits vidéo/audio invalides.") from exc
+    if video_bitrate < 1 or video_bitrate > 200:
+        raise DeliveryError("Débit H.264 autorisé : 1 à 200 Mb/s.")
+    if audio_bitrate < 96 or audio_bitrate > 512:
+        raise DeliveryError("Débit AAC autorisé : 96 à 512 kb/s.")
+    return {
+        **common,
+        "container": "mp4",
+        "video_codec": "libx264",
+        "video_bitrate_mbps": round(video_bitrate, 3),
+        "pixel_format": "yuv420p",
+        "audio_codec": "aac",
+        "audio_bitrate_kbps": audio_bitrate,
+        "audio_sample_rate": 48000,
+        "audio_channels": 2,
+        "tesseract_format": "mp4",
+    }
+
+
+def list_project_delivery_presets(root: Path) -> list[dict]:
+    doc = _preset_store(root)
+    result: list[dict] = []
+    seen = {item["id"] for item in delivery_targets()}
+    for raw in doc["presets"]:
+        if not isinstance(raw, dict):
+            continue
+        preset_id = str(raw.get("id") or "")
+        if not preset_id or preset_id in seen:
+            continue
+        try:
+            clean = _normalize_custom_preset(
+                raw,
+                preset_id=preset_id,
+                created_at=raw.get("created_at"),
+            )
+        except DeliveryError:
+            continue
+        clean["updated_at"] = str(raw.get("updated_at") or clean["updated_at"])
+        result.append(clean)
+        seen.add(preset_id)
+    return result
+
+
+def all_delivery_targets(root: Path | None = None) -> list[dict]:
+    builtins = [dict(item, custom=False) for item in delivery_targets()]
+    if root is None:
+        return builtins
+    return builtins + list_project_delivery_presets(root)
+
+
+def get_default_delivery_preset_id(root: Path) -> str:
+    doc = _preset_store(root)
+    requested = str(doc.get("default_preset_id") or "online_1080")
+    valid = {item["id"] for item in all_delivery_targets(root)}
+    return requested if requested in valid else "online_1080"
+
+
+def set_default_delivery_preset(root: Path, preset_id: str) -> str:
+    resolved = resolve_delivery_target(preset_id, root=root)
+    doc = _preset_store(root)
+    doc["default_preset_id"] = resolved["id"]
+    _write_preset_store(root, doc)
+    return resolved["id"]
+
+
+def create_project_delivery_preset(root: Path, payload: dict) -> dict:
+    doc = _preset_store(root)
+    existing = {item["id"] for item in all_delivery_targets(root)}
+    preset_id = _custom_preset_id(str(payload.get("label") or "preset"), existing)
+    clean = _normalize_custom_preset(payload, preset_id=preset_id)
+    doc["presets"].append(clean)
+    _write_preset_store(root, doc)
+    return clean
+
+
+def update_project_delivery_preset(
+    root: Path,
+    preset_id: str,
+    payload: dict,
+) -> dict:
+    if preset_id in {item["id"] for item in delivery_targets()}:
+        raise DeliveryError("Un preset intégré est immuable : dupliquez-le d'abord.")
+    doc = _preset_store(root)
+    for index, raw in enumerate(doc["presets"]):
+        if isinstance(raw, dict) and str(raw.get("id")) == preset_id:
+            merged = {**raw, **payload}
+            clean = _normalize_custom_preset(
+                merged,
+                preset_id=preset_id,
+                created_at=raw.get("created_at"),
+            )
+            doc["presets"][index] = clean
+            _write_preset_store(root, doc)
+            return clean
+    raise DeliveryError("Preset delivery personnalisé introuvable.")
+
+
+def delete_project_delivery_preset(root: Path, preset_id: str) -> None:
+    if preset_id in {item["id"] for item in delivery_targets()}:
+        raise DeliveryError("Un preset intégré ne peut pas être supprimé.")
+    doc = _preset_store(root)
+    before = len(doc["presets"])
+    doc["presets"] = [
+        raw
+        for raw in doc["presets"]
+        if not isinstance(raw, dict) or str(raw.get("id")) != preset_id
+    ]
+    if len(doc["presets"]) == before:
+        raise DeliveryError("Preset delivery personnalisé introuvable.")
+    if doc.get("default_preset_id") == preset_id:
+        doc["default_preset_id"] = "online_1080"
+    _write_preset_store(root, doc)
+
+
+def duplicate_delivery_preset(
+    root: Path,
+    preset_id: str,
+    *,
+    label: str | None = None,
+) -> dict:
+    source = resolve_delivery_target(preset_id, root=root)
+    payload = dict(source)
+    payload["label"] = str(label or f"{source['label']} · copie")
+    for key in ("id", "custom", "reference_only", "created_at", "updated_at"):
+        payload.pop(key, None)
+    return create_project_delivery_preset(root, payload)
+
+
+def export_delivery_preset(root: Path, preset_id: str) -> dict:
+    preset = resolve_delivery_target(preset_id, root=root)
+    payload = {
+        key: value
+        for key, value in preset.items()
+        if key not in {"id", "custom", "reference_only", "created_at", "updated_at"}
+    }
+    return {
+        "schema_version": CUSTOM_PRESETS_SCHEMA_VERSION,
+        "kind": "piste_studio_delivery_preset",
+        "preset": payload,
+    }
+
+
+def import_delivery_preset(root: Path, document: dict) -> dict:
+    if not isinstance(document, dict):
+        raise DeliveryError("Document de preset invalide.")
+    if document.get("kind") != "piste_studio_delivery_preset":
+        raise DeliveryError("Type de document preset invalide.")
+    if int(document.get("schema_version") or 0) != CUSTOM_PRESETS_SCHEMA_VERSION:
+        raise DeliveryError("Version de document preset non supportée.")
+    preset = document.get("preset")
+    if not isinstance(preset, dict):
+        raise DeliveryError("Preset importé absent ou invalide.")
+    return create_project_delivery_preset(root, preset)
+
+
+def resolve_delivery_target(
+    target_id: str,
+    *,
+    root: Path | None = None,
+) -> dict:
+    targets = {
+        item["id"]: item
+        for item in all_delivery_targets(root)
+    }
     try:
         return dict(targets[str(target_id)])
     except KeyError as exc:
@@ -373,7 +693,7 @@ def preflight_delivery(
     allow_crop: bool = False,
     audio_status: dict | None = None,
 ) -> dict:
-    target = resolve_delivery_target(target_id)
+    target = resolve_delivery_target(target_id, root=root)
     framing = str(framing_mode or target["default_framing"]).lower()
     if framing not in target["framing_modes"]:
         raise DeliveryError(
@@ -757,7 +1077,7 @@ def delivery_output_path(
     version: str,
     target_id: str,
 ) -> Path:
-    target = resolve_delivery_target(target_id)
+    target = resolve_delivery_target(target_id, root=root)
     base = root.expanduser().resolve()
     folder = (
         base / "exports" / slugify(edit_name) / _safe_version(version)
@@ -784,7 +1104,7 @@ def render_delivery_variant(
     framing_mode: str | None = None,
     allow_crop: bool = False,
 ) -> dict:
-    target = resolve_delivery_target(target_id)
+    target = resolve_delivery_target(target_id, root=root)
     framing = str(framing_mode or target["default_framing"]).lower()
     source = source_path.expanduser().resolve()
     if not source.exists() or not source.is_file():
