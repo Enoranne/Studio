@@ -123,14 +123,7 @@ function executeCommand(index){
   const list=filteredCommands(),cmd=list[index];if(!cmd)return;
   closeCommandPalette();cmd.run();
 }
-$('#commandSearch').addEventListener('input',()=>{commandIndex=0;renderCommandPalette()});
-$('#commandSearch').addEventListener('keydown',e=>{
-  const list=filteredCommands();
-  if(e.key==='ArrowDown'){e.preventDefault();commandIndex=Math.min(list.length-1,commandIndex+1);renderCommandPalette()}
-  if(e.key==='ArrowUp'){e.preventDefault();commandIndex=Math.max(0,commandIndex-1);renderCommandPalette()}
-  if(e.key==='Enter'){e.preventDefault();executeCommand(commandIndex)}
-  if(e.key==='Escape'){e.preventDefault();closeCommandPalette()}
-});
+// V0.28 : ux-universal-search.js owns search input and keyboard navigation.
 $('#commandPalette').addEventListener('pointerdown',e=>{if(e.target===$('#commandPalette'))closeCommandPalette()});
 
 const _v014SetWorkspace=setWorkspace;
