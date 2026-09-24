@@ -288,7 +288,7 @@ Aucun bouton de ce drawer ne remplace le clip automatiquement.
 
 ## Motion & Delivery V0.23.1
 
-Les titres utilisent le schema timeline v5.
+Le modèle de titres a été introduit avec le schema timeline v5. Le schema timeline courant est **v6**, qui ajoute le point de connexion graphique indépendant.
 
 ### Modèle
 
@@ -393,6 +393,77 @@ Les champs spécialisés sont sérialisés dans `title_cuts` :
 - `black_tail_seconds`.
 
 Ils restent auditables dans `unmaterialized_titles` si le schéma Tesseract installé ne confirme pas une matérialisation Text compatible.
+
+## Motion & Delivery V0.23.3
+
+Les connexions magnétiques utilisent désormais deux offsets distincts.
+
+### Modèle
+
+`anchorOffset` :
+
+`child.start = parent.start + anchorOffset`
+
+Il conserve la relation temporelle et sert au suivi magnétique lors d’un déplacement du parent.
+
+`connectionPointOffset` :
+
+`connection_time = parent.start + connectionPointOffset`
+
+Il représente uniquement le point graphique sur le plan parent et doit rester dans :
+
+`0 <= connectionPointOffset <= parent.duration`.
+
+### Migration
+
+Une ancienne connexion sans `connectionPointOffset` reste valide.
+
+Le backend dérive :
+
+`clamp(anchorOffset, 0, parent.duration)`
+
+et l’enregistre lors de la prochaine validation en schema v6.
+
+### Déplacement
+
+`move_connection_point(...)` conserve toujours la position absolue du clip enfant.
+
+Quand le point traverse une coupe :
+
+1. le nouveau plan sous le point devient `parentClipId` ;
+2. `child.start` reste inchangé ;
+3. `anchorOffset` est recalculé depuis le nouveau parent ;
+4. `connectionPointOffset` correspond à la position locale du point sur ce parent.
+
+### UI
+
+`ux-magnetic.js` dessine un SVG au-dessus de la timeline :
+
+- ligne discrète pour chaque connexion ;
+- ligne renforcée pour l’élément sélectionné ;
+- poignée circulaire déplaçable sur la Storyline.
+
+Seule la poignée de l’élément sélectionné reçoit les Pointer Events.
+
+L’Inspector fournit une alternative numérique **Point sur parent (s)**.
+
+### Sécurité éditoriale
+
+Chaque déplacement utilise `commitMagneticCandidate` :
+
+- validation locale ;
+- `/api/storyline/validate` ;
+- contrôle des locks ;
+- checkpoint avant mutation ;
+- Undo persistant.
+
+Le déplacement du point est vérifié sur l’ancienne et la nouvelle position avec :
+
+- `connection_point` ;
+- `graphics` pour les titres ;
+- `audio_change` pour les éléments audio.
+
+Changer le parent depuis le sélecteur Inspector utilise désormais exactement la même chaîne de sécurité.
 
 ## Audio Delivery V0.21
 
