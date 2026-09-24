@@ -66,7 +66,16 @@ function reflowCandidate(candidate,orderIds=null){
   let cursor=getStorylineStart();
   ordered.forEach(c=>{c.start=+cursor.toFixed(6);cursor+=c.duration});
   const parents=new Map(ordered.map(c=>[c.id,c]));
-  candidate.forEach(c=>{if(!c.parentClipId)return;const p=parents.get(c.parentClipId);if(!p)throw new Error(`Parent absent pour ${c.label}`);if(c.anchorOffset==null)c.anchorOffset=+(c.start-p.start).toFixed(6);c.connectionMode='follow';c.start=+(p.start+(+c.anchorOffset||0)).toFixed(6)});
+  candidate.forEach(c=>{
+    if(!c.parentClipId)return;
+    const p=parents.get(c.parentClipId);
+    if(!p)throw new Error(`Parent absent pour ${c.label}`);
+    if(c.anchorOffset==null)c.anchorOffset=+(c.start-p.start).toFixed(6);
+    if(c.connectionPointOffset==null)c.connectionPointOffset=+Math.min(Math.max(+c.anchorOffset||0,0),p.duration).toFixed(6);
+    else c.connectionPointOffset=+Math.min(Math.max(+c.connectionPointOffset||0,0),p.duration).toFixed(6);
+    c.connectionMode='follow';
+    c.start=+(p.start+(+c.anchorOffset||0)).toFixed(6)
+  });
   return candidate
 }
 function validateCandidate(candidate,original=clips){
@@ -358,3 +367,5 @@ document.addEventListener('keydown',e=>{
     e.preventDefault();undoLastEdit()
   }
 });
+
+window.addEventListener('resize',()=>renderConnectionPoints());
