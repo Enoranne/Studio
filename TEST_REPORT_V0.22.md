@@ -4,20 +4,20 @@ Date : 24 septembre 2026
 
 ## Périmètre validé
 
-Ce rapport couvre trois briques de V0.22 :
+Ce rapport couvre quatre briques de V0.22 :
 
 1. **V0.22.1 — Fenêtres SOURCE IN/OUT issues de ruptures visuelles** ;
 2. **V0.22.2 — Références visuelles ciblées sur un frame ou une zone ROI** ;
-3. **V0.22.3 — Groupes de références et qualité de preuve**.
+3. **V0.22.3 — Groupes de références et qualité de preuve** ;
+4. **V0.22.4 — Détection de conflits Canon / HARD-SOFT LOCKS**.
 
-Restent ouverts dans V0.22 :
+Reste ouvert dans V0.22 :
 
-- détection de conflit entre tags sémantiques et Canon ;
 - comparaison de continuité plan précédent / plan suivant.
 
 ## Résultat global
 
-- Python/API/UI : **96 tests passés / 96** sur le run fonctionnel V0.22.2.
+- Python/API/UI : **102 tests au total** avec la couverture V0.22.4 ; validation Chromium finale requise pour fermer le jalon.
 - JavaScript : tous les modules UI passent `node --check`.
 - Chromium / Playwright : succès.
 - ffmpeg système installé explicitement dans la CI.
@@ -381,9 +381,145 @@ Les propositions peuvent maintenant exposer :
 
 L’UI affiche notamment le nombre de groupes et la distribution **P/S/F**.
 
+# V0.22.4 — Conflits Canon et locks
+
+## Objectif
+
+Une proposition de continuité visuelle n’est plus évaluée uniquement par similarité.
+
+Elle est également confrontée :
+
+- au Canon courant ;
+- aux règles sémantiques explicites ;
+- aux `visual.look` / `visual.avoid` ;
+- aux personnages, accessoires et décors déclarés ;
+- au contexte HARD/SOFT LOCK de la timeline active.
+
+## Classification
+
+Le moteur produit cinq statuts :
+
+- **ALIGNED** : preuve canonique explicite compatible ;
+- **UNVERIFIED** : le Canon ne confirme ni n’interdit ;
+- **CONFLICT** : contradiction explicite ;
+- **HARD_LOCK** : média utilisé dans une zone HARD applicable aux opérations sémantiques ;
+- **REVIEW** : contexte SOFT LOCK.
+
+Principe fondamental :
+
+**absence de règle ≠ contradiction.**
+
+Un tag absent du Canon devient conflictuel par absence uniquement si son facet est déclaré fermé.
+
+## Canon semantic schema
+
+Les nouveaux projets utilisent un Canon schema v2 avec :
+
+```yaml
+semantic:
+  allowed_tags: []
+  forbidden_tags: []
+  closed_facets: []
+```
+
+La section reste optionnelle pour les anciens projets.
+
+Sources positives supplémentaires :
+
+- clés de `characters` ;
+- clés de `props` ;
+- clés de `decors` ;
+- valeurs de `visual.look`.
+
+Sources négatives supplémentaires :
+
+- `visual.avoid` ;
+- `semantic.forbidden_tags`.
+
+## Facets fermés
+
+Un facet fermé signifie que le vocabulaire Canon correspondant est exhaustif.
+
+Exemple :
+
+- Canon : `characters: {malo: ...}` ;
+- `closed_facets: [character]` ;
+- proposition `character:malo` → **ALIGNED** ;
+- proposition `character:jasper` → **CONFLICT**.
+
+Sans `closed_facets: [character]`, `character:jasper` serait **UNVERIFIED**.
+
+## Locks sémantiques
+
+PISTE Studio recherche si le média proposé est réellement présent dans un clip chevauchant le lock.
+
+Le lock ne s’applique à cette décision que si ses opérations interdites couvrent :
+
+- toutes les opérations ;
+- `semantic` ;
+- `semantic_tag` ;
+- `semantic_tag_accept` ;
+- `tag` ;
+- `semantic:<facet>` ;
+- `tag:<tag exact>`.
+
+Un HARD LOCK limité à `trim` ou `reorder` ne devient donc pas artificiellement un conflit de métadonnées.
+
+## Validation humaine explicite
+
+Pour ALIGNED, UNVERIFIED ou REVIEW, le comportement de décision reste humain et direct.
+
+Pour CONFLICT ou HARD_LOCK :
+
+1. le tag reste **PENDING** ;
+2. un premier passage d’acceptation renvoie `REQUIRES_ACKNOWLEDGEMENT` ;
+3. aucun tag n’est écrit ;
+4. l’interface affiche toutes les raisons et sources ;
+5. seul **Accepter malgré conflit** permet ensuite l’acceptation explicite.
+
+L’override :
+
+- ajoute le tag au média ;
+- ne modifie pas le Canon ;
+- ne modifie pas le lock ;
+- ne modifie pas la Storyline ;
+- conserve l’évaluation de conflit dans la proposition retournée.
+
+## Tests moteur
+
+Validé :
+
+- normalisation accents / espaces / tirets ;
+- index personnages, props, décors et looks ;
+- `visual.avoid` ;
+- `allowed_tags` ;
+- `forbidden_tags` ;
+- facets fermés ;
+- distinction ALIGNED / CONFLICT / UNVERIFIED ;
+- HARD LOCK sémantique ;
+- HARD LOCK de trim ignoré pour la sémantique ;
+- SOFT LOCK → REVIEW ;
+- acceptation conflictuelle sans acquittement → aucune mutation ;
+- acceptation avec acquittement explicite → tag ajouté.
+
+## Interface
+
+Chaque carte de proposition peut afficher :
+
+- état Canon ;
+- besoin ou non d’acquittement ;
+- raison(s) ;
+- source(s).
+
+Pour un conflit bloquant, le bouton standard **Accepter** est remplacé par **Examiner conflit**.
+
+L’écran de confirmation précise qu’aucune modification n’a encore eu lieu et expose **Accepter malgré conflit**.
+
+La vue **Canon & Locks** affiche aussi les règles sémantiques explicites.
+
 ## Politique de sécurité éditoriale
 
-V0.22.1 et V0.22.2 respectent les mêmes principes :
+V0.22.1 à V0.22.4 respectent les mêmes principes :
 
 - traitement local ;
 - suggestion explicable ;
@@ -395,7 +531,6 @@ V0.22.1 et V0.22.2 respectent les mêmes principes :
 ## Limites connues
 
 - la référence ciblée utilise encore un rectangle ROI renseigné par coordonnées ; un geste direct de sélection dans le Viewer pourra améliorer l’ergonomie ;
-- aucune règle Canon n’est encore comparée automatiquement aux tags proposés ;
 - la continuité n’est pas encore évaluée explicitement entre plan précédent et plan suivant ;
 - le modèle CLIP local reste optionnel et son téléchargement nécessite une action explicite.
 
@@ -405,4 +540,4 @@ V0.22 transforme progressivement la vision de PISTE Studio d’une analyse « pa
 
 La chaîne validée devient :
 
-**repérer une rupture → choisir une plage SOURCE → choisir un frame → isoler une zone → nommer la référence → l’associer à un groupe → qualifier sa force → comparer des groupes équilibrés → expliquer la preuve → laisser l’utilisateur décider.**
+**repérer une rupture → choisir une plage SOURCE → choisir un frame → isoler une zone → nommer la référence → l’associer à un groupe → qualifier sa force → comparer des groupes équilibrés → confronter la proposition au Canon et aux locks → expliquer la preuve et les contradictions → laisser l’utilisateur décider.**
