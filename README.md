@@ -13,6 +13,24 @@ Les composants, dépendances, références et services tiers restent soumis à *
 Le fait que ce dépôt soit public sur GitHub ne constitue pas, à lui seul, une autorisation générale de copier, modifier, redistribuer, sous-licencier ou commercialiser PISTE Studio.
 
 
+## V0.27 — Voice-to-Visual Editorial Bridge
+
+V0.27 relie une **VO séparée** aux images candidates sans transformer PISTE Studio en montage automatique transcript-first :
+
+- une source VO/audio transcrite peut piloter la recherche visuelle ;
+- chaque phrase peut recevoir une **intention explicite** facultative ;
+- présélection des rushes par métadonnées, tags et qualité éditoriale ;
+- fenêtres visuelles issues d’Editorial Vision ;
+- exclusion des zones `reject` et bonus pour les zones `favorite` ;
+- comparaison locale texte↔image avec CLIP lorsque le modèle est déjà disponible, sans téléchargement silencieux ;
+- recours aux références Semantic Vision ciblées lorsqu’elles tombent dans la fenêtre candidate ;
+- comparaison de plans avec score et raisons visibles ;
+- construction d’une EDL VO→image virtuelle qui conserve les respirations de la VO ;
+- maintien de la VO audio existante dans la timeline ;
+- validation humaine obligatoire puis réutilisation du pipeline transactionnel `Apply Proposal`.
+
+Principe : **AUDIO + IMAGE + TEMPS + CONTINUITÉ + INTENTION**. La phrase guide la recherche ; elle ne décide jamais seule du plan.
+
 ## V0.26 — Editorial Agent & Transcript Intelligence
 
 V0.26 ajoute une couche agentique **au-dessus** de la Storyline, sans remplacer le moteur de montage :

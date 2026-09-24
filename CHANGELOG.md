@@ -1,3 +1,22 @@
+# V0.27.0 — Voice-to-Visual Editorial Bridge
+
+- VO/audio séparée utilisable comme source éditoriale ;
+- mapping phrase/intention → fenêtres visuelles candidates ;
+- scoring explicable via métadonnées, tags, favoris/rejets, rating, Canon et durée ;
+- embeddings texte CLIP locaux optionnels, sans téléchargement implicite ;
+- comparaison du texte VO aux profils Semantic Vision et références ciblées ;
+- comparaison de plans sans sélection automatique d’un gagnant ;
+- longues phrases divisées en beats visuels tout en préservant les pauses ;
+- proposition de Storyline VO→image entièrement virtuelle ;
+- VO existante conservée et éléments connectés ré-ancrés prudemment ;
+- anti-stale, locks, checkpoint Undo et confirmation humaine avant Apply ;
+- Editorial Agent utilisable depuis un média vidéo ou audio/VO ;
+- version Python/FastAPI/Tauri alignée sur **0.27.0**.
+
+V0.27 répond au cas de PISTE 0 où narration, SFX et musique peuvent être séparés des rushes. Le matching sémantique aide au tri ; il ne constitue pas un jugement artistique autonome.
+
+---
+
 # V0.26.0 — Editorial Agent & Transcript Intelligence
 
 - Audio Track Intelligence pour les rushes vidéo/audio multipistes ;

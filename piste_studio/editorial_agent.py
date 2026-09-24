@@ -653,6 +653,47 @@ def propose_edit(
     return proposal
 
 
+def create_virtual_edit_proposal(
+    root: Path,
+    *,
+    edit_name: str,
+    brief: str,
+    proposal: dict,
+) -> dict:
+    """Persist a virtual edit without mutating the working Storyline."""
+    base = load_timeline(root, edit_name)
+    if base is None:
+        raise EditorialAgentError(
+            "Une timeline de travail est requise avant de créer "
+            "une proposition virtuelle."
+        )
+    candidate = proposal.get("candidate_timeline")
+    if not isinstance(candidate, dict):
+        raise EditorialAgentError(
+            "La proposition virtuelle doit contenir candidate_timeline."
+        )
+    clean = validate_timeline(root, candidate)
+    payload = dict(proposal)
+    payload["candidate_timeline"] = clean
+    policy = dict(payload.get("policy") or {})
+    policy.update({
+        "virtual_edl": True,
+        "storyline_unchanged": True,
+        "human_validation_required": True,
+        "lock_check_on_apply": True,
+        "checkpoint_before_apply": True,
+    })
+    payload["policy"] = policy
+    return _create_proposal_record(
+        root,
+        edit_name=edit_name,
+        proposal_kind="PROPOSED_EDIT",
+        brief=brief,
+        base_timeline=base,
+        proposal=payload,
+    )
+
+
 def _create_proposal_record(
     root: Path,
     *,

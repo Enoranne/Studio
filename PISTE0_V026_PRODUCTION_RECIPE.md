@@ -224,13 +224,24 @@ montage publié, Tesseract et le Delivery Center.
 
 Il n'existe volontairement **aucun PASS artistique automatique**.
 
-## Point de vigilance PISTE 0
+## Extension V0.27 — VO séparée → images
 
-Une partie de PISTE 0 utilise des voix, musiques ou SFX séparés des rushes
-vidéo. Le Proposed Edit V0.26 sélectionne actuellement ses segments à partir de
-transcripts associés aux médias VIDEO. La recette réelle doit donc mesurer
-explicitement cet écart.
+Le point de vigilance identifié en V0.26 est désormais couvert par le
+**Voice-to-Visual Editorial Bridge V0.27**.
 
-Si la VO séparée devient le principal moteur éditorial du passage, la prochaine
-évolution devra permettre de relier un transcript audio/VO à des fenêtres
-visuelles candidates sans imposer que la parole soit embarquée dans le rush.
+Une VO stockée dans `audio/` peut être transcrite indépendamment puis guider :
+
+```text
+phrase / intention
+→ rushes présélectionnés
+→ fenêtres Editorial Vision
+→ tags + références Semantic Vision
+→ Favorite / Reject
+→ comparaison de plans
+→ EDL VO→image virtuelle
+→ validation humaine
+```
+
+Le test réel PISTE 0 doit maintenant mesurer la pertinence artistique des
+candidats, notamment sur les silences, les motifs sonores et les passages où
+l’image doit volontairement **ne pas illustrer littéralement** la phrase.

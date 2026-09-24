@@ -18,17 +18,33 @@
   }
 
   function currentAgentMedia() {
+    if (typeof libraryMode !== "undefined" && libraryMode === "audio") {
+      const a = typeof getAudio === "function" ? getAudio(selectedAudio) : null;
+      if (a?.dbId) return { ...a, kind: "audio" };
+    }
     let m = typeof getMedia === "function" ? getMedia(selectedMedia) : null;
-    if (m?.dbId) return m;
+    if (m?.dbId) return { ...m, kind: "video" };
     const clip = (clips || []).find(x => x.id === selectedClip);
+    if (clip?.audioDbId) {
+      const a = (audioAssets || []).find(x => x.dbId === clip.audioDbId);
+      if (a) return { ...a, kind: "audio" };
+    }
     if (clip?.mediaDbId) {
-      return (media || []).find(x => x.dbId === clip.mediaDbId) || null;
+      m = (media || []).find(x => x.dbId === clip.mediaDbId) || null;
+      if (m) return { ...m, kind: "video" };
+    }
+    if (clip?.audioId) {
+      const a = typeof getAudio === "function" ? getAudio(clip.audioId) : null;
+      if (a?.dbId) return { ...a, kind: "audio" };
     }
     if (clip?.mediaId) {
       m = typeof getMedia === "function" ? getMedia(clip.mediaId) : null;
-      if (m?.dbId) return m;
+      if (m?.dbId) return { ...m, kind: "video" };
     }
-    return (media || []).find(x => x.dbId) || null;
+    m = (media || []).find(x => x.dbId);
+    if (m) return { ...m, kind: "video" };
+    const a = (audioAssets || []).find(x => x.dbId);
+    return a ? { ...a, kind: "audio" } : null;
   }
 
   function drawer() {
@@ -63,7 +79,8 @@
   function render() {
     const host = body();
     if (!host) return;
-    const m = (media || []).find(x => x.dbId === EA.mediaDbId);
+    const m = (media || []).find(x => x.dbId === EA.mediaDbId)
+      || (audioAssets || []).find(x => x.dbId === EA.mediaDbId);
     const tracks = EA.tracks || [];
     const activeTrack = tracks.find(x => x.selected_for_transcription);
     const transcript = EA.transcript;
@@ -112,6 +129,24 @@
         <div class="agent-transcript" id="agentTranscript">
           ${phrases.length ? phrases.map(phraseHtml).join("") : '<div class="hint">Aucun transcript. La transcription externe n’est lancée qu’après consentement explicite.</div>'}
         </div>
+      </section>
+
+      <section class="agent-section">
+        <div class="agent-title-row"><strong>VO → IMAGE · V0.27</strong>
+          <button class="btn tiny" onclick="findVoiceVisualCandidates()">Comparer plans</button>
+        </div>
+        <div class="hint">Phrase / intention → fenêtres visuelles → score explicable. Aucun plan n’est imposé.</div>
+        <label class="agent-meta">Phrase
+          <select id="voiceVisualPhrase">
+            ${phrases.map((p, i) => `<option value="${i}">${i + 1} · ${esc((p.text || "").slice(0, 74))}</option>`).join("")}
+          </select>
+        </label>
+        <input id="voiceVisualIntent" placeholder="Intention optionnelle pour la phrase sélectionnée">
+        <div class="ins-actions">
+          <button class="btn" onclick="findVoiceVisualCandidates()">Fenêtres candidates</button>
+          <button class="btn primary" onclick="createVoiceVisualProposal()">Proposer montage VO→image</button>
+        </div>
+        <div id="voiceVisualResult" class="agent-result"></div>
       </section>
 
       <section class="agent-section">
@@ -198,7 +233,7 @@
     }
     const m = currentAgentMedia();
     if (!m?.dbId) {
-      toast("Sélectionne un rush vidéo du catalogue", true);
+      toast("Sélectionne un rush vidéo ou une source audio/VO du catalogue", true);
       return;
     }
     EA.open = true;
@@ -274,25 +309,34 @@
 
   window.editorialAgentSeek = function(dbId, start, end) {
     const m = (media || []).find(x => x.dbId === Number(dbId));
-    if (!m) return;
-    selectedMedia = m.id;
-    if (typeof renderMedia === "function") renderMedia();
-    if (typeof setViewerMode === "function") setViewerMode("source");
-    if (typeof previewMedia === "function") previewMedia(m.id);
-    const v = document.getElementById("video");
-    const seek = () => {
-      try { v.currentTime = Number(start); } catch (_) {}
-      syncEditorialAgentTranscript(Number(start), Number(dbId));
-    };
-    if (v.readyState >= 1) seek();
-    else v.addEventListener("loadedmetadata", seek, { once: true });
+    if (m) {
+      selectedMedia = m.id;
+      if (typeof renderMedia === "function") renderMedia();
+      if (typeof setViewerMode === "function") setViewerMode("source");
+      if (typeof previewMedia === "function") previewMedia(m.id);
+      const v = document.getElementById("video");
+      const seek = () => {
+        try { v.currentTime = Number(start); } catch (_) {}
+        syncEditorialAgentTranscript(Number(start), Number(dbId));
+      };
+      if (v.readyState >= 1) seek();
+      else v.addEventListener("loadedmetadata", seek, { once: true });
+      return;
+    }
+    const a = (audioAssets || []).find(x => x.dbId === Number(dbId));
+    if (!a) return;
+    selectedAudio = a.id;
+    syncEditorialAgentTranscript(Number(start), Number(dbId));
   };
 
   function sourcePosition() {
     if (viewerMode === "source") {
-      const m = typeof getMedia === "function" ? getMedia(selectedMedia) : null;
-      if (!m?.dbId) return null;
-      return { dbId: m.dbId, time: Number(document.getElementById("video")?.currentTime || 0) };
+      const current = currentAgentMedia();
+      if (!current?.dbId) return null;
+      if (current.kind === "audio") {
+        return { dbId: current.dbId, time: 0 };
+      }
+      return { dbId: current.dbId, time: Number(document.getElementById("video")?.currentTime || 0) };
     }
     const clip = (clips || []).find(c =>
       c.track === "video" &&
@@ -334,6 +378,111 @@
     });
     const active = document.querySelector(".agent-phrase.active");
     if (active) active.scrollIntoView({ block: "nearest" });
+  };
+
+  function voiceVisualPayload(singlePhrase) {
+    const phraseIndex = Number(document.getElementById("voiceVisualPhrase")?.value || 0);
+    const intent = document.getElementById("voiceVisualIntent")?.value?.trim() || "";
+    const explicit = intent ? { [phraseIndex]: intent } : {};
+    return {
+      voice_media_id: EA.mediaDbId,
+      phrase_indexes: singlePhrase ? [phraseIndex] : null,
+      explicit_intents: explicit,
+      visual_media_ids: (media || []).map(x => x.dbId).filter(Boolean),
+      per_phrase: 8,
+      max_visual_media: 24,
+      max_shot_seconds: 4.5,
+      allow_model_download: false,
+      edit_name: activeEditName,
+      brief: document.getElementById("agentBrief")?.value || "",
+    };
+  }
+
+  window.findVoiceVisualCandidates = async function() {
+    const host = document.getElementById("voiceVisualResult");
+    if (!EA.mediaDbId || !EA.transcript) {
+      toast("Transcript requis sur la source VO", true);
+      return;
+    }
+    try {
+      if (host) host.innerHTML = '<div class="hint">Recherche des fenêtres visuelles…</div>';
+      const payload = voiceVisualPayload(true);
+      const r = await api("/api/editorial-agent/voice-visual/compare", {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          phrase_index: payload.phrase_indexes[0],
+          limit: 6,
+        }),
+      });
+      if (!host) return;
+      const semantic = r.semantic_text?.available
+        ? "CLIP texte↔image local actif"
+        : "fallback métadonnées/tags";
+      host.innerHTML = `<div class="card">
+        <h3>Phrase ${Number(r.phrase_index) + 1} · ${esc(semantic)}</h3>
+        ${(r.candidates || []).length ? (r.candidates || []).map((c, rank) => `
+          <div class="agent-match">
+            <strong>#${rank + 1} · ${esc(c.media_title)} · ${Math.round(Number(c.score) * 100)}%</strong>
+            <br><small>${fmt(Number(c.source_in))}–${fmt(Number(c.source_out))} · ${esc(c.reason || "")}</small>
+            <div class="ins-actions">
+              <button class="btn tiny" onclick="previewVoiceVisualCandidate(${Number(c.media_id)},${Number(c.source_in)})">Voir source</button>
+            </div>
+          </div>`).join("") : '<div class="hint">Aucune fenêtre candidate.</div>'}
+        <small>Comparaison uniquement · aucun gagnant appliqué automatiquement.</small>
+      </div>`;
+    } catch (err) {
+      if (host) host.innerHTML = "";
+      toast("VO → image : " + err.message, true);
+    }
+  };
+
+  window.previewVoiceVisualCandidate = function(dbId, sourceIn) {
+    const m = (media || []).find(x => x.dbId === Number(dbId));
+    if (!m) return;
+    selectedMedia = m.id;
+    if (typeof renderMedia === "function") renderMedia();
+    if (typeof setViewerMode === "function") setViewerMode("source");
+    if (typeof previewMedia === "function") previewMedia(m.id);
+    const v = document.getElementById("video");
+    const seek = () => { try { v.currentTime = Number(sourceIn); } catch (_) {} };
+    if (v?.readyState >= 1) seek();
+    else v?.addEventListener("loadedmetadata", seek, { once: true });
+  };
+
+  window.createVoiceVisualProposal = async function() {
+    const host = document.getElementById("voiceVisualResult");
+    if (!EA.mediaDbId || !EA.transcript) {
+      toast("Transcript requis sur la source VO", true);
+      return;
+    }
+    try {
+      if (host) host.innerHTML = '<div class="hint">Construction de l’EDL VO→image…</div>';
+      const payload = voiceVisualPayload(false);
+      const r = await api("/api/editorial-agent/voice-visual/propose", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      EA.lastResult = `
+        <div class="card agent-proposal-card">
+          <h3>EDL VO→image #${r.proposal_id}</h3>
+          <p>${r.slot_count} plan(s) · ${r.phrase_count} phrase(s) · ${esc(r.mapping_mode)}</p>
+          <div class="agent-segments">${(r.decisions || []).slice(0,20).map(d =>
+            `<div><strong>${esc(d.selected.media_title)}</strong> · VO ${Number(d.slot.phrase_index) + 1}<br>
+            <small>${fmt(d.timeline_start)}–${fmt(d.timeline_end)} · score ${Math.round(Number(d.selected.sequence_score || d.selected.score) * 100)}%</small></div>`
+          ).join("")}</div>
+          <div class="ins-actions">
+            <button class="btn primary" onclick="applyEditorialProposal(${r.proposal_id})">Valider et appliquer</button>
+            <button class="btn" onclick="rejectEditorialProposal(${r.proposal_id})">Rejeter</button>
+          </div>
+          <small>VO préservée · silences de phrasé conservés · Storyline inchangée jusqu’à validation.</small>
+        </div>`;
+      render();
+      toast("EDL VO→image créée · Storyline inchangée");
+    } catch (err) {
+      if (host) host.innerHTML = "";
+      toast("Proposition VO → image : " + err.message, true);
+    }
   };
 
   window.compareEditorialTakes = async function() {
