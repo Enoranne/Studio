@@ -148,6 +148,17 @@
         <button class="btn" onclick="runEditorialMasterCritic()">Analyser le rendu</button>
         <div id="agentCriticResult" class="agent-result"></div>
       </section>
+
+      <section class="agent-section">
+        <div class="agent-title-row"><strong>RECETTE PISTE 0 · V0.26</strong>
+          <div>
+            <button class="btn tiny" onclick="runEditorialProductionRecipe(false)">État</button>
+            <button class="btn tiny" onclick="runEditorialProductionRecipe(true)">Enregistrer</button>
+          </div>
+        </div>
+        <div class="hint">Rapport non destructif : rushes → audio → transcript → candidats → AI Timeline → EDL → humain → Storyline → Tesseract → Critic.</div>
+        <div id="agentProductionRecipeResult" class="agent-result"></div>
+      </section>
     `;
     syncEditorialAgentTranscript();
   }
@@ -448,6 +459,42 @@
         <small>Diagnostic uniquement · revue humaine toujours requise.</small></div>`;
     } catch (err) {
       toast("Master Critic : " + err.message, true);
+    }
+  };
+
+  window.runEditorialProductionRecipe = async function(save) {
+    const host = document.getElementById("agentProductionRecipeResult");
+    if (host) host.innerHTML = '<div class="hint">Analyse de la chaîne V0.26…</div>';
+    try {
+      let r;
+      if (save) {
+        r = await api("/api/editorial-production-run", {
+          method: "POST",
+          body: JSON.stringify({
+            edit_name: activeEditName,
+            version: activeVersion || null,
+          }),
+        });
+        r = r.report || r;
+      } else {
+        const params = new URLSearchParams({ edit_name: activeEditName });
+        if (activeVersion) params.set("version", activeVersion);
+        r = await api(`/api/editorial-production-run?${params.toString()}`);
+      }
+      if (!host) return;
+      const stages = (r.stages || []).map(s =>
+        `<div class="agent-match"><strong>${esc(s.status)}</strong> · ${esc(s.id)}<br><small>${esc(s.message || "")}</small></div>`
+      ).join("");
+      host.innerHTML = `<div class="card">
+        <h3>${esc(r.status || "—")}</h3>
+        <p>${esc(r.next_action || "")}</p>
+        <div class="agent-segments">${stages}</div>
+        <small>Aucun PASS artistique automatique · validation humaine obligatoire.</small>
+      </div>`;
+      if (save) toast("Rapport de recette V0.26 enregistré");
+    } catch (err) {
+      if (host) host.innerHTML = "";
+      toast("Recette V0.26 : " + err.message, true);
     }
   };
 
