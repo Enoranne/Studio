@@ -991,6 +991,7 @@ def test_delivery_targets_preflight_export_and_download(tmp_path, monkeypatch):
                 "duration_seconds": 10.0,
                 "size_bytes": path.stat().st_size,
             },
+            "conformance": {"status": "PASS", "reasons": []},
             "ffmpeg_args": ["ffmpeg"],
         }
 
@@ -1014,10 +1015,12 @@ def test_delivery_targets_preflight_export_and_download(tmp_path, monkeypatch):
     assert body["probe"]["width"] == 1080
     assert body["probe"]["height"] == 1920
     assert body["target"]["aspect_ratio"] == "9:16"
+    assert body["conformance"]["status"] == "PASS"
     assert body["file_url"]
     assert body["report_url"]
     assert client.get(body["file_url"]).content == b"fake-delivery"
     report = client.get(body["report_url"])
     assert report.status_code == 200
     assert report.json()["target"]["id"] == "social_vertical_1080x1920"
+    assert report.json()["conformance"]["status"] == "PASS"
     assert report.json()["policy"]["no_silent_crop"] is True
