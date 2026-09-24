@@ -261,6 +261,7 @@ def analyze_timeline_continuity(
             media_id=target_media_id,
             tag=tag,
             edit_name=edit_name,
+            context_clip_id=str(clip_id),
         )
         for tag in sorted(
             tag
