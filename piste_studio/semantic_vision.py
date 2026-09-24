@@ -294,12 +294,10 @@ def normalize_reference_roi(roi: dict | None) -> dict:
     except (TypeError, ValueError) as exc:
         raise SemanticVisionError("ROI invalide.") from exc
 
-    x = max(0.0, min(1.0, x))
-    y = max(0.0, min(1.0, y))
+    x = max(0.0, min(0.95, x))
+    y = max(0.0, min(0.95, y))
     width = max(0.05, min(1.0 - x, width))
     height = max(0.05, min(1.0 - y, height))
-    if width <= 0 or height <= 0:
-        raise SemanticVisionError("Zone de référence vide.")
     return {
         "x": round(x, 6),
         "y": round(y, 6),
