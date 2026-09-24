@@ -859,3 +859,149 @@ def test_editable_title_overlay_preview_and_persistence(tmp_path):
     finally:
         server.should_exit = True
         thread.join(timeout=5)
+
+
+
+def test_graphical_connection_point_drag_changes_parent_without_moving_child(tmp_path):
+    root = tmp_path / "ConnectionPointBrowser"
+    init_project(root, "Connection Point Browser")
+    save_timeline(
+        root,
+        {
+            "edit_name": "teaser_30",
+            "duration_seconds": 30,
+            "storyline": {"mode": "magnetic", "start": 0},
+            "tracks": [
+                {"id": "video", "name": "VIDEO", "kind": "video"},
+                {"id": "titles", "name": "TITLES", "kind": "title"},
+            ],
+            "clips": [
+                {
+                    "id": "v1",
+                    "track": "video",
+                    "label": "Plan A",
+                    "start": 0,
+                    "duration": 5,
+                    "sourceStart": 0,
+                },
+                {
+                    "id": "v2",
+                    "track": "video",
+                    "label": "Plan B",
+                    "start": 5,
+                    "duration": 5,
+                    "sourceStart": 0,
+                },
+                {
+                    "id": "t1",
+                    "track": "titles",
+                    "label": "Titre connecté",
+                    "text": "Titre connecté",
+                    "start": 2,
+                    "duration": 1,
+                    "parentClipId": "v1",
+                    "anchorOffset": 2,
+                    "connectionPointOffset": 2,
+                    "connectionMode": "follow",
+                },
+            ],
+        },
+    )
+
+    app = create_app(root)
+    port = _free_port()
+    server = uvicorn.Server(
+        uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
+    )
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    for _ in range(100):
+        if server.started:
+            break
+        time.sleep(0.05)
+    assert server.started
+
+    errors = []
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.on("pageerror", lambda exc: errors.append(str(exc)))
+            page.goto(f"http://127.0.0.1:{port}/", wait_until="networkidle")
+            page.wait_for_timeout(180)
+
+            page.locator('.clip[data-clip="t1"]').click()
+            page.wait_for_timeout(80)
+            expect(page.locator(".connection-line")).to_have_count(1)
+            expect(page.locator(".connection-point.selected")).to_have_count(1)
+            expect(page.locator("#connectionPointInput")).to_have_value("2.00")
+            expect(page.locator(".connection-badge")).to_contain_text(
+                "Plan A · +2.0s"
+            )
+
+            before = page.evaluate(
+                "() => { const c=getClip('t1'); return {start:c.start,parent:c.parentClipId,anchor:c.anchorOffset,point:c.connectionPointOffset}; }"
+            )
+            assert before == {
+                "start": 2,
+                "parent": "v1",
+                "anchor": 2,
+                "point": 2,
+            }
+
+            handle = page.locator(".connection-point.selected").bounding_box()
+            lane = page.locator("#lane-video").bounding_box()
+            assert handle is not None and lane is not None
+            target_x = lane["x"] + lane["width"] * (6.0 / 30.0)
+            target_y = handle["y"] + handle["height"] / 2
+            page.mouse.move(
+                handle["x"] + handle["width"] / 2,
+                target_y,
+            )
+            page.mouse.down()
+            page.mouse.move(target_x, target_y, steps=8)
+            page.mouse.up()
+            page.wait_for_timeout(220)
+
+            after = page.evaluate(
+                "() => { const c=getClip('t1'); return {start:c.start,parent:c.parentClipId,anchor:c.anchorOffset,point:c.connectionPointOffset}; }"
+            )
+            assert after["start"] == 2
+            assert after["parent"] == "v2"
+            assert after["anchor"] == -3
+            assert abs(after["point"] - 1.0) < 1e-6
+            expect(page.locator(".connection-badge")).to_contain_text(
+                "Plan B · +1.0s"
+            )
+            expect(page.locator("#connectionPointInput")).to_have_value("1.00")
+
+            page.locator("#saveBackendBtn").click()
+            page.wait_for_timeout(120)
+            timeline_path = (
+                root
+                / "edits"
+                / "teaser_30"
+                / "working"
+                / "timeline.json"
+            )
+            saved = __import__("json").loads(
+                timeline_path.read_text(encoding="utf-8")
+            )
+            child = next(x for x in saved["clips"] if x["id"] == "t1")
+            assert saved["schema_version"] == 6
+            assert child["start"] == 2
+            assert child["parentClipId"] == "v2"
+            assert child["anchorOffset"] == -3
+            assert child["connectionPointOffset"] == 1
+
+            page.keyboard.press("Control+Z")
+            page.wait_for_timeout(180)
+            restored = page.evaluate(
+                "() => { const c=getClip('t1'); return {start:c.start,parent:c.parentClipId,point:c.connectionPointOffset}; }"
+            )
+            assert restored == {"start": 2, "parent": "v1", "point": 2}
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
