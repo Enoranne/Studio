@@ -32,10 +32,25 @@ function connectChild(c,parentId=null){
   c.connectionMode='follow'
 }
 function detachChild(c){if(!c)return;delete c.parentClipId;delete c.anchorOffset;delete c.connectionPointOffset;delete c.connectionMode}
-function changeConnection(parentId){
+async function changeConnection(parentId){
   const c=getClip(selectedClip);if(!c||c.track==='video')return;
-  if(!parentId)detachChild(c);else connectChild(c,parentId);
-  renderTracks();toast(parentId?'Élément connecté à la STORY':'Élément détaché')
+  const before=cloneClips(),candidate=cloneClips(),child=candidate.find(x=>x.id===c.id);
+  if(!child)return;
+  if(!parentId)detachChild(child);
+  else{
+    const parent=candidate.find(x=>x.id===parentId&&x.track==='video');
+    if(!parent){toast('Plan parent introuvable',true);renderInspector();return}
+    child.parentClipId=parent.id;
+    child.anchorOffset=+(child.start-parent.start).toFixed(6);
+    child.connectionPointOffset=+Math.min(Math.max(child.start-parent.start,0),parent.duration).toFixed(6);
+    child.connectionMode='follow';
+  }
+  const ok=await commitMagneticCandidate(
+    candidate,
+    parentId?'Connexion STORY modifiée':'Élément détaché',
+    before,
+  );
+  if(!ok)renderInspector()
 }
 
 function connectionTargetAt(time,list=clips){
