@@ -995,7 +995,9 @@ def test_graphical_connection_point_drag_changes_parent_without_moving_child(tmp
             expect(page.locator("#connectionPointInput")).to_have_value("1.00")
 
             page.locator("#saveBackendBtn").click()
-            page.wait_for_timeout(120)
+            expect(page.locator("#toast")).to_contain_text(
+                "Timeline enregistrée côté backend"
+            )
             timeline_path = (
                 root
                 / "edits"
