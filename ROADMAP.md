@@ -24,7 +24,7 @@
 
 - ✅ **V0.22.1** — fenêtres IN/OUT candidates issues de ruptures/changements visuels, détection ffmpeg locale, sensibilité configurable, validation humaine ;
 - ✅ **V0.22.2** — références visuelles ciblées sur un frame ou une zone ROI, indépendantes des tags globaux du rush, intégrées aux preuves de continuité ;
-- groupes de références et qualité de référence ;
+- ✅ **V0.22.3** — groupes de références projet et qualité Primaire/Secondaire/Faible, pondération intra-groupe et équilibrage entre groupes ;
 - détection de conflit entre tags sémantiques et Canon ;
 - comparaison de continuité plan précédent / plan suivant.
 
