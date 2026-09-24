@@ -12,6 +12,7 @@ from piste_studio.media_intelligence import _write_analysis
 from piste_studio.semantic_vision import store_semantic_profile, store_targeted_semantic_reference
 from piste_studio.audio_intelligence import _write_analysis as _write_audio_loudness
 from piste_studio.timeline import save_timeline
+from piste_studio.storyline import move_connection_point
 
 
 def make_project(tmp_path: Path) -> Path:
@@ -821,3 +822,49 @@ def test_final_card_rejects_black_tail_equal_to_duration(tmp_path):
     response = client.post("/api/timeline", json=payload)
     assert response.status_code == 422
     assert "blackTailSeconds" in response.text
+
+
+
+def test_storyline_validate_accepts_connection_point_move_without_child_motion(tmp_path):
+    root = make_project(tmp_path)
+    before = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 30,
+        "storyline": {"mode": "magnetic", "start": 3},
+        "tracks": [
+            {"id": "video", "name": "VIDEO", "kind": "video"},
+            {"id": "titles", "name": "TITLES", "kind": "title"},
+        ],
+        "clips": [
+            {"id": "v1", "track": "video", "label": "A", "start": 3, "duration": 5, "sourceStart": 0},
+            {"id": "v2", "track": "video", "label": "B", "start": 8, "duration": 5, "sourceStart": 0},
+            {
+                "id": "t1",
+                "track": "titles",
+                "label": "Titre",
+                "text": "Titre",
+                "start": 5,
+                "duration": 1,
+                "parentClipId": "v1",
+                "anchorOffset": 2,
+                "connectionPointOffset": 2,
+                "connectionMode": "follow",
+            },
+        ],
+    }
+    after = move_connection_point(before, "t1", 9.0)
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    response = client.post(
+        "/api/storyline/validate",
+        json={"before": before, "after": after},
+    )
+    assert response.status_code == 200, response.text
+    child = next(
+        x for x in response.json()["timeline"]["clips"]
+        if x["id"] == "t1"
+    )
+    assert child["start"] == 5
+    assert child["parentClipId"] == "v2"
+    assert child["anchorOffset"] == -3
+    assert child["connectionPointOffset"] == 1
