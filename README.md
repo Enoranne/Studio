@@ -353,3 +353,29 @@ Le Viewer PROGRAM affiche les changements en direct.
 Le modèle est persisté dans la timeline schema v5 et conservé intégralement dans les `title_cuts` de l’authoring plan.
 
 PISTE Studio ne fabrique pas une couche texte Tesseract à partir d’hypothèses. Si le schéma Tesseract installé ne documente pas précisément une couche Text compatible, le titre reste explicitement listé dans `unmaterialized_titles` pour la phase de delivery au lieu d’être perdu silencieusement.
+
+
+### Carton final — V0.23.2
+
+Le bouton **+ Carton final** crée un clip spécialisé sur la piste TITLES.
+
+Par défaut, il est aligné exactement sur la fin du montage et possède :
+
+- un fond canvas noir plein ;
+- un texte éditable ;
+- une durée de 3,5 s ;
+- une queue finale de 0,75 s pendant laquelle le texte disparaît et seul le fond reste visible.
+
+Dans l’Inspector **CARTON FINAL**, les réglages de titre restent disponibles, avec en plus :
+
+- couleur du fond canvas ;
+- opacité du fond canvas ;
+- durée du **Noir / fond seul final**.
+
+Le fond canvas est distinct du fond de la boîte de texte : il recouvre toute l’image PROGRAM sans modifier le plan vidéo sous-jacent.
+
+Le noir final est intégré au même clip. Il ne crée pas de média noir artificiel ni de clip supplémentaire.
+
+Le backend refuse une durée de noir final supérieure ou égale à la durée du carton.
+
+Comme les autres titres, le carton final est conservé intégralement dans `title_cuts` pour l’authoring et n’est jamais perdu silencieusement si le moteur cible ne peut pas encore le matérialiser.
