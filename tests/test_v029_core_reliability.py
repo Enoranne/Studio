@@ -166,3 +166,15 @@ def test_storyline_operation_api_rejects_bad_operation(tmp_path):
     )
     assert response.status_code == 422
     assert "inconnue" in response.text
+
+
+def test_magnetic_ui_delegates_core_gestures_to_backend_kernel():
+    script = (ROOT / "piste_studio" / "ui" / "ux-magnetic.js").read_text(
+        encoding="utf-8"
+    )
+    assert "/api/storyline/operate" in script
+    assert "commitBackendMagneticOperation" in script
+    assert "'move'" in script
+    assert "'trim'" in script
+    assert "'connection_point'" in script
+    assert "backendConnected" in script
