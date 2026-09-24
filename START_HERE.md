@@ -315,3 +315,58 @@ Un statut WARN n’est pas masqué. Le bouton devient **Exporter avec avertissem
 Un FILL sans consentement reste **BLOCKED**.
 
 Si un festival fournit une fiche technique précise, utilise-la comme référence prioritaire plutôt que les cibles intégrées.
+
+
+## Presets de delivery V0.23.5
+
+### Créer un preset personnalisé
+
+1. Publie une version.
+2. Clique **Export**.
+3. Choisis le profil le plus proche de ton besoin.
+4. Clique **Dupliquer**.
+5. Modifie la copie :
+   - nom ;
+   - dimensions ;
+   - FPS ;
+   - codec ;
+   - bitrates si H.264 ;
+   - source Tesseract ;
+   - cadrage par défaut.
+6. Clique **Enregistrer le preset**.
+7. Vérifie le préflight.
+8. Exporte normalement.
+
+Les profils intégrés restent intacts.
+
+### Utiliser un preset par défaut
+
+Dans le Delivery Center :
+
+**Définir par défaut**
+
+Le preset sera sélectionné automatiquement aux prochaines ouvertures du projet.
+
+Si tu supprimes le preset par défaut, PISTE revient à **Online · H.264 · 1080p**.
+
+### Réutiliser dans un autre projet
+
+Dans le projet source :
+
+**Exporter JSON**
+
+Dans le projet cible :
+
+**Importer JSON**
+
+PISTE crée une nouvelle copie locale avec un ID sans collision.
+
+### Important
+
+Un preset contenant **FILL** ne mémorise jamais ton consentement au crop.
+
+À chaque export FILL, tu dois toujours cocher explicitement :
+
+**Autoriser explicitement le crop centré**
+
+Le preset mémorise une configuration technique, pas une autorisation éditoriale permanente.
