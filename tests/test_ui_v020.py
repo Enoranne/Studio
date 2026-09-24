@@ -158,3 +158,18 @@ def test_v023_final_card_patterns():
     assert "Titre · Ajouter un carton final" in ux
     assert "FIN DE TIMELINE" in ux
     assert "Carton final ajouté · texte à personnaliser" in ux
+
+
+
+def test_v023_graphical_connection_point_patterns():
+    ux = (UI / "ux-magnetic.js").read_text(encoding="utf-8")
+    css = (UI / "style.css").read_text(encoding="utf-8")
+    assert "connectionPointOffset" in ux
+    assert "renderConnectionPoints" in ux
+    assert "beginConnectionPointDrag" in ux
+    assert "Point sur parent (s)" in ux
+    assert "Appliquer le point" in ux
+    assert "Point de connexion déplacé" in ux
+    assert ".connection-overlay" in css
+    assert ".connection-line.selected" in css
+    assert ".connection-point.selected" in css
