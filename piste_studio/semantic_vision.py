@@ -13,6 +13,7 @@ from typing import Protocol
 from .db import connect
 from .metadata import fetch_media_with_metadata, set_media_metadata
 from .media_intelligence import get_media_analysis, probe_media
+from .canon_conflicts import assess_semantic_tag_against_canon
 
 VISION_PROVIDER = "local_clip"
 DEFAULT_MODEL_ID = os.environ.get(
@@ -1262,6 +1263,7 @@ def list_semantic_proposals(
     *,
     provider: str = VISION_PROVIDER,
     model_id: str = DEFAULT_MODEL_ID,
+    edit_name: str = "teaser_30",
 ) -> list[dict]:
     conn = connect(root / "media.sqlite")
     try:
@@ -1284,6 +1286,12 @@ def list_semantic_proposals(
             item["evidence"] = json.loads(item.pop("evidence_json"))
         except Exception:
             item["evidence"] = {}
+        item["canon_assessment"] = assess_semantic_tag_against_canon(
+            root,
+            media_id=int(item["media_id"]),
+            tag=str(item["tag"]),
+            edit_name=edit_name,
+        )
         out.append(item)
     return out
 
@@ -1293,6 +1301,8 @@ def resolve_semantic_proposal(
     proposal_id: int,
     *,
     accept: bool,
+    acknowledge_canon_conflict: bool = False,
+    edit_name: str = "teaser_30",
 ) -> dict:
     conn = connect(root / "media.sqlite")
     try:
@@ -1305,6 +1315,26 @@ def resolve_semantic_proposal(
                 f"Proposition introuvable : id={proposal_id}"
             )
         proposal = dict(row)
+        assessment = assess_semantic_tag_against_canon(
+            root,
+            media_id=int(proposal["media_id"]),
+            tag=str(proposal["tag"]),
+            edit_name=edit_name,
+        )
+        if (
+            accept
+            and assessment["requires_explicit_acknowledgement"]
+            and not acknowledge_canon_conflict
+        ):
+            item = dict(proposal)
+            try:
+                item["evidence"] = json.loads(item.pop("evidence_json"))
+            except Exception:
+                item["evidence"] = {}
+            item["canon_assessment"] = assessment
+            item["resolution_status"] = "REQUIRES_ACKNOWLEDGEMENT"
+            return item
+
         new_status = "ACCEPTED" if accept else "REJECTED"
         conn.execute(
             """
@@ -1335,6 +1365,7 @@ def resolve_semantic_proposal(
         int(proposal["media_id"]),
         provider=proposal["provider"],
         model_id=proposal["model_id"],
+        edit_name=edit_name,
     )
     resolved = next(x for x in rows if int(x["id"]) == int(proposal_id))
     return resolved
