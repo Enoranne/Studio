@@ -1,4 +1,6 @@
+from piste_studio.project import init_project
 from piste_studio.storyline import attach_clip, magnetic_reflow
+from piste_studio.timeline import validate_timeline
 from piste_studio.timebase import (
     TICKS_PER_SECOND,
     frame_time_ticks,
@@ -60,3 +62,43 @@ def test_connection_offset_is_normalized_to_ticks():
     child = next(c for c in attached["clips"] if c["id"] == "t1")
     assert child["anchorOffset"] == 0.2
     assert child["start"] == 0.3
+
+
+def test_timeline_validator_normalizes_public_seconds_to_same_timebase(tmp_path):
+    root = tmp_path / "TimebaseProject"
+    init_project(root, "Timebase")
+    noisy_start = 0.1 + 0.2
+    doc = {
+        "edit_name": "timebase",
+        "duration_seconds": 2,
+        "storyline": {"mode": "magnetic", "start": noisy_start},
+        "tracks": [
+            {"id": "video", "name": "VIDEO", "kind": "video"},
+            {"id": "titles", "name": "TITLES", "kind": "title"},
+        ],
+        "clips": [
+            {
+                "id": "v1",
+                "track": "video",
+                "start": noisy_start,
+                "duration": 0.4,
+                "sourceStart": 0,
+            },
+            {
+                "id": "t1",
+                "track": "titles",
+                "label": "Titre",
+                "start": 0.5,
+                "duration": 0.1,
+                "parentClipId": "v1",
+                "anchorOffset": 0.2,
+                "connectionMode": "follow",
+            },
+        ],
+    }
+    clean = validate_timeline(root, doc)
+    by_id = {clip["id"]: clip for clip in clean["clips"]}
+    assert clean["storyline"]["start"] == 0.3
+    assert by_id["v1"]["start"] == 0.3
+    assert by_id["t1"]["anchorOffset"] == 0.2
+    assert by_id["t1"]["connectionPointOffset"] == 0.2
