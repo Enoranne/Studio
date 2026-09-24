@@ -26,6 +26,32 @@ La fonction ne coupe jamais automatiquement la Storyline. **Charger IN/OUT** ne 
 
 Le moteur reste local et déterministe : aucune vidéo n’est envoyée vers un service externe pour cette analyse.
 
+
+### Références visuelles ciblées
+
+V0.22.2 affine la continuité : une référence n’a plus besoin de représenter un rush entier.
+
+Depuis **SEMANTIC VISION → Référence ciblée** ou `Ctrl/Cmd+K` → **Vision · Référence ciblée**, l’utilisateur peut définir :
+
+- un facet : `character`, `prop`, `decor` ou `look` ;
+- une valeur, par exemple `fisher` ;
+- un timecode précis ;
+- soit le frame entier ;
+- soit une zone ROI de l’image.
+
+Exemple : une zone autour du magnétophone peut devenir `prop:fisher` sans transformer tout le rush en référence globale Fisher.
+
+PISTE Studio extrait localement le frame ou le crop avec ffmpeg, calcule son embedding local puis conserve cette référence séparément dans SQLite.
+
+Les futures propositions de continuité peuvent combiner :
+
+- les références ciblées frame/ROI ;
+- les anciennes références basées sur le profil moyen d’un rush entier.
+
+L’interface indique combien de références ciblées participent à une proposition et peut identifier la meilleure référence ciblée.
+
+Une référence créée sur un rush n’est jamais utilisée pour lui proposer son propre tag. Aucun tag global n’est écrit lors de la création d’une référence.
+
 ## V0.21 — Audio Delivery & Master Check
 
 La V0.21 ferme le principal écart audio restant : PISTE Studio peut désormais contrôler **le mix réellement rendu**, après sommation des sources audibles de la timeline.
