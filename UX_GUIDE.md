@@ -300,3 +300,34 @@ Une proposition doit rester auditable jusqu’à cette preuve précise.
 Une référence extraite d’un média ne doit jamais être utilisée pour proposer le même tag à ce média lui-même.
 
 Sans cette règle, la similarité serait circulaire et donnerait une fausse impression de confiance.
+
+
+## 30. Qualité de référence ≠ vérité
+
+Primaire / Secondaire / Faible décrit la **qualité de la preuve visuelle**, pas la certitude de l’identité.
+
+Une référence primaire devrait idéalement être :
+- nette ;
+- lisible ;
+- représentative ;
+- peu ambiguë ;
+- correctement cadrée pour le facet visé.
+
+Le niveau ne doit jamais être présenté comme une probabilité.
+
+## 31. Pondérer dans le groupe, équilibrer les groupes
+
+Plusieurs images très proches d’un même objet ne doivent pas gagner artificiellement du poids parce qu’elles sont nombreuses.
+
+PISTE Studio doit :
+1. pondérer les références selon leur qualité à l’intérieur d’un groupe ;
+2. produire une représentation du groupe ;
+3. comparer ensuite les groupes comme preuves indépendantes de poids égal.
+
+La quantité ne doit pas se substituer à la diversité des preuves.
+
+## 32. Les groupes sont des outils humains
+
+Un groupe est créé ou choisi par l’utilisateur.
+
+Le système peut proposer la réutilisation d’un nom existant, mais ne doit pas fusionner automatiquement deux groupes sur la seule base d’une similarité visuelle.
