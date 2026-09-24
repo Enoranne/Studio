@@ -77,7 +77,10 @@ async function openProductionReadiness(){
   try{
     const params=new URLSearchParams();
     if(activeEditName)params.set('edit_name',activeEditName);
-    if(activeVersion)params.set('version',activeVersion);
+    const activeRecord=(backendState?.versions||[]).find(
+      item=>item.edit_name===activeEditName&&item.version_label===activeVersion
+    );
+    if(activeRecord&&activeVersion)params.set('version',activeVersion);
     const suffix=params.toString()?`?${params.toString()}`:'';
     const report=await api('/api/readiness'+suffix);
     renderProductionReadiness(report);
