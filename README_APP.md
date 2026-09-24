@@ -1,4 +1,4 @@
-# PISTE Studio Local App — v0.22
+# PISTE Studio Local App — v0.23
 
 L’application locale relie l’interface de montage au moteur PISTE Studio via FastAPI.
 
@@ -464,6 +464,180 @@ Le déplacement du point est vérifié sur l’ancienne et la nouvelle position 
 - `audio_change` pour les éléments audio.
 
 Changer le parent depuis le sélecteur Inspector utilise désormais exactement la même chaîne de sécurité.
+
+## Motion & Delivery V0.23.4
+
+Le bouton **Export** ouvre maintenant un **Delivery Center**.
+
+### Architecture
+
+Le rendu est volontairement séparé en deux phases :
+
+1. `execute_export(...)` demande à Tesseract un rendu de la version publiée ;
+2. `render_delivery_variant(...)` transcode ce rendu source avec ffmpeg.
+
+Cette séparation évite de supposer que le CLI Tesseract expose toutes les options nécessaires aux livrables festival/social.
+
+### Cibles intégrées
+
+V0.23.4 propose des cibles fixes de référence :
+
+- `festival_prores_1080` ;
+- `festival_h264_1080` ;
+- `online_1080` ;
+- `social_vertical_1080x1920` ;
+- `social_square_1080`.
+
+Les profils personnalisables seront traités dans la brique suivante **V0.23.5 — presets de delivery**.
+
+### Préflight
+
+`preflight_delivery(...)` produit quatre contrôles.
+
+#### Version publiée
+
+Une empreinte SHA-256 est calculée sur l’état éditorial pertinent :
+
+- durée ;
+- Storyline ;
+- pistes ;
+- clips.
+
+Le champ `updated_at` n’intervient pas.
+
+Si le snapshot `Vxxx/timeline.json` diffère de la timeline de travail :
+
+`STALE`
+
+est affiché.
+
+#### Audio
+
+Le statut du Master Check V0.21 est intégré sans être transformé :
+
+- PASS ;
+- WARN ;
+- STALE ;
+- MISSING.
+
+Un warning audio ne bloque pas silencieusement l’export.
+
+#### Titres
+
+Si la timeline ne contient aucun titre :
+
+`PASS`.
+
+Si elle en contient mais que `authoring-manifest.json` est absent :
+
+`MISSING`.
+
+Si `unmaterialized_titles` contient encore des entrées :
+
+`WARN`.
+
+Ce contrôle est essentiel tant que la matérialisation native des couches Text Tesseract n’est pas confirmée.
+
+#### Cadrage
+
+Pour les cibles social :
+
+- `fit` : scale + pad, conservation totale du cadre ;
+- `fill` : scale + crop centré.
+
+`fill` avec `allow_crop=false` produit :
+
+`BLOCKED`.
+
+Le serveur refuse donc un crop implicite.
+
+### Estimation du crop
+
+Si le canvas de la version est connu via `authoring-manifest.json` ou `authoring-plan.json`, PISTE calcule la fraction de largeur ou hauteur qui sortira du cadre en mode FILL.
+
+Exemple 16:9 vers 9:16 :
+
+environ **68,4 % de la largeur totale** se retrouve hors image.
+
+Cette valeur décrit un crop géométrique centré ; elle ne prétend pas décider ce qui est important dans le plan.
+
+### Encodage H.264
+
+Les sorties MP4 utilisent notamment :
+
+- libx264 ;
+- High Profile ;
+- yuv420p ;
+- débit cible propre à la cible ;
+- AAC ;
+- 48 kHz ;
+- stéréo ;
+- `+faststart`.
+
+### Encodage Festival ProRes
+
+La cible ProRes utilise :
+
+- `prores_ks` ;
+- profile 3 / ProRes 422 HQ ;
+- `yuv422p10le` ;
+- PCM 24-bit ;
+- 48 kHz ;
+- stéréo ;
+- conteneur MOV.
+
+Ce profil est un master/interchange de référence, **pas un DCP**.
+
+### Inspection
+
+Après transcodage, ffprobe enregistre :
+
+- codec vidéo ;
+- largeur / hauteur ;
+- pixel format ;
+- fps ;
+- métadonnées couleur lorsqu’elles existent ;
+- codec audio ;
+- sample rate ;
+- nombre de canaux ;
+- durée ;
+- taille du fichier.
+
+### Stockage
+
+Livrable :
+
+`exports/<edit>/<version>/<edit>_<version>_<target>.<ext>`
+
+Rapport :
+
+`reports/delivery/<edit>_<version>_<target>.json`
+
+### API
+
+- `GET /api/delivery/targets`
+- `POST /api/delivery/{version}/preflight`
+- `POST /api/delivery/{version}/export`
+- `GET /api/delivery/reports/{report_name}`
+- `GET /api/delivery/files/{edit_name}/{version}/{filename}`
+
+### UI
+
+Le drawer montre :
+
+- cible ;
+- paramètres techniques ;
+- FIT / FILL pour les sorties social ;
+- consentement crop ;
+- préflight version/audio/titres/cadrage ;
+- estimation de crop ;
+- état PASS / WARN / BLOCKED ;
+- téléchargement du livrable ;
+- téléchargement du rapport JSON.
+
+La Command Palette expose :
+
+**Delivery · Festival / social**
 
 ## Audio Delivery V0.21
 
