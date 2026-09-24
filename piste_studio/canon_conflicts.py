@@ -142,13 +142,21 @@ def _semantic_lock_findings(
     media_id: int,
     tag: str,
     edit_name: str,
+    context_clip_id: str | None = None,
 ) -> list[dict]:
     timeline = load_timeline(root, edit_name) or {}
-    clips = [
-        clip
-        for clip in timeline.get("clips", [])
-        if int(clip.get("mediaDbId") or -1) == int(media_id)
-    ]
+    if context_clip_id is not None:
+        clips = [
+            clip
+            for clip in timeline.get("clips", [])
+            if str(clip.get("id") or "") == str(context_clip_id)
+        ]
+    else:
+        clips = [
+            clip
+            for clip in timeline.get("clips", [])
+            if int(clip.get("mediaDbId") or -1) == int(media_id)
+        ]
     if not clips:
         return []
 
@@ -204,6 +212,7 @@ def assess_semantic_tag_against_canon(
     media_id: int,
     tag: str,
     edit_name: str = "teaser_30",
+    context_clip_id: str | None = None,
 ) -> dict:
     facet, value, normalized = normalize_semantic_tag(tag)
     canon = read_yaml(root / "canon.yaml") or {}
@@ -262,6 +271,7 @@ def assess_semantic_tag_against_canon(
             media_id=media_id,
             tag=normalized,
             edit_name=edit_name,
+            context_clip_id=context_clip_id,
         )
     )
 
