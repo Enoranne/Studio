@@ -1,3 +1,26 @@
+# V0.30.0 — Transaction Journal
+
+- history schema v2 rétrocompatible avec les index v1 ;
+- snapshots avant/après pour les nouvelles transactions ;
+- Undo et Redo persistants ;
+- capture d'un état Redo pour les anciens checkpoints lors du premier Undo lorsque possible ;
+- provenance explicite user / agent / system ;
+- métadonnées operation, transaction_id et affected ;
+- opérations Storyline du kernel enregistrées comme transactions ;
+- normalisation audio, ducking et crossfade reliés au même journal ;
+- Apply Proposal enregistré avec provenance agent après confirmation humaine ;
+- nouvelle édition après Undo supprimant proprement la branche Redo ;
+- identifiants d'historique monotones après divergence ;
+- coalescing explicite des micro-opérations avec fenêtre configurable ;
+- bouton Redo et raccourcis Cmd/Ctrl+Shift+Z et Ctrl+Y ;
+- fallback navigateur avec Undo/Redo local ;
+- rollback vers la timeline précédente si l'écriture de l'index échoue après une mutation ;
+- version Python/FastAPI/Tauri alignée sur **0.30.0**.
+
+V0.30 enrichit les checkpoints existants au lieu de les remplacer. Les règles Canon, locks, anti-stale et validation humaine restent inchangées.
+
+---
+
 # V0.29.0 — Timeline Core Reliability
 
 - timebase interne entier à 1 MHz pour les opérations temporelles critiques ;
