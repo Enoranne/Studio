@@ -406,3 +406,71 @@ Si elle franchit une coupe, PISTE Studio peut rattacher l’élément au nouveau
 L’Inspector **CONNEXION STORY** propose également **Point sur parent (s)** pour un réglage numérique précis sans drag.
 
 Tous les changements passent par les checkpoints, la validation backend et les HARD/SOFT LOCKS. Un Undo restaure le parent et le point de connexion précédents.
+
+
+### Exports festival / social — V0.23.4
+
+Le bouton **Export** ouvre désormais un **Delivery Center** au lieu de lancer directement un MP4 1080p générique.
+
+PISTE Studio fournit cinq cibles techniques intégrées :
+
+- **Festival · ProRes 422 HQ · 1080p** ;
+- **Festival · H.264 haute qualité · 1080p** ;
+- **Online · H.264 · 1080p** ;
+- **Social · Vertical · 9:16** ;
+- **Social · Carré · 1:1**.
+
+Ces cibles sont des **repères de travail**, pas des normes universelles. Lorsqu’un festival, diffuseur ou réseau fournit une fiche technique, celle-ci prime.
+
+#### Chaîne de rendu
+
+Le delivery est séparé du montage :
+
+1. la version publiée est rendue par Tesseract ;
+2. PISTE Studio utilise ffmpeg pour fabriquer le livrable final ;
+3. ffprobe inspecte le fichier obtenu ;
+4. un rapport JSON est enregistré.
+
+Le MASTER et les médias source ne sont jamais modifiés.
+
+#### Préflight
+
+Avant chaque export, PISTE vérifie :
+
+- si la version publiée correspond encore au montage de travail ;
+- l’état du dernier Audio Master Check ;
+- la matérialisation des titres/overlays ;
+- le cadrage demandé ;
+- le risque de crop.
+
+Un montage modifié après publication apparaît comme **STALE**.
+
+Si des titres restent dans `unmaterialized_titles`, le Delivery Center signale explicitement que le rendu Tesseract peut ne pas les contenir.
+
+#### Social : FIT vs FILL
+
+Pour les formats 9:16 et 1:1 :
+
+**FIT** conserve toute l’image et complète le canvas si nécessaire.
+
+**FILL** remplit le canvas mais recadre l’image au centre.
+
+FILL n’est jamais appliqué automatiquement. Il faut cocher explicitement :
+
+**Autoriser le crop centré**
+
+Le préflight affiche une estimation du cadre sacrifié. Pour une source 16:9 vers un 9:16, le recadrage centré retire environ **68,4 % de la largeur totale**.
+
+Aucun « auto-reframe IA » n’est déclenché en V0.23.4.
+
+#### Sorties et rapports
+
+Les livrables sont écrits dans :
+
+`exports/<edit>/<version>/`
+
+Les rapports sont écrits dans :
+
+`reports/delivery/`
+
+Le rapport contient notamment la cible, le cadrage, le préflight, le fichier source de rendu, le fichier final et les mesures ffprobe.
