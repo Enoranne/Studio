@@ -9,6 +9,7 @@ from piste_studio.storyline import (
     attach_clip,
     detach_clip,
     magnetic_reflow,
+    move_connection_point,
     move_story_clip,
     trim_story_clip,
     validate_locked_change,
@@ -108,5 +109,55 @@ def test_lock_validation_blocks_ripple_through_hard_lock(tmp_path):
     add_lock(root, "Protected opening", 0, 5, "HARD", ["reorder", "trim"])
     before = base_doc()
     after = move_story_clip(before, "v2", 3.1, story_start=3)
+    with pytest.raises(StorylineError, match="HARD LOCK"):
+        validate_locked_change(root, before, after)
+
+
+
+def test_move_connection_point_does_not_move_child():
+    moved = move_connection_point(base_doc(), "t1", 8.5)
+    by_id = {c["id"]: c for c in moved["clips"]}
+    child = by_id["t1"]
+    assert child["start"] == 8
+    assert child["parentClipId"] == "v2"
+    assert child["anchorOffset"] == 1
+    assert child["connectionPointOffset"] == 1.5
+
+
+def test_move_connection_point_can_change_parent_without_moving_child():
+    moved = move_connection_point(base_doc(), "t1", 10.5)
+    by_id = {c["id"]: c for c in moved["clips"]}
+    child = by_id["t1"]
+    assert child["start"] == 8
+    assert child["parentClipId"] == "v3"
+    assert child["anchorOffset"] == -2
+    assert child["connectionPointOffset"] == 0.5
+
+
+def test_timeline_validator_normalizes_legacy_connection_point(tmp_path):
+    root = tmp_path / "ProjectConnection"
+    init_project(root, "Test connection")
+    clean = validate_timeline(root, base_doc())
+    child = next(c for c in clean["clips"] if c["id"] == "t1")
+    assert clean["schema_version"] == 6
+    assert child["connectionPointOffset"] == 1.0
+
+
+def test_timeline_validator_rejects_connection_point_outside_parent(tmp_path):
+    root = tmp_path / "ProjectConnectionInvalid"
+    init_project(root, "Test connection invalid")
+    doc = base_doc()
+    child = next(c for c in doc["clips"] if c["id"] == "t1")
+    child["connectionPointOffset"] = 4.0
+    with pytest.raises(TimelineError, match="connectionPointOffset"):
+        validate_timeline(root, doc)
+
+
+def test_lock_validation_blocks_graphical_connection_point_move(tmp_path):
+    root = tmp_path / "ProjectConnectionLock"
+    init_project(root, "Test connection lock")
+    add_lock(root, "Protected graphic point", 8.4, 8.6, "HARD", ["graphics"])
+    before = base_doc()
+    after = move_connection_point(before, "t1", 8.5)
     with pytest.raises(StorylineError, match="HARD LOCK"):
         validate_locked_change(root, before, after)
