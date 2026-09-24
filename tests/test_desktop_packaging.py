@@ -1,5 +1,17 @@
-from scripts.desktop_backend_entry import main as desktop_backend_main
+from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
+
 from piste_studio.project import load_project
+
+
+_ENTRY = Path(__file__).parents[1] / "scripts" / "desktop_backend_entry.py"
+_SPEC = importlib.util.spec_from_file_location("piste_desktop_backend_entry", _ENTRY)
+assert _SPEC is not None and _SPEC.loader is not None
+_MODULE = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_MODULE)
+desktop_backend_main = _MODULE.main
 
 
 def test_desktop_backend_entry_can_create_project(tmp_path):
