@@ -17,7 +17,7 @@ Reste ouvert dans V0.22 :
 
 ## Résultat global
 
-- Python/API/UI : **102 tests au total** avec la couverture V0.22.4 ; validation Chromium finale requise pour fermer le jalon.
+- Python/API/UI : **103 tests passés / 103** avec la couverture V0.22.4.
 - JavaScript : tous les modules UI passent `node --check`.
 - Chromium / Playwright : succès.
 - ffmpeg système installé explicitement dans la CI.
@@ -501,6 +501,21 @@ Validé :
 - SOFT LOCK → REVIEW ;
 - acceptation conflictuelle sans acquittement → aucune mutation ;
 - acceptation avec acquittement explicite → tag ajouté.
+
+## Chromium V0.22.4
+
+Le scénario navigateur valide :
+
+1. proposition `prop:fisher` classée **CONFLIT CANON** ;
+2. présence du bouton **Examiner conflit** ;
+3. ouverture de l’écran **Conflit Canon** ;
+4. affichage de la raison « explicitement interdit » ;
+5. vérification que `prop:fisher` n’est pas encore dans l’Inspector ;
+6. clic **Accepter malgré conflit** ;
+7. apparition de `prop:fisher` dans les tags du média ;
+8. proposition `character:malo` affichée **CANON ALIGNÉ** ;
+9. acceptation normale de cette proposition ;
+10. aucune erreur JavaScript.
 
 ## Interface
 
