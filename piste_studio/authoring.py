@@ -45,6 +45,28 @@ class PlannedClip:
 
 
 @dataclass(frozen=True)
+class PlannedTitle:
+    clip_id: str
+    text: str
+    timeline_start_ms: int
+    duration_ms: int
+    preset: str
+    font_family: str
+    font_size: float
+    font_weight: int
+    text_align: str
+    position_x: float
+    position_y: float
+    box_width: float
+    color: str
+    background_color: str
+    background_opacity: float
+    opacity: float
+    padding: float
+    corner_radius: float
+
+
+@dataclass(frozen=True)
 class PlannedAudio:
     clip_id: str
     track: str
@@ -149,6 +171,7 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
     tracks = {str(t["id"]): t for t in timeline.get("tracks", [])}
     cuts: list[PlannedClip] = []
     audio_cuts: list[PlannedAudio] = []
+    title_cuts: list[PlannedTitle] = []
     warnings: list[str] = []
     media_map: dict[tuple[str, int], dict] = {}
 
@@ -261,12 +284,32 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
             continue
 
         if kind in {"titles", "title"}:
-            warnings.append(f"{clip.get('id','?')}: titre conservé dans timeline.json; authoring texte prévu après V0.11.")
+            title_cuts.append(PlannedTitle(
+                clip_id=str(clip.get("id") or "title"),
+                text=str(clip.get("text") or clip.get("label") or ""),
+                timeline_start_ms=start_ms,
+                duration_ms=duration_ms,
+                preset=str(clip.get("titlePreset") or "center"),
+                font_family=str(clip.get("fontFamily") or "sans"),
+                font_size=float(clip.get("fontSize", 64)),
+                font_weight=int(clip.get("fontWeight", 700)),
+                text_align=str(clip.get("textAlign") or "center"),
+                position_x=float(clip.get("positionX", 0.5)),
+                position_y=float(clip.get("positionY", 0.5)),
+                box_width=float(clip.get("boxWidth", 0.8)),
+                color=str(clip.get("color") or "#FFFFFF"),
+                background_color=str(clip.get("backgroundColor") or "#000000"),
+                background_opacity=float(clip.get("backgroundOpacity", 0)),
+                opacity=float(clip.get("opacity", 1)),
+                padding=float(clip.get("padding", 0.02)),
+                corner_radius=float(clip.get("cornerRadius", 0)),
+            ))
+            continue
 
     width, height = SUPPORTED_CANVASES[ratio]
     return {
-        "schema_version": 3,
-        "engine": "piste-studio-authoring-v0.19",
+        "schema_version": 4,
+        "engine": "piste-studio-authoring-v0.23",
         "source": "timeline.json",
         "edit_name": edit_name,
         "version": version,
@@ -281,6 +324,8 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
             "audio_pan_preserved": True,
             "audio_volume_envelope_preserved": True,
             "audio_automation_native_support": "runtime-schema-dependent",
+            "title_style_preserved": True,
+            "title_native_support": "runtime-schema-dependent",
             "append_footage_behind_existing_overlays": True,
             "work_on_copy_then_atomic_replace": True,
             "never_modify_source_media": True,
@@ -290,6 +335,7 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
         "media": list(media_map.values()),
         "cuts": [asdict(c) for c in cuts],
         "audio_cuts": [asdict(c) for c in audio_cuts],
+        "title_cuts": [asdict(c) for c in title_cuts],
         "warnings": warnings,
     }
 
@@ -384,6 +430,7 @@ def build_authoring_plan(root: Path, edit_name: str, version: str) -> dict:
         "media": unique_media,
         "cuts": [asdict(c) for c in cuts],
         "audio_cuts": [],
+        "title_cuts": [],
         "warnings": warnings,
     }
     return plan
@@ -448,6 +495,12 @@ def _load_document_schema(version_dir: Path, *, require_audio: bool = False) -> 
             + ", ".join(missing)
         )
     return schema
+
+
+def _schema_supports_native_text(schema: dict) -> bool:
+    probe = json.dumps(schema, ensure_ascii=False)
+    required = ("Text", "activeRange", "text", "transform")
+    return all(token in probe for token in required)
 
 
 def _composition_from_document(doc: dict) -> dict:
@@ -585,7 +638,11 @@ def execute_authoring(
             "Créez une nouvelle version/PATCH plutôt que de reconstruire silencieusement."
         )
 
-    _load_document_schema(version_dir, require_audio=bool(plan.get("audio_cuts")))
+    document_schema = _load_document_schema(
+        version_dir,
+        require_audio=bool(plan.get("audio_cuts")),
+    )
+    native_text_supported = _schema_supports_native_text(document_schema)
     work = version_dir / ".tesseract-work"
     work.mkdir(parents=True, exist_ok=True)
     working_project = work / "authoring-working.tsrct"
@@ -725,6 +782,21 @@ def execute_authoring(
             })
             next_id += 1
 
+        unmaterialized_titles: list[dict] = []
+        for title in plan.get("title_cuts", []):
+            if native_text_supported:
+                warnings.append(
+                    f"{title['clip_id']}: le schéma Tesseract annonce un type Text, "
+                    "mais PISTE Studio V0.23.1 conserve encore le style en plan "
+                    "plutôt que d'inventer une forme de couche native non confirmée."
+                )
+            else:
+                warnings.append(
+                    f"{title['clip_id']}: titre/overlay conservé dans authoring-plan.json; "
+                    "le schéma Tesseract installé ne confirme pas de couche Text compatible."
+                )
+            unmaterialized_titles.append(dict(title))
+
         if not materialized and not materialized_audio:
             raise TesseractBridgeError("Aucune couche vidéo ou audio n'a pu être matérialisée ; commit annulé.")
 
@@ -760,6 +832,8 @@ def execute_authoring(
             "imported_assets": imported,
             "layers": materialized,
             "audio_layers": materialized_audio,
+            "title_layers": [],
+            "unmaterialized_titles": unmaterialized_titles,
             "warnings": warnings,
         }
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
