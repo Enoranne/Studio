@@ -54,8 +54,53 @@ jobs:
         working-directory: desktop
         run: npx tauri build --bundles app,dmg
 
+      - name: Smoke test bundled backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$(find desktop/src-tauri/target/release/bundle/macos -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP"
+          SIDECAR="$(find "$APP/Contents" -type f -name 'piste-studio-backend*' -perm -111 -print -quit)"
+          test -n "$SIDECAR"
+          "$SIDECAR" --help >/dev/null
+
+          PROJECT="$RUNNER_TEMP/piste-desktop-smoke"
+          python3 -m piste_studio.cli init --root "$PROJECT" --name "Desktop Smoke"
+          PORT="$(python3 - <<'PY'
+          import socket
+          s=socket.socket()
+          s.bind(("127.0.0.1",0))
+          print(s.getsockname()[1])
+          s.close()
+          PY
+          )"
+
+          "$SIDECAR" --project "$PROJECT" --host 127.0.0.1 --port "$PORT" --no-open >"$RUNNER_TEMP/piste-sidecar.log" 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+
+          READY=0
+          for _ in $(seq 1 80); do
+            if curl --fail --silent "http://127.0.0.1:$PORT/api/health" >"$RUNNER_TEMP/piste-health.json"; then
+              READY=1
+              break
+            fi
+            sleep 0.25
+          done
+
+          if [[ "$READY" != "1" ]]; then
+            cat "$RUNNER_TEMP/piste-sidecar.log"
+            exit 1
+          fi
+
+          cat "$RUNNER_TEMP/piste-health.json"
+          grep -q '"ok":true' "$RUNNER_TEMP/piste-health.json"
+          kill "$PID"
+          wait "$PID" 2>/dev/null || true
+          trap - EXIT
+
       - name: Show produced bundles
-        run: find desktop/src-tauri/target/release/bundle -maxdepth 4 -type f -print
+        run: find desktop/src-tauri/target/release/bundle -maxdepth 7 -type f -print
 
       - uses: actions/upload-artifact@v4
         with:
