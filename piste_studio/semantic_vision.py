@@ -822,7 +822,7 @@ def propose_semantic_tags(
         provider=provider,
         model_id=model_id,
     )
-    references: dict[str, list[tuple[int, list[float]]]] = {}
+    references: dict[str, list[dict]] = {}
     facets: dict[str, str] = {}
     for item in items:
         iid = int(item["id"])
@@ -835,8 +835,35 @@ def propose_semantic_tags(
         if not embedding:
             continue
         for facet, tag in _structured_tags(item):
-            references.setdefault(tag, []).append((iid, embedding))
+            references.setdefault(tag, []).append({
+                "source": "media_profile",
+                "media_id": iid,
+                "reference_id": None,
+                "embedding": embedding,
+            })
             facets[tag] = facet
+
+    targeted = list_targeted_semantic_references(
+        root,
+        provider=provider,
+        model_id=model_id,
+    )
+    for reference in targeted:
+        if int(reference["media_id"]) == int(media_id):
+            continue
+        embedding = reference.get("embedding") or []
+        if not embedding:
+            continue
+        tag = str(reference["tag"])
+        references.setdefault(tag, []).append({
+            "source": "targeted_reference",
+            "media_id": int(reference["media_id"]),
+            "reference_id": int(reference["id"]),
+            "embedding": embedding,
+            "timestamp_seconds": float(reference["timestamp_seconds"]),
+            "roi": reference.get("roi") or {},
+        })
+        facets[tag] = str(reference["facet"])
 
     conn = connect(root / "media.sqlite")
     try:
@@ -855,12 +882,15 @@ def propose_semantic_tags(
                 continue
             facet = facets[tag]
             threshold = float(thresholds[facet])
-            centroid = _centroid([embedding for _, embedding in refs])
+            centroid = _centroid([ref["embedding"] for ref in refs])
             similarity = cosine_similarity(target_embedding, centroid)
-            best_id, best_similarity = max(
+            best_ref, best_similarity = max(
                 (
-                    (ref_id, cosine_similarity(target_embedding, emb))
-                    for ref_id, emb in refs
+                    (
+                        ref,
+                        cosine_similarity(target_embedding, ref["embedding"]),
+                    )
+                    for ref in refs
                 ),
                 key=lambda x: x[1],
             )
@@ -877,11 +907,35 @@ def propose_semantic_tags(
             ):
                 continue
 
+            targeted_ids = [
+                int(ref["reference_id"])
+                for ref in refs
+                if ref.get("reference_id") is not None
+            ]
+            legacy_count = sum(
+                1 for ref in refs if ref.get("source") == "media_profile"
+            )
             evidence = {
-                "method": "reference_embedding_centroid",
-                "reference_media_ids": [ref_id for ref_id, _ in refs],
+                "method": (
+                    "targeted_and_media_reference_centroid"
+                    if targeted_ids and legacy_count
+                    else "targeted_reference_centroid"
+                    if targeted_ids
+                    else "reference_embedding_centroid"
+                ),
+                "reference_media_ids": sorted(
+                    {int(ref["media_id"]) for ref in refs}
+                ),
+                "targeted_reference_ids": targeted_ids,
+                "targeted_reference_count": len(targeted_ids),
+                "legacy_reference_count": legacy_count,
                 "reference_count": len(refs),
-                "best_reference_media_id": best_id,
+                "best_reference_media_id": int(best_ref["media_id"]),
+                "best_targeted_reference_id": (
+                    int(best_ref["reference_id"])
+                    if best_ref.get("reference_id") is not None
+                    else None
+                ),
                 "best_reference_similarity": round(best_similarity, 4),
                 "threshold": threshold,
                 "human_validation_required": True,
