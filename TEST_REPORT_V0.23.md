@@ -19,7 +19,7 @@ La dernière brique V0.23 restant à réaliser est :
 
 Run fonctionnel de référence V0.23.4 :
 
-- Python/API/UI/Chromium : **135 tests passés / 135** ;
+- Python/API/UI/Chromium : **137 tests passés / 137** ;
 - JavaScript : `node --check` réussi ;
 - Chromium / Playwright : réussi ;
 - ffmpeg réel : réussi ;
@@ -362,14 +362,17 @@ Statuts :
 
 ## 2. Audio master
 
-Le statut V0.21 est repris :
+Le statut V0.21 est évalué contre la timeline de la **version publiée Vxxx** lorsque ce snapshot est disponible.
 
-- PASS ;
-- WARN ;
-- STALE ;
-- MISSING.
+Cela évite un faux diagnostic si le working cut a changé après publication.
 
-Un warning audio ne disparaît jamais de l’interface.
+Test dédié :
+
+1. publication V001 ;
+2. modification du working cut ;
+3. préflight V001 ;
+4. statut version = STALE ;
+5. Master Check appelé avec les clips de V001, pas ceux du working cut.
 
 ## 3. Titres / overlays
 
@@ -502,6 +505,30 @@ Après encodage, PISTE relève :
 - durée ;
 - taille du fichier.
 
+## Conformité post-encode
+
+Après ffprobe, `evaluate_delivery_probe(...)` compare le fichier réel avec la cible déclarée.
+
+Contrôles :
+
+- codec vidéo ;
+- largeur / hauteur ;
+- pixel format ;
+- fps ;
+- présence de la piste audio ;
+- codec audio ;
+- sample rate ;
+- nombre de canaux.
+
+Résultat :
+
+- `PASS` si aucun écart n’est détecté ;
+- `WARN` avec raisons détaillées sinon.
+
+Le Delivery Center affiche ce statut après rendu.
+
+Un test dédié vérifie également qu’un mauvais pixel format et une piste audio absente produisent bien WARN.
+
 ## Stockage
 
 Livrables :
@@ -591,7 +618,7 @@ Le scénario navigateur valide :
 
 Run fonctionnel de référence :
 
-**135 tests passés / 135**
+**137 tests passés / 137**
 
 ---
 
