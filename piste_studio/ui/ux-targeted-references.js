@@ -60,8 +60,16 @@ function renderTargetedReferenceManager(m,refs){
       <div class="semantic-proposal-main">
         <div class="suggestion-head"><b>${ref.tag}</b><span>@ ${(+ref.timestamp_seconds).toFixed(2)} s</span></div>
         <div class="semantic-facet">${String(ref.facet||'').toUpperCase()} · ${zone}</div>
+        <div class="suggestion-reasons">
+          <span>${ref.group_name?`Groupe · ${ref.group_name}`:'Sans groupe'}</span>
+          <span>Qualité · ${ref.quality==='primary'?'Primaire':ref.quality==='low'?'Faible':'Secondaire'} · poids ${(+ref.quality_weight||1).toFixed(1)}</span>
+        </div>
+        <div class="form-grid">
+          <div class="row"><label>Groupe</label><input id="referenceGroup_${ref.id}" value="${ref.group_name||''}" placeholder="ex. Fisher principal"></div>
+          <div class="row"><label>Qualité</label><select id="referenceQuality_${ref.id}"><option value="primary" ${ref.quality==='primary'?'selected':''}>Primaire · 1,5×</option><option value="secondary" ${ref.quality==='secondary'?'selected':''}>Secondaire · 1,0×</option><option value="low" ${ref.quality==='low'?'selected':''}>Faible · 0,5×</option></select></div>
+        </div>
         ${ref.image_url?`<img src="${ref.image_url}" alt="Référence ${ref.tag}" style="display:block;max-width:100%;max-height:180px;object-fit:contain;margin:8px 0;border-radius:4px">`:''}
-        <div class="suggestion-actions"><button class="btn" onclick="deleteTargetedReference(${ref.id},${m.dbId})">Supprimer</button></div>
+        <div class="suggestion-actions"><button class="btn primary" onclick="updateTargetedReferenceMeta(${ref.id},${m.dbId})">Enregistrer groupe/qualité</button><button class="btn" onclick="deleteTargetedReference(${ref.id},${m.dbId})">Supprimer</button></div>
       </div>
     </article>`;
   }).join(''):'<div class="editorial-empty">Aucune référence ciblée sur ce rush.</div>';
@@ -73,6 +81,8 @@ function renderTargetedReferenceManager(m,refs){
       <div class="row"><label>Facet</label><select id="targetedReferenceFacet"><option value="character">Character</option><option value="prop">Prop</option><option value="decor">Decor</option><option value="look">Look</option></select></div>
       <div class="row"><label>Valeur</label><input id="targetedReferenceValue" placeholder="ex. fisher"></div>
       <div class="row"><label>Frame (s)</label><input id="targetedReferenceTime" type="number" min="0" max="${m.duration||99999}" step="0.01" value="${t.toFixed(3)}"></div>
+      <div class="row"><label>Groupe</label><input id="targetedReferenceGroup" placeholder="ex. Fisher principal"></div>
+      <div class="row"><label>Qualité</label><select id="targetedReferenceQuality"><option value="primary">Primaire · 1,5×</option><option value="secondary" selected>Secondaire · 1,0×</option><option value="low">Faible · 0,5×</option></select></div>
       <div class="row"><label>Cadrage</label><select id="targetedReferenceMode" onchange="toggleTargetedRoiFields()"><option value="full">Frame entier</option><option value="roi">Zone de l’image</option></select></div>
     </div>
     <div class="form-grid" id="targetedRoiFields" hidden>
@@ -81,7 +91,7 @@ function renderTargetedReferenceManager(m,refs){
       <div class="row"><label>Largeur %</label><input id="targetedRoiW" type="number" min="5" max="100" step="1" value="60"></div>
       <div class="row"><label>Hauteur %</label><input id="targetedRoiH" type="number" min="5" max="100" step="1" value="60"></div>
     </div>
-    <div class="hint">Les coordonnées de zone sont normalisées en pourcentage de l’image. Le crop est effectué localement avant calcul de l’embedding.</div>
+    <div class="hint">Les coordonnées de zone sont normalisées en pourcentage de l’image. Le crop est effectué localement avant calcul de l’embedding. Dans un même groupe : Primaire = 1,5×, Secondaire = 1,0×, Faible = 0,5×. Les groupes contribuent ensuite à poids égal.</div>
     <div class="suggestion-actions">
       <button class="btn" onclick="useDisplayedReferenceFrame()">Utiliser le frame affiché</button>
       <button class="btn primary" onclick="saveTargetedReference(false)">Créer la référence</button>
@@ -98,13 +108,15 @@ async function saveTargetedReference(allowModelDownload=false){
   if(!value){toast('Renseigne la valeur de référence',true);return}
   const tag=`${facet}:${value}`;
   const timestamp=+$('#targetedReferenceTime')?.value||0;
+  const groupName=($('#targetedReferenceGroup')?.value||'').trim();
+  const quality=$('#targetedReferenceQuality')?.value||'secondary';
   const roi=targetedRoiFromForm();
   const error=$('#targetedReferenceError');
   if(error)error.innerHTML='<div class="editorial-loading">Extraction du frame et calcul de la référence…</div>';
   try{
     await api('/api/vision/references',{
       method:'POST',
-      body:JSON.stringify({media_id:m.dbId,tag,timestamp_seconds:timestamp,roi,allow_model_download:!!allowModelDownload}),
+      body:JSON.stringify({media_id:m.dbId,tag,timestamp_seconds:timestamp,roi,group_name:groupName,quality,allow_model_download:!!allowModelDownload}),
     });
     const keepDbId=m.dbId;
     await hydrateBackend();
@@ -127,4 +139,18 @@ async function deleteTargetedReference(referenceId,dbId){
     toast('Référence ciblée supprimée');
     await openTargetedReferenceManager(dbId);
   }catch(err){toast('Suppression impossible : '+err.message,true)}
+}
+
+
+async function updateTargetedReferenceMeta(referenceId,dbId){
+  const groupName=($('#referenceGroup_'+referenceId)?.value||'').trim();
+  const quality=$('#referenceQuality_'+referenceId)?.value||'secondary';
+  try{
+    await api(`/api/vision/references/${referenceId}`,{
+      method:'PATCH',
+      body:JSON.stringify({group_name:groupName,quality}),
+    });
+    toast('Groupe et qualité enregistrés');
+    await openTargetedReferenceManager(dbId);
+  }catch(err){toast('Mise à jour impossible : '+err.message,true)}
 }
