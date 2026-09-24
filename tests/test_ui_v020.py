@@ -16,7 +16,7 @@ def test_v022_ui_structure_and_assets(tmp_path):
     client = TestClient(app)
     html = client.get("/").text
 
-    assert "PISTE Studio — Local App v0.27.0" in html
+    assert "PISTE Studio — Local App v0.28.0" in html
     assert 'id="audioMeters"' in html
     assert 'id="editorialDrawer"' in html
     assert "Storyline magnétique" in html
@@ -30,6 +30,10 @@ def test_v022_ui_structure_and_assets(tmp_path):
         "ux-magnetic.js",
         "ux-shell.js",
         "ux-polish.js",
+        "ux-context.js",
+        "ux-help.js",
+        "ux-universal-search.js",
+        "ux-preferences.js",
         "ux-editorial.js",
         "ux-media-intelligence.js",
         "ux-editorial-vision.js",
