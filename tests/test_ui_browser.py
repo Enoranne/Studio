@@ -16,6 +16,7 @@ from piste_studio.media_intelligence import _write_analysis
 from piste_studio.semantic_vision import store_semantic_profile, store_targeted_semantic_reference
 from piste_studio.audio_intelligence import _write_analysis as _write_audio_loudness
 from piste_studio.timeline import save_timeline
+from piste_studio.config import read_yaml, write_yaml
 
 
 def _free_port():
@@ -56,6 +57,14 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
             rating=4,
             tags=tags,
         )
+    canon = read_yaml(root / "canon.yaml")
+    canon["characters"] = {"malo": {"age": 6}}
+    canon["semantic"] = {
+        "allowed_tags": [],
+        "forbidden_tags": ["prop:fisher"],
+        "closed_facets": [],
+    }
+    write_yaml(root / "canon.yaml", canon)
     set_media_metadata(
         root,
         audio["id"],
@@ -469,10 +478,24 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
             page.get_by_role("button", name="Proposer continuité").click()
             expect(page.locator("#editorialDrawer")).to_be_visible()
             expect(page.locator(".semantic-proposal-card")).to_have_count(3)
+
+            fisher_card = page.locator(".semantic-proposal-card").filter(
+                has_text="prop:fisher"
+            )
+            expect(fisher_card).to_contain_text("CONFLIT CANON")
+            expect(fisher_card.get_by_role("button", name="Examiner conflit")).to_be_visible()
+            fisher_card.get_by_role("button", name="Examiner conflit").click()
+            expect(page.locator("#editorialDrawerTitle")).to_contain_text("Conflit Canon")
+            expect(page.locator("#editorialDrawer")).to_contain_text("explicitement interdit")
+            expect(page.locator("#inspector")).not_to_contain_text("prop:fisher")
+            page.get_by_role("button", name="Accepter malgré conflit").click()
+            expect(page.locator("#inspector")).to_contain_text("prop:fisher")
+
             character_card = page.locator(".semantic-proposal-card").filter(
                 has_text="character:malo"
             )
             expect(character_card).to_be_visible()
+            expect(character_card).to_contain_text("CANON ALIGNÉ")
             character_card.get_by_role("button", name="Accepter").click()
             expect(page.locator("#inspector")).to_contain_text("character:malo")
             page.locator("#editorialDrawer .pane-close").click()
