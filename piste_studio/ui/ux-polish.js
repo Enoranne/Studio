@@ -101,6 +101,7 @@ const commands=[
   {label:'Audio · Vérifier clipping',hint:'',keywords:'clipping true peak headroom',run:()=>typeof openClippingReport==='function'&&openClippingReport()},
   {label:'Audio · Ducking VO',hint:'',keywords:'ducking voice music dialogue',run:()=>typeof openDuckingProposal==='function'&&openDuckingProposal()},
   {label:'Audio · Master Check',hint:'',keywords:'master delivery lufs true peak export rapport',run:()=>typeof openMasterCheck==='function'&&openMasterCheck()},
+  {label:'Production · Readiness',hint:'',keywords:'production readiness preflight tesseract delivery validation',run:()=>typeof openProductionReadiness==='function'&&openProductionReadiness()},
 ];
 function filteredCommands(){
   const q=($('#commandSearch')?.value||'').trim().toLowerCase();
