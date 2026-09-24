@@ -64,6 +64,10 @@ class PlannedTitle:
     opacity: float
     padding: float
     corner_radius: float
+    title_role: str
+    canvas_background_color: str
+    canvas_background_opacity: float
+    black_tail_seconds: float
 
 
 @dataclass(frozen=True)
@@ -303,6 +307,14 @@ def _build_timeline_authoring_plan(root: Path, edit_name: str, version: str, bri
                 opacity=float(clip.get("opacity", 1)),
                 padding=float(clip.get("padding", 0.02)),
                 corner_radius=float(clip.get("cornerRadius", 0)),
+                title_role=str(clip.get("titleRole") or "overlay"),
+                canvas_background_color=str(
+                    clip.get("canvasBackgroundColor") or "#000000"
+                ),
+                canvas_background_opacity=float(
+                    clip.get("canvasBackgroundOpacity", 0)
+                ),
+                black_tail_seconds=float(clip.get("blackTailSeconds", 0)),
             ))
             continue
 
@@ -787,7 +799,7 @@ def execute_authoring(
             if native_text_supported:
                 warnings.append(
                     f"{title['clip_id']}: le schéma Tesseract annonce un type Text, "
-                    "mais PISTE Studio V0.23.1 conserve encore le style en plan "
+                    "mais PISTE Studio V0.23 conserve encore le style en plan "
                     "plutôt que d'inventer une forme de couche native non confirmée."
                 )
             else:
