@@ -466,3 +466,48 @@ def test_delivery_preset_export_import_round_trip(tmp_path):
     assert imported["video_bitrate_mbps"] == 30
     assert imported["tesseract_resolution"] == "4k"
     assert imported["id"] != custom["id"] or imported["id"].startswith("custom_")
+
+
+
+def test_custom_delivery_preset_is_used_by_preflight(tmp_path):
+    root = tmp_path / "ProjectCustomPreflight"
+    root.mkdir()
+    timeline = _timeline()
+    _published_version(root, timeline)
+
+    custom = create_project_delivery_preset(
+        root,
+        {
+            "label": "Vertical Client",
+            "family": "social",
+            "width": 1080,
+            "height": 1920,
+            "fps": 30,
+            "video_codec": "libx264",
+            "video_bitrate_mbps": 16,
+            "audio_bitrate_kbps": 320,
+            "tesseract_resolution": "1080p",
+            "default_framing": "fit",
+        },
+    )
+
+    result = preflight_delivery(
+        root,
+        timeline,
+        edit_name="teaser_30",
+        version="V001",
+        target_id=custom["id"],
+        framing_mode="fit",
+        audio_status={
+            "status": "PASS",
+            "message": "Master Check valide.",
+            "reasons": [],
+        },
+    )
+    assert result["target"]["id"] == custom["id"]
+    assert result["target"]["custom"] is True
+    assert result["target"]["width"] == 1080
+    assert result["target"]["height"] == 1920
+    assert result["target"]["fps"] == 30
+    assert result["framing_mode"] == "fit"
+    assert result["can_export"] is True
