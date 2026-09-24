@@ -13,6 +13,21 @@ Les composants, dépendances, références et services tiers restent soumis à *
 Le fait que ce dépôt soit public sur GitHub ne constitue pas, à lui seul, une autorisation générale de copier, modifier, redistribuer, sous-licencier ou commercialiser PISTE Studio.
 
 
+## V0.28 — UX Navigation & Context System
+
+V0.28 rend l’interface plus lisible sans supprimer les fonctions avancées :
+
+- accents contextuels discrets Video / Audio / Transcript / Editorial / Delivery ;
+- aide contextuelle **Guidée / Minimale / Désactivée** ;
+- barre universelle **Action / Aller à / Aide / Ressources** via `Cmd/Ctrl+K` ;
+- FAQ et ressources intégrées sans quitter Studio ;
+- raccourcis **UTILE ICI** selon le contexte ;
+- repères **ANALYSE / PROPOSITION / APPLICATION / RENDU** ;
+- préférences locales de densité, couleurs et actions contextuelles.
+
+La couleur n’est jamais le seul signal et toutes ces préférences restent
+strictement locales à l’interface.
+
 ## V0.27 — Voice-to-Visual Editorial Bridge
 
 V0.27 relie une **VO séparée** aux images candidates sans transformer PISTE Studio en montage automatique transcript-first :
