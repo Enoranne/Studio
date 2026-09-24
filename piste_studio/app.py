@@ -84,6 +84,17 @@ from .audio_delivery import (
     report_path as audio_report_path,
     run_master_check,
 )
+from .delivery import (
+    DeliveryError,
+    DELIVERY_VERSION,
+    delivery_file_path,
+    delivery_report_path,
+    delivery_targets,
+    preflight_delivery,
+    render_delivery_variant,
+    resolve_delivery_target,
+    write_delivery_report,
+)
 
 
 def _media_payload(root: Path) -> list[dict]:
