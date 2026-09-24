@@ -1108,3 +1108,92 @@ def test_delivery_audio_check_uses_published_version_snapshot(
     assert body["checks"]["published_version"]["status"] == "STALE"
     assert seen == {"label": "published", "duration": 5}
     assert body["checks"]["audio"]["status"] == "PASS"
+
+
+
+def test_delivery_preset_api_crud_default_export_import(tmp_path):
+    root = make_project(tmp_path)
+    app = create_app(
+        root,
+        Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html",
+    )
+    client = TestClient(app)
+
+    initial = client.get("/api/delivery/targets")
+    assert initial.status_code == 200
+    assert initial.json()["default_preset_id"] == "online_1080"
+    assert all(
+        x.get("custom") is False
+        for x in initial.json()["targets"]
+    )
+
+    immutable = client.patch(
+        "/api/delivery/presets/online_1080",
+        json={"label": "Changed"},
+    )
+    assert immutable.status_code == 422
+    assert "immuable" in immutable.text
+
+    duplicate = client.post(
+        "/api/delivery/presets/online_1080/duplicate",
+        json={"label": "YouTube PISTE"},
+    )
+    assert duplicate.status_code == 200, duplicate.text
+    preset = duplicate.json()["preset"]
+    assert preset["custom"] is True
+    preset_id = preset["id"]
+
+    updated = client.patch(
+        f"/api/delivery/presets/{preset_id}",
+        json={
+            "label": "Vertical PISTE",
+            "family": "social",
+            "width": 1080,
+            "height": 1920,
+            "fps": 30,
+            "video_codec": "libx264",
+            "video_bitrate_mbps": 14,
+            "audio_bitrate_kbps": 320,
+            "tesseract_resolution": "1080p",
+            "default_framing": "fit",
+        },
+    )
+    assert updated.status_code == 200, updated.text
+    body = updated.json()
+    assert body["preset"]["aspect_ratio"] == "9:16"
+    assert body["preset"]["video_bitrate_mbps"] == 14
+
+    default = client.post(
+        f"/api/delivery/presets/{preset_id}/default",
+        json={},
+    )
+    assert default.status_code == 200
+    assert default.json()["default_preset_id"] == preset_id
+    targets = client.get("/api/delivery/targets").json()
+    assert targets["default_preset_id"] == preset_id
+
+    exported = client.get(
+        f"/api/delivery/presets/{preset_id}/export"
+    )
+    assert exported.status_code == 200
+    document = exported.json()
+    assert document["kind"] == "piste_studio_delivery_preset"
+    assert document["preset"]["label"] == "Vertical PISTE"
+
+    imported = client.post(
+        "/api/delivery/presets/import",
+        json=document,
+    )
+    assert imported.status_code == 200, imported.text
+    imported_id = imported.json()["preset"]["id"]
+    assert imported_id != preset_id
+    assert imported.json()["preset"]["width"] == 1080
+
+    deleted = client.delete(
+        f"/api/delivery/presets/{preset_id}"
+    )
+    assert deleted.status_code == 200
+    assert deleted.json()["default_preset_id"] == "online_1080"
+    ids = {x["id"] for x in deleted.json()["targets"]}
+    assert preset_id not in ids
+    assert imported_id in ids
