@@ -35,6 +35,7 @@ def test_v022_ui_structure_and_assets(tmp_path):
         "ux-editorial-vision.js",
         "ux-semantic-vision.js",
         "ux-targeted-references.js",
+        "ux-timeline-continuity.js",
         "ux-audio-mix.js",
         "ux-audio-intelligence.js",
         "ux-audio-delivery.js",
@@ -117,3 +118,15 @@ def test_v022_ux_contains_canon_conflict_patterns():
     assert "requires_explicit_acknowledgement" in semantic
     assert "Règles sémantiques" in backend
     assert "Facets fermés" in backend
+
+
+def test_v022_ux_contains_timeline_neighbor_continuity_patterns():
+    ux = (UI / "ux-timeline-continuity.js").read_text(encoding="utf-8")
+    assert "CONTINUITÉ DE VOISINAGE" in ux
+    assert "Analyser voisins" in ux
+    assert "Tester un autre rush à cette position" in ux
+    assert "Tester ce candidat" in ux
+    assert "RUPTURE POTENTIELLE" in ux
+    assert "BRIDGE_GAP" in ux
+    assert "Aucun remplacement n’est appliqué automatiquement" in ux
+    assert "Vision · Continuité voisins" in ux
