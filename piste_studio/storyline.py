@@ -287,6 +287,181 @@ def trim_story_clip(
     return magnetic_reflow(doc, story_start=story_start)
 
 
+
+def insert_story_clip(
+    payload: dict,
+    clip: dict,
+    *,
+    target_time: float | None = None,
+    story_start: float | None = None,
+) -> dict:
+    if not isinstance(clip, dict):
+        raise StorylineError("clip doit être un objet.")
+    if str(clip.get("track") or "") != "video":
+        raise StorylineError("Seul un plan VIDEO peut être inséré dans la STORYLINE.")
+    clip_id = str(clip.get("id") or "").strip()
+    if not clip_id:
+        raise StorylineError("Le plan à insérer doit avoir un identifiant.")
+
+    doc = deepcopy(payload)
+    clips = _clips(doc)
+    if any(str(item.get("id")) == clip_id for item in clips):
+        raise StorylineError(f"Identifiant de clip déjà utilisé : {clip_id}")
+
+    current_story = _story(clips)
+    clips.append(deepcopy(clip))
+    start = (
+        float(story_start)
+        if story_start is not None
+        else float((doc.get("storyline") or {}).get("start", 0) or 0)
+    )
+
+    if target_time is None:
+        order = [str(item.get("id")) for item in current_story] + [clip_id]
+    else:
+        target_ticks = _ticks(target_time)
+        index = sum(
+            1
+            for item in current_story
+            if 2 * target_ticks
+            >= 2 * _ticks(item.get("start", 0))
+            + _ticks(item.get("duration", 0))
+        )
+        order = [str(item.get("id")) for item in current_story]
+        order.insert(index, clip_id)
+
+    return magnetic_reflow(doc, story_start=start, order=order)
+
+
+def remove_story_clip(
+    payload: dict,
+    clip_id: str,
+    *,
+    story_start: float | None = None,
+) -> dict:
+    doc = deepcopy(payload)
+    clips = _clips(doc)
+    target = next(
+        (
+            clip
+            for clip in clips
+            if str(clip.get("id")) == str(clip_id)
+            and clip.get("track") == "video"
+        ),
+        None,
+    )
+    if target is None:
+        raise StorylineError("Plan STORY introuvable.")
+
+    doc["clips"] = [
+        clip for clip in clips if str(clip.get("id")) != str(clip_id)
+    ]
+    for child in doc["clips"]:
+        if str(child.get("parentClipId") or "") == str(clip_id):
+            child.pop("parentClipId", None)
+            child.pop("anchorOffset", None)
+            child.pop("connectionPointOffset", None)
+            child.pop("connectionMode", None)
+
+    start = (
+        float(story_start)
+        if story_start is not None
+        else float((doc.get("storyline") or {}).get("start", 0) or 0)
+    )
+    return magnetic_reflow(doc, story_start=start)
+
+
+def apply_storyline_operation(
+    payload: dict,
+    operation: str,
+    args: dict | None = None,
+) -> dict:
+    """Applique une mutation magnétique via une seule surface canonique.
+
+    L'UI, l'API et les futurs agents doivent appeler cette surface plutôt que
+    réimplémenter reorder/ripple/connexion avec leurs propres règles.
+    """
+
+    params = args or {}
+    if not isinstance(params, dict):
+        raise StorylineError("args doit être un objet.")
+    op = str(operation or "").strip().lower().replace("-", "_")
+    story_start = float(
+        params.get(
+            "story_start",
+            (payload.get("storyline") or {}).get("start", 0) or 0,
+        )
+    )
+
+    try:
+        if op == "move":
+            return move_story_clip(
+                payload,
+                str(params["clip_id"]),
+                float(params["target_time"]),
+                story_start=story_start,
+            )
+        if op == "trim":
+            return trim_story_clip(
+                payload,
+                str(params["clip_id"]),
+                edge=str(params["edge"]),
+                delta=float(params["delta"]),
+                story_start=story_start,
+                min_duration=float(params.get("min_duration", 0.2)),
+            )
+        if op in {"connection_point", "move_connection_point"}:
+            return move_connection_point(
+                payload,
+                str(params["child_id"]),
+                float(params["target_time"]),
+            )
+        if op == "attach":
+            anchor = params.get("anchor_offset")
+            return attach_clip(
+                payload,
+                str(params["child_id"]),
+                str(params["parent_id"]),
+                anchor_offset=float(anchor) if anchor is not None else None,
+            )
+        if op == "detach":
+            return detach_clip(payload, str(params["child_id"]))
+        if op == "insert":
+            return insert_story_clip(
+                payload,
+                params["clip"],
+                target_time=(
+                    float(params["target_time"])
+                    if params.get("target_time") is not None
+                    else None
+                ),
+                story_start=story_start,
+            )
+        if op == "remove":
+            return remove_story_clip(
+                payload,
+                str(params["clip_id"]),
+                story_start=story_start,
+            )
+        if op == "reflow":
+            order = params.get("order")
+            if order is not None and not isinstance(order, list):
+                raise StorylineError("order doit être une liste.")
+            return magnetic_reflow(
+                payload,
+                story_start=story_start,
+                order=[str(item) for item in order] if order is not None else None,
+            )
+    except (KeyError, TypeError, ValueError) as exc:
+        if isinstance(exc, StorylineError):
+            raise
+        raise StorylineError(
+            f"Arguments invalides pour l'opération {op or '<vide>'}."
+        ) from exc
+
+    raise StorylineError(f"Opération Storyline inconnue : {op or '<vide>'}.")
+
+
 def validate_locked_change(
     root,
     before: dict,
