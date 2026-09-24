@@ -120,7 +120,7 @@ def _compare_side(
         elif left and not right:
             findings.append({
                 "kind": "TARGET_EVIDENCE_MISSING",
-                "severity": "INFO",
+                "severity": "REVIEW",
                 "side": side,
                 "facet": facet,
                 "message": (
@@ -231,8 +231,8 @@ def analyze_timeline_continuity(
         missing = bridge - target_tags[facet]
         if missing:
             findings.append({
-                "kind": "BRIDGE_GAP",
-                "severity": "WARNING",
+                "kind": "BRIDGE_EVIDENCE_GAP",
+                "severity": "REVIEW",
                 "side": "PRÉCÉDENT↔SUIVANT",
                 "facet": facet,
                 "message": (
@@ -273,6 +273,10 @@ def analyze_timeline_continuity(
         finding for finding in findings
         if finding.get("severity") == "WARNING"
     ]
+    reviews = [
+        finding for finding in findings
+        if finding.get("severity") == "REVIEW"
+    ]
     continuity = [
         finding for finding in findings
         if finding.get("kind") in {
@@ -283,6 +287,8 @@ def analyze_timeline_continuity(
     structured_count = sum(len(values) for values in target_tags.values())
     if warnings:
         status = "RUPTURE"
+    elif reviews:
+        status = "REVIEW"
     elif continuity:
         status = "CONTINUOUS"
     elif structured_count == 0:
@@ -314,6 +320,7 @@ def analyze_timeline_continuity(
         "canon_assessments": canon_assessments,
         "summary": {
             "warning_count": len(warnings),
+            "review_count": len(reviews),
             "continuity_count": len(continuity),
             "structured_target_tag_count": structured_count,
             "neighbor_count": int(previous_clip is not None) + int(next_clip is not None),
