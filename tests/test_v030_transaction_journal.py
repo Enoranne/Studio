@@ -1,7 +1,10 @@
 import json
+from pathlib import Path
 
+from fastapi.testclient import TestClient
 import pytest
 
+from piste_studio.app import create_app
 from piste_studio.history import (
     HistoryError,
     create_checkpoint,
@@ -12,6 +15,10 @@ from piste_studio.history import (
 )
 from piste_studio.project import init_project
 from piste_studio.timeline import load_timeline, save_timeline
+
+
+ROOT = Path(__file__).parents[1]
+UI = ROOT / "piste_studio" / "ui" / "index.html"
 
 
 def timeline(start=3.0, label="A"):
@@ -210,3 +217,69 @@ def test_actor_is_explicitly_limited(tmp_path):
             timeline(2),
             actor="robot",
         )
+
+
+def test_storyline_api_records_transaction_and_supports_redo(tmp_path):
+    root = tmp_path / "Project"
+    init_project(root, "API Journal")
+    app = create_app(root, UI)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/storyline/operate",
+        json={
+            "timeline": timeline(3),
+            "operation": "trim",
+            "args": {
+                "clip_id": "v1",
+                "edge": "right",
+                "delta": 0.5,
+            },
+            "edit_name": "teaser_30",
+            "checkpoint_reason": "Ripple trim",
+            "actor": "user",
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["checkpoint"]["can_undo"] is True
+    assert body["checkpoint"]["last"]["actor"] == "user"
+    assert body["checkpoint"]["last"]["operation"] == "storyline.trim"
+    assert body["checkpoint"]["last"]["affected"] == ["v1"]
+    assert load_timeline(root, "teaser_30")["clips"][0]["duration"] == 4.5
+
+    undone = client.post(
+        "/api/history/undo",
+        json={"edit_name": "teaser_30"},
+    )
+    assert undone.status_code == 200, undone.text
+    assert undone.json()["can_redo"] is True
+    assert load_timeline(root, "teaser_30")["clips"][0]["duration"] == 4
+
+    redone = client.post(
+        "/api/history/redo",
+        json={"edit_name": "teaser_30"},
+    )
+    assert redone.status_code == 200, redone.text
+    assert redone.json()["redone"]["reason"] == "Ripple trim"
+    assert load_timeline(root, "teaser_30")["clips"][0]["duration"] == 4.5
+
+
+def test_v030_integrates_audio_agent_and_ui_provenance():
+    app_source = (ROOT / "piste_studio" / "app.py").read_text(encoding="utf-8")
+    agent_source = (
+        ROOT / "piste_studio" / "editorial_agent.py"
+    ).read_text(encoding="utf-8")
+    ui_source = (
+        ROOT / "piste_studio" / "ui" / "ux-magnetic.js"
+    ).read_text(encoding="utf-8")
+
+    assert 'operation="audio.normalize"' in app_source
+    assert 'operation="audio.ducking"' in app_source
+    assert 'operation="audio.crossfade"' in app_source
+    assert 'actor="agent"' in agent_source
+    assert 'operation="editorial.apply_proposal"' in agent_source
+    assert "/api/history/redo" in ui_source
+    assert "redoLastEdit" in ui_source
+    assert "key==='z'&&e.shiftKey" in ui_source
+    assert "key==='y'" in ui_source
