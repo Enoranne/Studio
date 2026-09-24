@@ -52,6 +52,29 @@ L’interface indique combien de références ciblées participent à une propos
 
 Une référence créée sur un rush n’est jamais utilisée pour lui proposer son propre tag. Aucun tag global n’est écrit lors de la création d’une référence.
 
+
+### Groupes et qualité de référence
+
+V0.22.3 permet de réunir plusieurs références ciblées sous un même groupe, par exemple :
+
+- `prop:fisher` → **Fisher principal** ;
+- `character:malo` → **Malo visage enfance** ;
+- `decor:salon` → **Salon cheminée**.
+
+Chaque référence reçoit une qualité explicite :
+
+- **Primaire** : poids 1,5 ;
+- **Secondaire** : poids 1,0 ;
+- **Faible** : poids 0,5.
+
+Le poids agit **à l’intérieur du groupe**. PISTE Studio calcule d’abord un centroïde pondéré pour chaque groupe, puis les groupes contribuent chacun à poids égal au calcul final. Ajouter dix images moyennes dans un groupe ne lui donne donc pas dix fois plus d’influence qu’un autre groupe.
+
+Une référence sans groupe reste une preuve indépendante.
+
+Les noms de groupes existants sont proposés dans le gestionnaire pour favoriser leur réutilisation entre plusieurs rushes. Groupe et qualité peuvent être modifiés après création sans toucher au tag du média ni à la Storyline.
+
+Les propositions de continuité rendent cette logique visible : nombre de références, nombre de groupes, répartition Primaire/Secondaire/Faible et meilleure référence ciblée éventuelle.
+
 ## V0.21 — Audio Delivery & Master Check
 
 La V0.21 ferme le principal écart audio restant : PISTE Studio peut désormais contrôler **le mix réellement rendu**, après sommation des sources audibles de la timeline.
