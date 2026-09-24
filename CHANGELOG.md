@@ -2,6 +2,27 @@
 
 ## V0.22 — Editorial Vision Refinement
 
+### V0.22.3 — Groupes et qualité de référence
+
+- Migration SQLite rétrocompatible des références V0.22.2.
+- Ajout de `group_name` et `quality` aux références ciblées.
+- Trois qualités explicites : **Primaire 1,5×**, **Secondaire 1,0×**, **Faible 0,5×**.
+- La pondération s’applique à l’intérieur d’un groupe.
+- Les centroïdes de groupes contribuent ensuite à poids égal afin qu’un groupe contenant beaucoup d’images ne domine pas artificiellement les autres.
+- Une référence non groupée reste une preuve indépendante.
+- Les anciens profils de rush entier restent compatibles et sont traités comme preuves indépendantes.
+- Résumé projet des groupes : tag, facet, références, médias, répartition qualité et poids total.
+- API PATCH pour modifier groupe/qualité sans recalculer ni modifier le tag global.
+- API de résumé `/api/vision/reference-groups`.
+- Création d’une référence avec groupe/qualité dès l’origine.
+- Déduplication conservée : recréer exactement la même référence met à jour ses métadonnées.
+- UI : groupe, qualité, poids visible et édition postérieure.
+- Réutilisation des noms de groupes déjà présents dans le projet.
+- Les preuves de continuité affichent nombre de groupes et distribution Primaire/Secondaire/Faible.
+- Migration d’une base V0.22.2 testée.
+- Chromium : création primaire dans « Fisher principal », puis reclassement en faible dans « Fisher secondaire ».
+- CI fonctionnelle de référence : **96 tests passés / 96**.
+
 ### V0.22.2 — Références visuelles ciblées
 
 - Nouvelle table SQLite `semantic_references`.
