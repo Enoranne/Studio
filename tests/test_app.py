@@ -77,7 +77,7 @@ def test_timeline_persists_and_reloads(tmp_path):
     assert saved.status_code == 200, saved.text
     reloaded = client.get("/api/timeline?edit_name=teaser_30").json()["timeline"]
     assert reloaded["clips"][0]["mediaDbId"] == video_id
-    assert reloaded["schema_version"] == 5
+    assert reloaded["schema_version"] == 6
     assert reloaded["clips"][1]["audioDbId"] == audio_id
     assert reloaded["clips"][1]["gainDb"] == -6
     assert reloaded["clips"][1]["pan"] == 0.2
@@ -515,7 +515,7 @@ def test_audio_intelligence_api_normalize_clipping_ducking_and_crossfade(tmp_pat
     )
     assert applied.status_code == 200, applied.text
     after = applied.json()["timeline"]
-    assert after["schema_version"] == 5
+    assert after["schema_version"] == 6
     m1 = next(x for x in after["clips"] if x["id"] == "m1")
     m2 = next(x for x in after["clips"] if x["id"] == "m2")
     assert m1["crossfadeWith"] == "m2"
