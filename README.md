@@ -501,3 +501,43 @@ ou :
 avec les écarts constatés.
 
 Pour un export d’une version publiée `Vxxx`, le Master Check audio est lui aussi évalué contre le snapshot `Vxxx/timeline.json`. Si le working cut a changé depuis, le préflight peut donc simultanément indiquer **Version publiée · STALE** tout en contrôlant correctement l’audio de la version réellement livrée.
+
+
+### Presets de delivery — V0.23.5
+
+Le Delivery Center distingue désormais deux niveaux :
+
+- **presets intégrés** : profils de référence fournis par PISTE Studio, toujours disponibles et immuables ;
+- **presets personnalisés projet** : copies éditables persistées dans `delivery-presets.yaml`.
+
+Un preset intégré n’est jamais modifié directement. Pour l’adapter, utilise **Dupliquer**, puis modifie la copie.
+
+Réglages personnalisables :
+
+- nom ;
+- famille `festival / online / social / custom` ;
+- largeur / hauteur ;
+- 24, 30 ou 60 fps ;
+- codec H.264 ou ProRes 422 HQ ;
+- bitrate vidéo H.264 ;
+- bitrate AAC ;
+- résolution source Tesseract 720p / 1080p / 4K ;
+- cadrage par défaut lorsque nécessaire.
+
+PISTE normalise les combinaisons techniques :
+
+- H.264 → MP4, `yuv420p`, AAC 48 kHz stéréo ;
+- ProRes → MOV, `yuv422p10le`, PCM 24-bit 48 kHz stéréo.
+
+Le mode **NATIVE** n’est conservé que si le canvas final correspond réellement à la résolution source Tesseract. Une source 4K destinée à un fichier 1080p passe donc automatiquement en FIT/FILL.
+
+Un preset peut être défini comme **défaut du projet**. Le Delivery Center le sélectionne automatiquement à la prochaine ouverture.
+
+Les presets sont stockés au niveau du projet pour rester explicites et transportables avec celui-ci. Pour les réutiliser dans un autre projet, utilise :
+
+- **Exporter JSON** ;
+- **Importer JSON**.
+
+Le document portable est versionné et ne contient aucune référence au projet d’origine.
+
+Les presets personnalisés utilisent exactement le même préflight et les mêmes garde-fous que les profils intégrés : version publiée, Master Check audio, titres, cadrage, consentement FILL et conformité ffprobe finale.
