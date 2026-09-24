@@ -399,6 +399,20 @@ def audio_waveform_samples(
     if not tools.ffmpeg:
         return []
     samples = max(40, min(int(samples), 1200))
+    digest = str(item.get("sha256") or "unknown")[:16]
+    cache_dir = root / "cache" / "waveforms"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_path = cache_dir / (
+        f"media_{int(media_id):06d}_track_{int(track_index):02d}_"
+        f"{digest}_{samples}.json"
+    )
+    if cache_path.exists():
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            if isinstance(cached, list):
+                return [float(x) for x in cached]
+        except Exception:
+            pass
     try:
         proc = subprocess.run(
             [
@@ -443,6 +457,13 @@ def audio_waveform_samples(
         )
         if len(peaks) >= samples:
             break
+    try:
+        cache_path.write_text(
+            json.dumps(peaks, separators=(",", ":")),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
     return peaks
 
 
