@@ -295,6 +295,25 @@ def validate_locked_change(
     before_by_id = {
         str(c.get("id")): c for c in before.get("clips", [])
     }
+    after_by_id = {
+        str(c.get("id")): c for c in after.get("clips", [])
+    }
+
+    def connection_time(by_id: dict[str, dict], clip: dict) -> float | None:
+        parent_id = clip.get("parentClipId")
+        if not parent_id:
+            return None
+        parent = by_id.get(str(parent_id))
+        if parent is None:
+            return None
+        point = clip.get("connectionPointOffset")
+        if point is None:
+            point = min(
+                max(float(clip.get("anchorOffset", 0) or 0), 0.0),
+                float(parent.get("duration", 0)),
+            )
+        return float(parent.get("start", 0)) + float(point)
+
     for new in after.get("clips", []):
         cid = str(new.get("id"))
         old = before_by_id.get(cid)
@@ -311,10 +330,59 @@ def validate_locked_change(
             float(old.get("sourceStart", 0) or 0)
             - float(new.get("sourceStart", 0) or 0)
         ) > 1e-6
-        if not (changed_start or changed_duration or changed_source):
-            continue
+        old_point = connection_time(before_by_id, old)
+        new_point = connection_time(after_by_id, new)
+        changed_connection = (
+            str(old.get("parentClipId") or "")
+            != str(new.get("parentClipId") or "")
+            or (
+                old_point is None
+                and new_point is not None
+            )
+            or (
+                old_point is not None
+                and new_point is None
+            )
+            or (
+                old_point is not None
+                and new_point is not None
+                and abs(old_point - new_point) > 1e-6
+            )
+        )
 
         track = str(new.get("track") or old.get("track") or "")
+        if changed_connection:
+            points = [
+                point for point in (old_point, new_point)
+                if point is not None
+            ]
+            if points:
+                point_start = max(0.0, min(points) - 0.001)
+                point_end = max(points) + 0.001
+                operations = ["connection_point"]
+                operations.append(
+                    "graphics" if track == "titles" else "audio_change"
+                )
+                for operation in operations:
+                    decision = check_operation(
+                        root,
+                        operation=operation,
+                        start=point_start,
+                        end=point_end,
+                        target="timeline",
+                    )
+                    if not decision.allowed:
+                        raise StorylineError(
+                            f"{cid}: {decision.reason}"
+                        )
+
+        if not (
+            changed_start
+            or changed_duration
+            or changed_source
+        ):
+            continue
+
         if track == "video":
             operation = (
                 "trim"
