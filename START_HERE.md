@@ -1,6 +1,20 @@
-# Démarrage rapide — PISTE Studio v0.24
+# Démarrage rapide — PISTE Studio v0.25
 
-## 1. Installer
+## 1. Application desktop macOS — parcours recommandé
+
+Pour un build desktop V0.25 :
+
+1. ouvre `PISTE Studio.app` ou installe l’application depuis le DMG de ton architecture ;
+2. choisis **Ouvrir un projet…** pour un projet existant ;
+3. ou choisis **Nouveau projet…**, donne un nom puis sélectionne le dossier qui contiendra le projet ;
+4. PISTE Studio crée la structure et démarre le moteur local automatiquement ;
+5. aucun Terminal ni installation Python manuelle n’est nécessaire pour ce parcours.
+
+Tesseract reste volontairement séparé. Le panneau **Readiness** indique s’il est détecté et quelle action effectuer avant l’authoring/rendu.
+
+Pour les builds de test non notarisés, macOS peut demander une autorisation explicite selon les réglages Gatekeeper. La diffusion publique propre passe par le workflow Developer ID/notarisation documenté dans `PACKAGING.md`.
+
+## 2. Installation développeur / CLI
 
 ```bash
 python -m venv .venv
@@ -20,7 +34,7 @@ Windows PowerShell :
 pip install -e .
 ```
 
-## 2. Lancer
+## 3. Lancer en mode développeur
 
 Projet de démonstration :
 
@@ -36,7 +50,7 @@ piste-studio-app --project /chemin/vers/PISTE_0
 
 L’application s’ouvre sur `http://127.0.0.1:8765/`.
 
-## 3. Workflow UI V0.13
+## 4. Workflow UI
 
 1. Place les vidéos dans `rushes/` et les sons dans `audio/`.
 2. Clique **Scanner projet**.

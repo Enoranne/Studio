@@ -30,13 +30,14 @@ Le dépôt contient :
 
 Le lanceur :
 
-1. ouvre un sélecteur de dossier natif ;
-2. refuse un dossier sans `project.yaml` ;
-3. choisit un port localhost libre ;
-4. démarre le sidecar embarqué ;
-5. attend que le backend écoute réellement ;
-6. ouvre PISTE Studio dans une fenêtre desktop ;
-7. arrête le sidecar lorsque la fenêtre Studio se ferme.
+1. permet soit d’ouvrir un projet existant, soit d’en créer un nouveau ;
+2. pour un nouveau projet, demande un nom et un dossier parent puis initialise la structure via le sidecar embarqué ;
+3. pour un projet existant, refuse un dossier sans `project.yaml` ;
+4. choisit un port localhost libre ;
+5. démarre le sidecar embarqué ;
+6. interroge réellement `/api/health` et vérifie que le backend répond pour le dossier projet attendu ;
+7. ouvre PISTE Studio dans une fenêtre desktop ;
+8. arrête le sidecar lorsque la fenêtre Studio se ferme.
 
 ## Construire sur macOS
 
@@ -89,12 +90,12 @@ Ces opérations nécessitent un compte Apple Developer pour une distribution vé
 
 ## Ce qui reste après V0.25.0
 
-- valider le build Tauri en CI macOS ;
-- tester Apple Silicon et Intel ;
-- définir l'icône finale ;
-- automatiser signature/notarisation sans stocker de secret dans le dépôt ;
-- éventuellement embarquer ou guider l'installation de ffmpeg/ffprobe ;
-- garder Tesseract comme dépendance externe explicitement détectée par Readiness.
+La fondation d’installation utilisateur est terminée côté dépôt. Restent des validations ou choix de distribution externes :
+
+- tester le DMG sur la machine de production avec un vrai projet et les médias PISTE 0 ;
+- exécuter la signature Developer ID et la notarisation Apple si une diffusion publique est souhaitée ;
+- éventuellement embarquer ou guider plus explicitement l’installation de ffmpeg/ffprobe ;
+- conserver Tesseract comme dépendance externe explicitement détectée par Readiness.
 
 ## Principe produit
 
@@ -169,3 +170,25 @@ Secrets GitHub attendus :
 Le workflow importe le certificat Developer ID, construit avec Tauri, puis vérifie `codesign`, le ticket de notarisation avec `stapler` et l'évaluation Gatekeeper avec `spctl`.
 
 Aucun secret Apple n'est stocké dans le dépôt.
+
+
+### First Run V0.25.0
+
+L’écran d’accueil expose désormais deux parcours :
+
+- **Ouvrir un projet…** : sélection d’un dossier contenant déjà `project.yaml` ;
+- **Nouveau projet…** : saisie du nom, choix d’un dossier parent, création automatique de la structure PISTE Studio puis ouverture immédiate.
+
+La création est exécutée par le **sidecar réellement empaqueté**, avec la même logique `init_project` que le CLI. La CI reproduit ce parcours avant de démarrer le serveur du projet créé.
+
+Le contrôle de démarrage ne se contente plus de vérifier qu’un port TCP est ouvert. Le shell attend une réponse HTTP 200 de `/api/health`, parse le JSON et vérifie que `project_root` correspond au projet demandé. Cela évite d’ouvrir la WebView sur un service étranger ou un backend démarré sur le mauvais dossier.
+
+### Version
+
+À partir de V0.25.0, les versions suivantes sont alignées sur `0.25.0` :
+
+- package Python ;
+- FastAPI / `/api/health` ;
+- shell Rust/Tauri ;
+- configuration Tauri ;
+- package desktop Node.

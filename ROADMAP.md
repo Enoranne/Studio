@@ -45,14 +45,22 @@
 - ✅ **V0.24.0 — Production Readiness** : diagnostic projet/outils/médias/version publiée, sélection prudente de la timeline, validation du plan d'authoring, détection bootstrap/authoring/rendu Tesseract, capacités `can_start_editing / can_bootstrap / can_author / can_deliver`, prochaine action explicite, CLI `piste-studio readiness` et API `/api/readiness` ;
 - ⏳ **V0.24.1 — Première recette réelle PISTE 0** : rapport machine de recette intégré (5+ plans, audio, fade, automation, titre, carton final, connexion, delivery) ; validation finale toujours humaine. Reste à exécuter la chaîne sur les vrais médias PISTE 0 et le Tesseract local.
 
+## V0.25 — Desktop Packaging & First Run
+
+- ✅ **V0.25.0 — Packaging desktop macOS** : shell Tauri v2, sidecar PyInstaller, ouverture de projet sans Terminal, création de projet au premier lancement, validation réelle de /api/health, bundles .app/.dmg ARM64 et x86_64, smoke tests du bundle et signature ad-hoc de test ;
+- ⏳ **Distribution Developer ID / notarisation** : workflow préparé, exécution conditionnée à la fourniture des secrets/certificats Apple Developer. Cette étape ne bloque pas les builds de test locaux.
+
+**V0.25 — FONDATION PACKAGING UTILISATEUR TERMINÉE ✅**
+
 ## Avant V1
 
 - valider **V0.24.1** sur le vrai projet PISTE 0 ;
+- tester le DMG V0.25 sur la machine de production avec un vrai projet ;
+- exécuter la signature Developer ID / notarisation si une diffusion publique macOS est souhaitée ;
 - refactor progressif des globals JS vers state/actions ;
 - recovery après crash ;
 - tests navigateur approfondis de drag/trim/ripple/fades ;
 - performances sur catalogues média importants ;
-- finaliser packaging desktop Tauri / notarisation ;
 - premier test PISTE 0 → vrai Tesseract → teaser exporté.
 
 ## Plus tard

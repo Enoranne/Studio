@@ -1,3 +1,20 @@
+# V0.25.0 — Desktop Packaging & First Run
+
+- application desktop macOS basée sur Tauri v2 avec backend local PyInstaller embarqué ;
+- bundles `.app` et `.dmg` produits séparément pour Apple Silicon et Intel ;
+- écran de démarrage sans Terminal avec **Ouvrir un projet** et **Nouveau projet** ;
+- création d’un projet neuf directement depuis l’application via le sidecar empaqueté ;
+- validation stricte du démarrage : PISTE Studio attend une réponse réelle de `/api/health` et vérifie que le backend ouvert correspond au dossier projet demandé ;
+- arrêt du sidecar à la fermeture de la fenêtre Studio ;
+- smoke test CI du sidecar réellement contenu dans le bundle, incluant désormais la création d’un projet ;
+- version applicative, backend Python, shell Tauri et package desktop alignés sur **0.25.0** ;
+- signature ad-hoc conservée pour les builds de test ;
+- workflow Developer ID + notarisation Apple préparé séparément et sans secret stocké dans le dépôt.
+
+La notarisation de distribution reste une opération externe : elle nécessite les identifiants/certificats du compte Apple Developer. La recette V0.24.1 sur les vrais médias PISTE 0 reste également une validation de production distincte.
+
+---
+
 # V0.24.0 — Production Readiness
 
 - ajout du moteur `piste_studio.readiness` ;
