@@ -320,6 +320,28 @@
 
 ## V0.23 — Motion & Delivery
 
+### V0.23.2 — Carton final
+
+- Extension du modèle title v5 avec `titleRole = final_card`.
+- Fond plein canvas avec couleur et opacité dédiées.
+- Ajout de `canvasBackgroundColor`.
+- Ajout de `canvasBackgroundOpacity`.
+- Ajout de `blackTailSeconds`.
+- Validation serveur : le noir final doit être >= 0 et strictement inférieur à la durée du carton.
+- Bouton timeline **+ Carton final**.
+- Création par défaut alignée exactement sur la fin de la timeline.
+- Durée par défaut 3,5 s, avec queue noire/fond seul de 0,75 s.
+- Inspector spécialisé **CARTON FINAL**.
+- Preview PROGRAM avec fond plein au-dessus du plan vidéo.
+- Pendant la queue finale, le texte disparaît mais le fond canvas reste visible.
+- Command Palette : **Titre · Ajouter un carton final**.
+- Conservation intégrale dans les `title_cuts` de l’authoring plan.
+- Les champs de fond plein et de noir final restent présents dans `unmaterialized_titles` tant que la couche Text native Tesseract n’est pas documentée.
+- Tests API : persistance du carton et rejet d’une queue noire invalide.
+- Test authoring : conservation du fond plein et du noir final.
+- Test Chromium : création, édition, extinction du texte, alignement exact sur la fin et sauvegarde.
+- CI fonctionnelle de référence : **119 tests passés / 119**.
+
 ### V0.23.1 — Titres et overlays éditables
 
 - Timeline schema v5.
