@@ -91,6 +91,7 @@ const commands=[
   {label:'Média · Analyser le catalogue',hint:'',keywords:'analyze analyse ffmpeg filmstrip media intelligence',run:()=>typeof analyzeMediaCatalog==='function'&&analyzeMediaCatalog()},
   {label:'Média · Prises proches',hint:'',keywords:'similar take duplicate proche visual',run:()=>typeof openSimilarTakes==='function'&&openSimilarTakes()},
   {label:'Vision · Fenêtres IN/OUT',hint:'',keywords:'scene cut rupture source in out editorial window',run:()=>typeof openEditorialWindows==='function'&&openEditorialWindows()},
+  {label:'Vision · Référence ciblée',hint:'',keywords:'frame roi zone reference character prop decor look',run:()=>typeof openTargetedReferenceManager==='function'&&openTargetedReferenceManager()},
   {label:'Vision · Analyser le rush',hint:'',keywords:'semantic clip local vision analyse',run:()=>typeof analyzeSemanticSelected==='function'&&analyzeSemanticSelected(false)},
   {label:'Vision · Proposer continuité',hint:'',keywords:'semantic continuity character prop decor look',run:()=>typeof openSemanticContinuity==='function'&&openSemanticContinuity()},
   {label:'Audio · Ajouter un point de volume',hint:'',keywords:'audio automation keyframe gain volume',run:()=>typeof addAudioAutomationPoint==='function'&&addAudioAutomationPoint()},
