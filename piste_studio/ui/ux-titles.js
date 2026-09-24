@@ -226,7 +226,7 @@ addTitle=function(){
 
 addFinalCard=function(){
   const duration=Math.min(3.5,DURATION);
-  const start=snapTime(Math.max(0,DURATION-duration));
+  const start=Math.max(0,DURATION-duration);
   const c={
     id:'fc'+Date.now(),
     track:'titles',
