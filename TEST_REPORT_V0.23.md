@@ -9,17 +9,16 @@ Ce rapport couvre :
 1. **V0.23.1 — Titres et overlays éditables** ;
 2. **V0.23.2 — Carton final spécialisé** ;
 3. **V0.23.3 — Point de connexion graphique déplaçable** ;
-4. **V0.23.4 — Exports festival / social**.
+4. **V0.23.4 — Exports festival / social** ;
+5. **V0.23.5 — Presets de delivery**.
 
-La dernière brique V0.23 restant à réaliser est :
-
-- **V0.23.5 — presets de delivery**.
+**V0.23 — Motion & Delivery est terminée.**
 
 ## Validation globale
 
-Run fonctionnel de référence V0.23.4 :
+Run fonctionnel de référence V0.23.5 :
 
-- Python/API/UI/Chromium : **137 tests passés / 137** ;
+- Python/API/UI/Chromium : **144 tests passés / 144** ;
 - JavaScript : `node --check` réussi ;
 - Chromium / Playwright : réussi ;
 - ffmpeg réel : réussi ;
@@ -618,7 +617,267 @@ Le scénario navigateur valide :
 
 Run fonctionnel de référence :
 
-**137 tests passés / 137**
+**144 tests passés / 144**
+
+---
+
+# V0.23.5 — Presets de delivery
+
+## Objectif
+
+Permettre de transformer les cibles fixes V0.23.4 en configurations de delivery réutilisables sans rendre les profils intégrés mutables ni affaiblir le préflight.
+
+## Modèle
+
+Deux catégories coexistent.
+
+### Presets intégrés
+
+Les profils intégrés restent toujours disponibles.
+
+Ils portent :
+
+`custom = false`
+
+Ils ne peuvent pas être modifiés ou supprimés.
+
+L’action attendue pour les adapter est :
+
+**Dupliquer**
+
+### Presets personnalisés
+
+Une copie personnalisée porte :
+
+`custom = true`
+
+Elle possède un ID technique stable indépendant de son label.
+
+Format :
+
+`custom_[a-z0-9_]+`
+
+Le label peut être renommé sans changer l’ID.
+
+## Persistance
+
+Le store est :
+
+`delivery-presets.yaml`
+
+Il est local au projet.
+
+Structure :
+
+```yaml
+schema_version: 1
+default_preset_id: online_1080
+presets:
+  - ...
+```
+
+Le fichier n’est écrit qu’à la première mutation.
+
+## Paramètres éditables
+
+Un preset custom peut définir :
+
+- label ;
+- famille ;
+- largeur ;
+- hauteur ;
+- FPS ;
+- codec ;
+- bitrate H.264 ;
+- bitrate AAC ;
+- source Tesseract ;
+- cadrage par défaut ;
+- notes.
+
+## Validation
+
+Dimensions :
+
+- largeur 320–7680 ;
+- hauteur 240–7680 ;
+- nombres pairs.
+
+FPS supportés par le bridge courant :
+
+- 24 ;
+- 30 ;
+- 60.
+
+H.264 :
+
+- bitrate vidéo 1–200 Mb/s ;
+- bitrate AAC 96–512 kb/s.
+
+## Normalisation codec
+
+### H.264
+
+PISTE impose :
+
+- MP4 ;
+- libx264 ;
+- yuv420p ;
+- AAC ;
+- 48 kHz ;
+- stéréo.
+
+### ProRes
+
+PISTE impose :
+
+- MOV ;
+- prores_ks ;
+- profile 3 ;
+- yuv422p10le ;
+- PCM 24-bit ;
+- 48 kHz ;
+- stéréo.
+
+Les valeurs incompatibles d’un formulaire ne deviennent donc pas une configuration technique incohérente.
+
+## Source Tesseract et cadrage
+
+Correspondances :
+
+- 720p = 1280×720 ;
+- 1080p = 1920×1080 ;
+- 4K = 3840×2160.
+
+Le mode NATIVE est autorisé seulement si les dimensions finales correspondent au canvas source choisi.
+
+Exemple testé :
+
+- sortie : 1920×1080 ;
+- source Tesseract : 4K ;
+- cadrage demandé : NATIVE.
+
+Résultat normalisé :
+
+- modes disponibles : FIT / FILL ;
+- défaut : FIT.
+
+PISTE évite ainsi un faux NATIVE qui aurait produit un fichier 3840×2160 au lieu du 1920×1080 annoncé.
+
+## Preset par défaut
+
+Chaque projet possède un :
+
+`default_preset_id`
+
+Il peut pointer vers :
+
+- un built-in ;
+- un custom.
+
+À l’ouverture du Delivery Center, ce preset est sélectionné.
+
+Si un custom actuellement par défaut est supprimé :
+
+`online_1080`
+
+redevient automatiquement le défaut.
+
+## Portabilité JSON
+
+### Export
+
+Document :
+
+```json
+{
+  "schema_version": 1,
+  "kind": "piste_studio_delivery_preset",
+  "preset": {}
+}
+```
+
+Les données propres au projet source ne sont pas exportées :
+
+- ID ;
+- timestamps ;
+- flags internes.
+
+### Import
+
+L’import :
+
+1. valide le document ;
+2. normalise la configuration ;
+3. génère un nouvel ID sûr ;
+4. évite les collisions avec les presets existants.
+
+Cela permet de transférer un profil entre projets sans état global invisible.
+
+## Sécurité des IDs
+
+Les IDs custom sont validés avant résolution.
+
+Un `delivery-presets.yaml` modifié manuellement avec un ID contenant un chemin ou des caractères hors format ne peut pas être utilisé comme nom de sortie.
+
+Les IDs générés depuis des labels longs sont également bornés.
+
+## API
+
+Cycle complet validé :
+
+- créer ;
+- modifier ;
+- dupliquer ;
+- supprimer ;
+- définir par défaut ;
+- exporter JSON ;
+- importer JSON.
+
+`GET /api/delivery/targets` retourne built-ins + custom + défaut courant.
+
+## Intégration préflight/export
+
+Un custom n’est pas une simple préférence UI.
+
+`resolve_delivery_target(..., root=...)` l’injecte dans le même moteur que les built-ins.
+
+Test dédié :
+
+- création d’un custom 1080×1920 / 30 fps ;
+- résolution par son ID ;
+- préflight réel ;
+- cible custom présente dans le résultat ;
+- cadrage FIT ;
+- export autorisé.
+
+## Chromium
+
+Le parcours navigateur valide :
+
+1. ouverture du Delivery Center ;
+2. choix du preset vertical intégré ;
+3. export V0.23.4 et conformité ;
+4. **Dupliquer** ;
+5. apparition de l’éditeur custom ;
+6. modification du nom ;
+7. passage à 30 fps ;
+8. bitrate H.264 à 14 Mb/s ;
+9. **Enregistrer le preset** ;
+10. résumé technique actualisé ;
+11. **Définir par défaut** ;
+12. badge **PERSONNALISÉ · DÉFAUT** ;
+13. fermeture du drawer ;
+14. nouvelle ouverture ;
+15. custom toujours sélectionné ;
+16. valeurs persistées ;
+17. suppression ;
+18. retour automatique à `online_1080`.
+
+## Validation V0.23.5
+
+Run fonctionnel de référence :
+
+**144 tests passés / 144**
 
 ---
 
@@ -631,13 +890,16 @@ Run fonctionnel de référence :
 - V0.23.4 ne produit pas de DCP ;
 - pas d’auto-reframe sémantique pour le social ;
 - le FILL actuel est un crop centré explicite ;
-- les cibles sont fixes : les profils personnalisables arrivent en V0.23.5 ;
-- le frame rate de delivery reste fixé par la cible de référence ; la politique FPS personnalisable appartient également à V0.23.5.
+- les presets custom restent volontairement au niveau projet ; leur transfert entre projets passe par JSON ;
+- les cadences custom sont limitées à 24 / 30 / 60 tant que le bridge Tesseract courant conserve cette contrainte ;
+- V0.23 ne produit toujours pas de DCP ni d’auto-reframe sémantique.
 
 # Conclusion
 
-V0.23.1 à V0.23.4 forment désormais une chaîne cohérente :
+V0.23.1 à V0.23.5 forment désormais une chaîne Motion & Delivery complète :
 
-**créer le titre / carton final → régler le style → définir la connexion Storyline → sauvegarder en timeline v6 → publier Vxxx → authorer Tesseract → ouvrir Delivery Center → vérifier version/audio/titres/cadrage → choisir FIT ou autoriser explicitement FILL → rendre → inspecter ffprobe → télécharger le livrable et son rapport JSON.**
+**créer le titre / carton final → régler le style → définir la connexion Storyline → sauvegarder en timeline v6 → publier Vxxx → authorer Tesseract → choisir ou personnaliser un preset → vérifier version/audio/titres/cadrage → choisir FIT ou autoriser explicitement FILL → rendre → inspecter ffprobe → vérifier la conformité → télécharger le livrable et son rapport JSON.**
 
-La prochaine étape est **V0.23.5 — presets de delivery** : rendre ces cibles configurables, mémorisables et réutilisables par projet/utilisateur sans perdre les garde-fous introduits en V0.23.4.
+**V0.23 — Motion & Delivery est terminée.**
+
+La suite de la roadmap revient au hardening avant V1 : refactor progressif de l’état UI, recovery après crash, approfondissement des tests d’interactions timeline, performances catalogue, packaging desktop et premier test PISTE 0 → Tesseract réel → teaser exporté.
