@@ -183,3 +183,24 @@ Une sensibilité plus forte propose potentiellement davantage de ruptures. PISTE
 9. Lance ensuite **Proposer continuité** sur un autre rush.
 
 Créer une référence ciblée n’ajoute pas son tag au média source. Elle sert uniquement de preuve visuelle explicite pour les comparaisons futures.
+
+
+## Groupes et qualité V0.22.3
+
+Quand plusieurs références décrivent la même identité visuelle :
+
+1. donne-leur le même **Groupe**, par exemple `Fisher principal` ;
+2. marque la meilleure vue nette et représentative **Primaire** ;
+3. garde les vues utiles mais moins fortes en **Secondaire** ;
+4. classe les vues partielles, floues ou très contextuelles en **Faible** ;
+5. vérifie le résumé du groupe dans le gestionnaire.
+
+Repère de poids :
+
+- Primaire = 1,5× ;
+- Secondaire = 1,0× ;
+- Faible = 0,5×.
+
+Ces poids ne sont pas des scores de vérité. Ils indiquent uniquement quelle référence doit peser davantage **à l’intérieur d’un groupe**.
+
+Les groupes sont ensuite équilibrés entre eux : multiplier les captures similaires d’un même plan ne doit pas écraser une autre preuve visuelle indépendante.
