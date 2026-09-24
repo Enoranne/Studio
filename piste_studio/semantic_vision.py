@@ -61,6 +61,56 @@ class VisionProvider(Protocol):
     provider: str
     model_id: str
 
+    def embed_texts(
+        self,
+        texts: list[str],
+        *,
+        allow_model_download: bool = False,
+    ) -> list[list[float]]:
+        clean = [str(text or "").strip() for text in texts]
+        if not clean or any(not text for text in clean):
+            raise SemanticVisionError("Texte sémantique vide.")
+        try:
+            import torch
+            from transformers import AutoProcessor, CLIPModel
+        except Exception as exc:
+            raise SemanticVisionError(
+                "Installe l’extra vision pour utiliser le modèle local."
+            ) from exc
+
+        try:
+            processor = AutoProcessor.from_pretrained(
+                self.model_id,
+                local_files_only=not allow_model_download,
+            )
+            model = CLIPModel.from_pretrained(
+                self.model_id,
+                local_files_only=not allow_model_download,
+            )
+        except Exception as exc:
+            if allow_model_download:
+                raise SemanticVisionError(
+                    f"Impossible de charger le modèle {self.model_id}."
+                ) from exc
+            raise SemanticVisionError(
+                "Modèle vision absent du cache local. "
+                "Autorise explicitement son téléchargement ou installe-le localement."
+            ) from exc
+
+        inputs = processor(
+            text=clean,
+            padding=True,
+            truncation=True,
+            return_tensors="pt",
+        )
+        with torch.no_grad():
+            features = model.get_text_features(**inputs)
+            features = features / features.norm(dim=-1, keepdim=True)
+        return [
+            [float(x) for x in row.detach().cpu().tolist()]
+            for row in features
+        ]
+
     def embed_images(
         self,
         image_paths: list[Path],
