@@ -44,7 +44,7 @@ async function openTargetedReferenceManager(dbId=null){
   try{
     const [r,g]=await Promise.all([
       api(`/api/vision/references?media_id=${m.dbId}`),
-      api(`/api/vision/reference-groups?media_id=${m.dbId}`),
+      api('/api/vision/reference-groups'),
     ]);
     renderTargetedReferenceManager(m,r.references||[],g.groups||[]);
   }catch(err){
@@ -55,6 +55,8 @@ async function openTargetedReferenceManager(dbId=null){
 function renderTargetedReferenceManager(m,refs,groups=[]){
   const body=$('#editorialDrawerBody');
   const t=currentReferenceFrameTime(m);
+  const groupNames=[...new Set(groups.map(group=>group.group_name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const groupOptions=groupNames.map(name=>`<option value="${name}"></option>`).join('');
   const groupSummary=groups.length?groups.map(group=>`<div class="semantic-resolved-row"><span>${group.tag} · ${group.group_name}</span><b>${group.reference_count} réf. · poids ${(+group.total_quality_weight||0).toFixed(1)}</b></div>`).join(''):'<div class="hint">Aucun groupe défini : les références sans groupe restent des preuves indépendantes.</div>';
   const cards=refs.length?refs.map(ref=>{
     const roi=ref.roi||{x:0,y:0,width:1,height:1};
@@ -69,7 +71,7 @@ function renderTargetedReferenceManager(m,refs,groups=[]){
           <span>Qualité · ${ref.quality==='primary'?'Primaire':ref.quality==='low'?'Faible':'Secondaire'} · poids ${(+ref.quality_weight||1).toFixed(1)}</span>
         </div>
         <div class="form-grid">
-          <div class="row"><label>Groupe</label><input id="referenceGroup_${ref.id}" value="${ref.group_name||''}" placeholder="ex. Fisher principal"></div>
+          <div class="row"><label>Groupe</label><input id="referenceGroup_${ref.id}" list="targetedReferenceGroups" value="${ref.group_name||''}" placeholder="ex. Fisher principal"></div>
           <div class="row"><label>Qualité</label><select id="referenceQuality_${ref.id}"><option value="primary" ${ref.quality==='primary'?'selected':''}>Primaire · 1,5×</option><option value="secondary" ${ref.quality==='secondary'?'selected':''}>Secondaire · 1,0×</option><option value="low" ${ref.quality==='low'?'selected':''}>Faible · 0,5×</option></select></div>
         </div>
         ${ref.image_url?`<img src="${ref.image_url}" alt="Référence ${ref.tag}" style="display:block;max-width:100%;max-height:180px;object-fit:contain;margin:8px 0;border-radius:4px">`:''}
@@ -81,13 +83,14 @@ function renderTargetedReferenceManager(m,refs,groups=[]){
   body.innerHTML=`
     <div class="selector-policy"><span>RÉFÉRENCE CIBLÉE</span><b>${m.label}</b><small>Frame/zone explicitement choisie · aucun tag global ajouté au rush</small></div>
     <div id="targetedReferenceError"></div>
-    <div class="inspector-section-title">GROUPES DE RÉFÉRENCES</div>
+    <datalist id="targetedReferenceGroups">${groupOptions}</datalist>
+    <div class="inspector-section-title">GROUPES DE RÉFÉRENCES · PROJET</div>
     <div class="semantic-resolved">${groupSummary}</div>
     <div class="form-grid">
       <div class="row"><label>Facet</label><select id="targetedReferenceFacet"><option value="character">Character</option><option value="prop">Prop</option><option value="decor">Decor</option><option value="look">Look</option></select></div>
       <div class="row"><label>Valeur</label><input id="targetedReferenceValue" placeholder="ex. fisher"></div>
       <div class="row"><label>Frame (s)</label><input id="targetedReferenceTime" type="number" min="0" max="${m.duration||99999}" step="0.01" value="${t.toFixed(3)}"></div>
-      <div class="row"><label>Groupe</label><input id="targetedReferenceGroup" placeholder="ex. Fisher principal"></div>
+      <div class="row"><label>Groupe</label><input id="targetedReferenceGroup" list="targetedReferenceGroups" placeholder="ex. Fisher principal"></div>
       <div class="row"><label>Qualité</label><select id="targetedReferenceQuality"><option value="primary">Primaire · 1,5×</option><option value="secondary" selected>Secondaire · 1,0×</option><option value="low">Faible · 0,5×</option></select></div>
       <div class="row"><label>Cadrage</label><select id="targetedReferenceMode" onchange="toggleTargetedRoiFields()"><option value="full">Frame entier</option><option value="roi">Zone de l’image</option></select></div>
     </div>
