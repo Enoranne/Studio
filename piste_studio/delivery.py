@@ -165,6 +165,11 @@ CUSTOM_PRESETS_FILENAME = "delivery-presets.yaml"
 ALLOWED_DELIVERY_FPS = {24, 30, 60}
 ALLOWED_FAMILIES = {"festival", "online", "social", "custom"}
 ALLOWED_TESSERACT_RESOLUTIONS = {"720p", "1080p", "4k"}
+TESSERACT_CANVASES = {
+    "720p": (1280, 720),
+    "1080p": (1920, 1080),
+    "4k": (3840, 2160),
+}
 
 
 def _preset_store_path(root: Path) -> Path:
@@ -220,6 +225,7 @@ def _validate_custom_preset_id(preset_id: str) -> str:
 def _custom_preset_id(label: str, existing: set[str]) -> str:
     stem = slugify(str(label or "preset")).replace("-", "_")
     stem = re.sub(r"[^a-z0-9_]+", "_", stem).strip("_") or "preset"
+    stem = stem[:80].rstrip("_") or "preset"
     candidate = f"custom_{stem}"
     suffix = 2
     while candidate in existing:
@@ -274,20 +280,25 @@ def _normalize_custom_preset(
     if codec not in {"libx264", "prores_ks"}:
         raise DeliveryError("Codec vidéo invalide : H.264 ou ProRes attendu.")
 
-    framing_modes = ["native"]
-    default_framing = str(payload.get("default_framing") or "native").lower()
-    if width != 1920 or height != 1080 or default_framing in {"fit", "fill"}:
-        framing_modes = ["fit", "fill"]
-        if default_framing not in framing_modes:
-            default_framing = "fit"
-    elif default_framing != "native":
-        default_framing = "native"
-
     tesseract_resolution = str(
         payload.get("tesseract_resolution") or "1080p"
     ).lower()
     if tesseract_resolution not in ALLOWED_TESSERACT_RESOLUTIONS:
         raise DeliveryError("Résolution source Tesseract invalide.")
+
+    source_width, source_height = TESSERACT_CANVASES[tesseract_resolution]
+    framing_modes = ["native"]
+    default_framing = str(payload.get("default_framing") or "native").lower()
+    if (
+        width != source_width
+        or height != source_height
+        or default_framing in {"fit", "fill"}
+    ):
+        framing_modes = ["fit", "fill"]
+        if default_framing not in framing_modes:
+            default_framing = "fit"
+    elif default_framing != "native":
+        default_framing = "native"
 
     now = datetime.now(timezone.utc).isoformat()
     common = {
