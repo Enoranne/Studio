@@ -1360,12 +1360,34 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             )
             clean = validate_timeline(root, candidate)
             validate_locked_change(root, before, clean)
-        except (TimelineError, StorylineError, ValueError, TypeError) as exc:
+            checkpoint_reason = str(
+                payload.get("checkpoint_reason") or ""
+            ).strip()
+            checkpoint = None
+            if checkpoint_reason:
+                checkpoint = create_checkpoint(
+                    root,
+                    before,
+                    edit_name=str(
+                        payload.get("edit_name")
+                        or before.get("edit_name")
+                        or "teaser_30"
+                    ),
+                    reason=checkpoint_reason,
+                )
+        except (
+            TimelineError,
+            StorylineError,
+            HistoryError,
+            ValueError,
+            TypeError,
+        ) as exc:
             raise HTTPException(422, str(exc)) from exc
         return {
             "ok": True,
             "operation": operation,
             "timeline": clean,
+            "checkpoint": checkpoint,
         }
 
     @app.get("/api/history")
