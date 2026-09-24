@@ -6,6 +6,7 @@ import json
 import math
 
 from .db import connect
+from .timebase import seconds_to_ticks, ticks_to_seconds
 from .versioning import slugify
 
 
@@ -176,7 +177,13 @@ def load_timeline(root: Path, edit_name: str = "teaser_30") -> dict | None:
 
 
 def _overlap(a_start: float, a_end: float, b_start: float, b_end: float) -> bool:
-    return max(a_start, b_start) < min(a_end, b_end)
+    return max(
+        seconds_to_ticks(a_start),
+        seconds_to_ticks(b_start),
+    ) < min(
+        seconds_to_ticks(a_end),
+        seconds_to_ticks(b_end),
+    )
 
 
 def _crossfade_overlap_allowed(a: dict, b: dict) -> bool:
@@ -230,10 +237,10 @@ def _clean_storyline(payload: dict) -> dict:
     mode = str(raw.get("mode") or "free").strip().lower()
     if mode not in {"free", "magnetic"}:
         raise TimelineError("storyline.mode doit être free ou magnetic.")
-    start = float(raw.get("start", 0) or 0)
-    if start < 0:
+    start_ticks = seconds_to_ticks(raw.get("start", 0) or 0)
+    if start_ticks < 0:
         raise TimelineError("storyline.start doit être >= 0.")
-    return {"mode": mode, "start": round(start, 6)}
+    return {"mode": mode, "start": ticks_to_seconds(start_ticks)}
 
 
 def _validate_connections(clean_clips: list[dict]) -> None:
@@ -263,33 +270,38 @@ def _validate_connections(clean_clips: list[dict]) -> None:
             raise TimelineError(
                 f"connectionMode invalide pour {child['id']}: {mode}"
             )
+        parent_start = seconds_to_ticks(parent["start"])
+        parent_duration = seconds_to_ticks(parent["duration"])
         offset = child.get("anchorOffset")
         if offset is None:
-            offset = float(child["start"]) - float(parent["start"])
-        offset = float(offset)
-        expected = float(parent["start"]) + offset
-        if abs(float(child["start"]) - expected) > 1e-4:
+            offset_ticks = seconds_to_ticks(child["start"]) - parent_start
+        else:
+            offset_ticks = seconds_to_ticks(offset)
+        expected = parent_start + offset_ticks
+        child_start = seconds_to_ticks(child["start"])
+        if child_start != expected:
             raise TimelineError(
                 f"Connexion incohérente pour {child['id']}: "
-                f"start={child['start']} mais parent+offset={expected:.6f}"
+                f"start={child['start']} mais parent+offset="
+                f"{ticks_to_seconds(expected):.6f}"
             )
         point_offset = child.get("connectionPointOffset")
         if point_offset is None:
-            point_offset = min(
-                max(offset, 0.0),
-                float(parent["duration"]),
+            point_offset_ticks = min(
+                max(offset_ticks, 0),
+                parent_duration,
             )
-        point_offset = float(point_offset)
-        if point_offset < -1e-6 or point_offset > float(parent["duration"]) + 1e-6:
+        else:
+            point_offset_ticks = seconds_to_ticks(point_offset)
+        if point_offset_ticks < 0 or point_offset_ticks > parent_duration:
             raise TimelineError(
                 f"connectionPointOffset hors plan parent pour {child['id']}."
             )
 
         child["parentClipId"] = parent["id"]
-        child["anchorOffset"] = round(offset, 6)
-        child["connectionPointOffset"] = round(
-            min(max(point_offset, 0.0), float(parent["duration"])),
-            6,
+        child["anchorOffset"] = ticks_to_seconds(offset_ticks)
+        child["connectionPointOffset"] = ticks_to_seconds(
+            min(max(point_offset_ticks, 0), parent_duration)
         )
         child["connectionMode"] = "follow"
 
@@ -301,20 +313,27 @@ def _validate_magnetic_storyline(clean_clips: list[dict], storyline: dict) -> No
         (c for c in clean_clips if c["track"] == "video"),
         key=lambda c: (c["start"], c["id"]),
     )
-    cursor = float(storyline["start"])
+    cursor = seconds_to_ticks(storyline["start"])
     for clip in story:
-        if abs(float(clip["start"]) - cursor) > 1e-4:
+        clip_start = seconds_to_ticks(clip["start"])
+        if clip_start != cursor:
             raise TimelineError(
                 f"Storyline magnétique non contiguë à {clip['id']}: "
-                f"{clip['start']} au lieu de {cursor:.6f}"
+                f"{clip['start']} au lieu de {ticks_to_seconds(cursor):.6f}"
             )
-        cursor += float(clip["duration"])
+        cursor += seconds_to_ticks(clip["duration"])
 
 
 def validate_timeline(root: Path, payload: dict) -> dict:
-    duration = float(payload.get("duration_seconds", 0))
-    if duration <= 0 or duration > 3600:
+    timeline_duration_ticks = seconds_to_ticks(
+        payload.get("duration_seconds", 0)
+    )
+    if (
+        timeline_duration_ticks <= 0
+        or timeline_duration_ticks > seconds_to_ticks(3600)
+    ):
         raise TimelineError("duration_seconds doit être > 0 et <= 3600.")
+    duration = ticks_to_seconds(timeline_duration_ticks)
 
     tracks = payload.get("tracks")
     clips = payload.get("clips")
@@ -324,7 +343,7 @@ def validate_timeline(root: Path, payload: dict) -> dict:
         raise TimelineError("clips doit être une liste.")
 
     storyline = _clean_storyline(payload)
-    if storyline["start"] > duration:
+    if seconds_to_ticks(storyline["start"]) > timeline_duration_ticks:
         raise TimelineError("storyline.start dépasse la durée de la timeline.")
 
     track_ids: set[str] = set()
@@ -357,18 +376,21 @@ def validate_timeline(root: Path, payload: dict) -> dict:
         if track not in track_ids:
             raise TimelineError(f"Piste inconnue pour {cid}: {track}")
 
-        start = float(c.get("start", 0))
-        clip_duration = float(c.get("duration", 0))
+        start_ticks = seconds_to_ticks(c.get("start", 0))
+        clip_duration_ticks = seconds_to_ticks(c.get("duration", 0))
         if (
-            start < 0
-            or clip_duration <= 0
-            or start + clip_duration > duration + 1e-6
+            start_ticks < 0
+            or clip_duration_ticks <= 0
+            or start_ticks + clip_duration_ticks > timeline_duration_ticks
         ):
             raise TimelineError(f"Plage temporelle invalide pour {cid}.")
+        start = ticks_to_seconds(start_ticks)
+        clip_duration = ticks_to_seconds(clip_duration_ticks)
 
-        source_start = float(c.get("sourceStart", 0) or 0)
-        if source_start < 0:
+        source_start_ticks = seconds_to_ticks(c.get("sourceStart", 0) or 0)
+        if source_start_ticks < 0:
             raise TimelineError(f"sourceStart invalide pour {cid}.")
+        source_start = ticks_to_seconds(source_start_ticks)
 
         media_db_id = c.get("mediaDbId") or c.get("audioDbId")
         if media_db_id is not None:
@@ -380,7 +402,8 @@ def validate_timeline(root: Path, payload: dict) -> dict:
             src_duration = durations[media_db_id]
             if (
                 src_duration is not None
-                and source_start + clip_duration > src_duration + 1e-6
+                and source_start_ticks + clip_duration_ticks
+                > seconds_to_ticks(src_duration)
             ):
                 raise TimelineError(
                     f"{cid} dépasse la durée de sa source média."
@@ -431,9 +454,9 @@ def validate_timeline(root: Path, payload: dict) -> dict:
             {
                 "id": cid,
                 "track": track,
-                "start": round(start, 6),
-                "duration": round(clip_duration, 6),
-                "sourceStart": round(source_start, 6),
+                "start": start,
+                "duration": clip_duration,
+                "sourceStart": source_start,
             }
         )
         if media_db_id is not None:
