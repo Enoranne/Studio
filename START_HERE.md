@@ -283,3 +283,35 @@ Le badge du clip indique le plan parent et la position locale du point, par exem
 `↳ Plan B · +1.0s`
 
 Un déplacement bloqué par un lock est refusé avant mutation. `Ctrl/Cmd+Z` restaure le parent et le point précédents.
+
+
+## Delivery festival / social V0.23.4
+
+1. Enregistre ton montage.
+2. Publie une version `Vxxx`.
+3. Authorise-la avec Tesseract si nécessaire.
+4. Clique **Export**.
+5. Choisis le livrable :
+   - Festival ProRes ;
+   - Festival H.264 ;
+   - Online 1080p ;
+   - Social vertical 9:16 ;
+   - Social carré 1:1.
+6. Lis les quatre blocs du préflight :
+   - Version publiée ;
+   - Audio master ;
+   - Titres / overlays ;
+   - Cadrage.
+7. Pour un export social, choisis :
+   - **FIT** pour conserver toute l’image ;
+   - **FILL** pour remplir le cadre en acceptant un crop.
+8. Si tu choisis FILL, coche explicitement **Autoriser le crop centré**.
+9. Vérifie l’estimation de crop affichée.
+10. Lance l’export.
+11. Télécharge le livrable et son rapport JSON.
+
+Un statut WARN n’est pas masqué. Le bouton devient **Exporter avec avertissements**.
+
+Un FILL sans consentement reste **BLOCKED**.
+
+Si un festival fournit une fiche technique précise, utilise-la comme référence prioritaire plutôt que les cibles intégrées.
