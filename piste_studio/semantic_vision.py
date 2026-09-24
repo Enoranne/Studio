@@ -27,6 +27,12 @@ FACET_THRESHOLDS = {
     "look": 0.82,
 }
 
+REFERENCE_QUALITY_WEIGHTS = {
+    "primary": 1.5,
+    "secondary": 1.0,
+    "low": 0.5,
+}
+
 
 class SemanticVisionError(ValueError):
     pass
@@ -306,6 +312,24 @@ def normalize_reference_roi(roi: dict | None) -> dict:
     }
 
 
+def normalize_reference_quality(value: str | None) -> tuple[str, float]:
+    clean = str(value or "secondary").strip().lower()
+    if clean not in REFERENCE_QUALITY_WEIGHTS:
+        raise SemanticVisionError(
+            "Qualité invalide : primary, secondary ou low."
+        )
+    return clean, float(REFERENCE_QUALITY_WEIGHTS[clean])
+
+
+def normalize_reference_group(value: str | None) -> str | None:
+    clean = " ".join(str(value or "").strip().split())
+    if not clean:
+        return None
+    if len(clean) > 80:
+        raise SemanticVisionError("Nom de groupe trop long (80 caractères max).")
+    return clean
+
+
 def _reference_tag(tag: str) -> tuple[str, str]:
     clean = str(tag or "").strip().lower()
     if ":" not in clean:
@@ -399,12 +423,16 @@ def store_targeted_semantic_reference(
     image_path: Path | str | None = None,
     provider: str = VISION_PROVIDER,
     model_id: str = DEFAULT_MODEL_ID,
+    group_name: str | None = None,
+    quality: str = "secondary",
     status: str = "READY",
 ) -> dict:
     _media_row(root, media_id)
     facet, clean_tag = _reference_tag(tag)
     clean_roi = normalize_reference_roi(roi)
     clean_embedding = _normalize([float(x) for x in embedding])
+    clean_group = normalize_reference_group(group_name)
+    clean_quality, _quality_weight = normalize_reference_quality(quality)
     relative_image = None
     if image_path is not None:
         image = Path(image_path)
@@ -447,13 +475,15 @@ def store_targeted_semantic_reference(
             conn.execute(
                 """
                 UPDATE semantic_references
-                SET embedding_json=?, image_path=?, status=?,
-                    updated_at=CURRENT_TIMESTAMP
+                SET embedding_json=?, image_path=?, group_name=?, quality=?,
+                    status=?, updated_at=CURRENT_TIMESTAMP
                 WHERE id=?
                 """,
                 (
                     json.dumps(clean_embedding),
                     relative_image,
+                    clean_group,
+                    clean_quality,
                     status,
                     reference_id,
                 ),
@@ -463,9 +493,10 @@ def store_targeted_semantic_reference(
                 """
                 INSERT INTO semantic_references(
                   media_id, tag, facet, timestamp_seconds, roi_json,
-                  provider, model_id, embedding_json, image_path, status
+                  provider, model_id, embedding_json, image_path,
+                  group_name, quality, status
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     int(media_id),
@@ -477,6 +508,8 @@ def store_targeted_semantic_reference(
                     model_id,
                     json.dumps(clean_embedding),
                     relative_image,
+                    clean_group,
+                    clean_quality,
                     status,
                 ),
             )
@@ -495,6 +528,8 @@ def create_targeted_semantic_reference(
     timestamp_seconds: float,
     roi: dict | None = None,
     provider: VisionProvider | None = None,
+    group_name: str | None = None,
+    quality: str = "secondary",
     allow_model_download: bool = False,
 ) -> dict:
     provider = provider or LocalClipProvider()
@@ -518,6 +553,8 @@ def create_targeted_semantic_reference(
         image_path=frame,
         provider=provider.provider,
         model_id=provider.model_id,
+        group_name=group_name,
+        quality=quality,
     )
 
 
@@ -582,6 +619,40 @@ def list_targeted_semantic_references(
     finally:
         conn.close()
     return [_reference_row_to_dict(row) for row in rows]
+
+
+def update_targeted_semantic_reference_metadata(
+    root: Path,
+    reference_id: int,
+    *,
+    group_name: str | None = None,
+    quality: str | None = None,
+) -> dict:
+    current = get_targeted_semantic_reference(root, reference_id)
+    if not current:
+        raise SemanticVisionError(
+            f"Référence ciblée introuvable : id={reference_id}"
+        )
+    clean_group = normalize_reference_group(
+        current.get("group_name") if group_name is None else group_name
+    )
+    clean_quality, _ = normalize_reference_quality(
+        current.get("quality") if quality is None else quality
+    )
+    conn = connect(root / "media.sqlite")
+    try:
+        conn.execute(
+            """
+            UPDATE semantic_references
+            SET group_name=?, quality=?, updated_at=CURRENT_TIMESTAMP
+            WHERE id=?
+            """,
+            (clean_group, clean_quality, int(reference_id)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return get_targeted_semantic_reference(root, reference_id) or {}
 
 
 def targeted_reference_image_path(root: Path, reference_id: int) -> Path:
@@ -812,6 +883,56 @@ def _structured_tags(item: dict) -> list[tuple[str, str]]:
         facet, value = tag.split(":", 1)
         if facet in FACET_THRESHOLDS and value.strip():
             out.append((facet, f"{facet}:{value.strip()}"))
+    return out
+
+
+def _weighted_centroid(
+    vectors: list[list[float]],
+    weights: list[float],
+) -> list[float]:
+    if not vectors or len(vectors) != len(weights):
+        raise SemanticVisionError("Références pondérées invalides.")
+    size = len(vectors[0])
+    if any(len(v) != size for v in vectors):
+        raise SemanticVisionError("Références d’embedding incompatibles.")
+    total_weight = sum(max(0.0, float(w)) for w in weights)
+    if total_weight <= 0:
+        raise SemanticVisionError("Poids de références invalide.")
+    mean = [
+        sum(float(v[i]) * max(0.0, float(w)) for v, w in zip(vectors, weights))
+        / total_weight
+        for i in range(size)
+    ]
+    return _normalize(mean)
+
+
+def _group_reference_centroids(refs: list[dict]) -> list[dict]:
+    grouped: dict[str, list[dict]] = {}
+    for ref in refs:
+        if ref.get("source") == "targeted_reference":
+            key = (
+                f"group:{str(ref.get('group_name')).strip().lower()}"
+                if ref.get("group_name")
+                else f"targeted:{int(ref['reference_id'])}"
+            )
+        else:
+            key = f"legacy:{int(ref['media_id'])}"
+        grouped.setdefault(key, []).append(ref)
+
+    out: list[dict] = []
+    for key, members in grouped.items():
+        vectors = [member["embedding"] for member in members]
+        weights = [
+            float(member.get("quality_weight") or 1.0)
+            for member in members
+        ]
+        centroid = _weighted_centroid(vectors, weights)
+        out.append({
+            "key": key,
+            "embedding": centroid,
+            "members": members,
+            "total_weight": round(sum(weights), 4),
+        })
     return out
 
 
