@@ -286,6 +286,65 @@ Un sélecteur permet de tester un autre rush du catalogue à la même position.
 
 Aucun bouton de ce drawer ne remplace le clip automatiquement.
 
+## Motion & Delivery V0.23.1
+
+Les titres utilisent le schema timeline v5.
+
+### Modèle
+
+Chaque clip `titles` peut contenir :
+
+- `text` ;
+- `titlePreset` ;
+- `fontFamily` ;
+- `fontSize` ;
+- `fontWeight` ;
+- `textAlign` ;
+- `positionX / positionY` ;
+- `boxWidth` ;
+- `color` ;
+- `backgroundColor` ;
+- `backgroundOpacity` ;
+- `opacity` ;
+- `padding` ;
+- `cornerRadius`.
+
+Les coordonnées et dimensions visuelles sont normalisées.
+
+### Validation
+
+Le backend refuse notamment :
+
+- texte vide ;
+- texte > 500 caractères ;
+- position hors 0..1 ;
+- taille hors 12..240 ;
+- graisse hors 100..900 par pas de 100 ;
+- couleurs hors `#RRGGBB` ;
+- opacités hors 0..1.
+
+### Viewer
+
+`ux-titles.js` traduit les unités du canvas vers les dimensions réelles du Viewer.
+
+Les familles sont volontairement génériques afin de ne pas créer une dépendance implicite à une fonte locale non transportable.
+
+### Authoring
+
+L’authoring plan passe au schema v4 et ajoute `title_cuts`.
+
+Tous les paramètres du titre sont préservés.
+
+La prise en charge native Tesseract reste **runtime-schema-dependent**. Même si un type `Text` est détecté dans le schéma, V0.23.1 ne fabrique pas encore une structure de couche à partir d’une hypothèse sur les champs.
+
+Quand la forme native n’est pas confirmée, le manifest contient :
+
+- `title_layers: []` ;
+- `unmaterialized_titles: [...]` ;
+- un warning explicite.
+
+Aucun titre n’est donc silencieusement abandonné.
+
 ## Audio Delivery V0.21
 
 Le **Master Check** contrôle le mix rendu, après sommation des clips audio audibles de la timeline.
