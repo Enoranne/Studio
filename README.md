@@ -108,6 +108,32 @@ Les entrées `characters`, `props`, `decors` et `visual.look` participent aussi 
 
 En cas de conflit bloquant, PISTE Studio ne rejette pas la proposition automatiquement. Il empêche uniquement une acceptation silencieuse : l’utilisateur doit lire la raison puis choisir explicitement **Accepter malgré conflit**. Le Canon, les locks et la Storyline restent inchangés.
 
+
+### Continuité plan précédent / suivant
+
+V0.22.5 replace l’analyse visuelle dans le montage réel.
+
+Sélectionne un clip vidéo de la STORYLINE puis utilise **Continuité de voisinage → Analyser voisins**. PISTE Studio examine :
+
+**plan précédent → plan sélectionné → plan suivant**
+
+pour les facets structurés :
+
+- `character` ;
+- `prop` ;
+- `decor` ;
+- `look`.
+
+Une **RUPTURE POTENTIELLE** n’est signalée que lorsque les deux plans comparés possèdent des tags explicites du même facet mais sans valeur commune.
+
+Si un voisin porte par exemple `prop:fisher` et que le plan évalué n’a aucun tag `prop`, PISTE Studio affiche **À VÉRIFIER** : l’absence de tag n’est jamais interprétée comme preuve que l’objet est absent de l’image.
+
+Le moteur reconnaît aussi les ponts de continuité : si le plan précédent et le suivant partagent `character:malo`, il vérifie si le plan central documente lui aussi cette preuve.
+
+Il est possible de choisir **un autre rush candidat** dans le drawer. PISTE Studio le simule à la position du plan courant et recalcule immédiatement la continuité avec les mêmes voisins, **sans modifier le montage**.
+
+Cela permet de comparer plusieurs prises avant une éventuelle décision de remplacement.
+
 ## V0.21 — Audio Delivery & Master Check
 
 La V0.21 ferme le principal écart audio restant : PISTE Studio peut désormais contrôler **le mix réellement rendu**, après sommation des sources audibles de la timeline.
