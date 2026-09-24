@@ -1024,3 +1024,87 @@ def test_delivery_targets_preflight_export_and_download(tmp_path, monkeypatch):
     assert report.json()["target"]["id"] == "social_vertical_1080x1920"
     assert report.json()["conformance"]["status"] == "PASS"
     assert report.json()["policy"]["no_silent_crop"] is True
+
+
+
+def test_delivery_audio_check_uses_published_version_snapshot(
+    tmp_path,
+    monkeypatch,
+):
+    root = make_project(tmp_path)
+    app = create_app(
+        root,
+        Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html",
+    )
+    client = TestClient(app)
+    media = client.get("/api/state").json()["media"]
+    video_id = next(x["id"] for x in media if x["kind"] == "video")
+    published_timeline = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 10,
+        "storyline": {"mode": "free", "start": 0},
+        "tracks": [
+            {"id": "video", "name": "VIDEO", "kind": "video"},
+        ],
+        "clips": [
+            {
+                "id": "v1",
+                "track": "video",
+                "label": "published",
+                "start": 0,
+                "duration": 5,
+                "sourceStart": 0,
+                "mediaDbId": video_id,
+            },
+        ],
+    }
+    assert client.post(
+        "/api/timeline",
+        json=published_timeline,
+    ).status_code == 200
+    assert client.post(
+        "/api/publish",
+        json={"edit_name": "teaser_30"},
+    ).json()["version"] == "V001"
+
+    changed = {
+        **published_timeline,
+        "clips": [
+            {
+                **published_timeline["clips"][0],
+                "label": "working changed",
+                "duration": 4,
+            }
+        ],
+    }
+    assert client.post("/api/timeline", json=changed).status_code == 200
+
+    seen = {}
+
+    def capture_master_status(root_arg, timeline):
+        seen["label"] = timeline["clips"][0]["label"]
+        seen["duration"] = timeline["clips"][0]["duration"]
+        return {
+            "status": "PASS",
+            "can_export": True,
+            "message": "Audio snapshot checked.",
+            "reasons": [],
+        }
+
+    monkeypatch.setattr(
+        app_module,
+        "master_check_status",
+        capture_master_status,
+    )
+    response = client.post(
+        "/api/delivery/V001/preflight",
+        json={
+            "edit_name": "teaser_30",
+            "target_id": "festival_h264_1080",
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["checks"]["published_version"]["status"] == "STALE"
+    assert seen == {"label": "published", "duration": 5}
+    assert body["checks"]["audio"]["status"] == "PASS"
