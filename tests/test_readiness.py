@@ -4,7 +4,9 @@ import os
 from unittest.mock import patch
 
 import pytest
+from fastapi.testclient import TestClient
 
+from piste_studio.app import create_app
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.project import init_project
@@ -140,3 +142,20 @@ def test_readiness_does_not_guess_between_multiple_edits(_which, tmp_path):
     assert first.edit_name == "teaser_30"
     assert report["selection"]["version"] is None
     assert "Plusieurs montages" in check_by_id(report, "published_version")["message"]
+
+
+@patch("piste_studio.readiness.shutil.which", side_effect=lambda name: f"/usr/bin/{name}")
+def test_readiness_api_exposes_same_report(_which, tmp_path):
+    root = make_project(tmp_path)
+    app = create_app(
+        root,
+        Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html",
+    )
+    client = TestClient(app)
+    response = client.get("/api/readiness")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["version"] == "0.24.0"
+    assert body["project_name"] == "PISTE 0"
+    assert "capabilities" in body
+    assert "next_action" in body
