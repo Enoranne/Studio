@@ -78,6 +78,41 @@ from .audio_intelligence import (
     propose_crossfade,
     propose_ducking,
 )
+from .audio_tracks import (
+    AUDIO_TRACK_INTELLIGENCE_VERSION,
+    AudioTrackIntelligenceError,
+    analyze_audio_tracks,
+    detect_audio_track_tools,
+    list_audio_tracks,
+    select_audio_track,
+)
+from .transcript_engine import (
+    TRANSCRIPT_ENGINE_VERSION,
+    TranscriptEngineError,
+    get_transcript,
+    import_transcript_payload,
+    list_transcripts,
+    transcribe_media,
+)
+from .editorial_agent import (
+    EDITORIAL_AGENT_VERSION,
+    EditorialAgentError,
+    apply_proposal,
+    build_ai_timeline_view,
+    compare_takes,
+    draft_editorial_strategy,
+    get_proposal,
+    list_proposals,
+    propose_edit,
+    reject_proposal,
+    transcript_candidates,
+)
+from .master_critic import (
+    MASTER_CRITIC_VERSION,
+    MasterCriticError,
+    critique_render,
+    list_master_critic_reports,
+)
 from .audio_delivery import (
     AudioDeliveryError,
     AUDIO_DELIVERY_VERSION,
@@ -149,7 +184,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.25.0")
+    app = FastAPI(title="PISTE Studio Local App", version="0.26.0")
     app.state.project_root = root
 
     @app.get("/")
@@ -158,7 +193,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/ui/{filename}")
     def ui_asset(filename: str):
-        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-editorial-vision.js", "ux-semantic-vision.js", "ux-targeted-references.js", "ux-timeline-continuity.js", "ux-titles.js", "ux-audio-mix.js", "ux-audio-intelligence.js", "ux-audio-delivery.js", "ux-delivery.js", "ux-readiness.js", "backend.js"}:
+        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-editorial-vision.js", "ux-semantic-vision.js", "ux-targeted-references.js", "ux-timeline-continuity.js", "ux-titles.js", "ux-audio-mix.js", "ux-audio-intelligence.js", "ux-audio-delivery.js", "ux-delivery.js", "ux-readiness.js", "ux-editorial-agent.js", "backend.js"}:
             raise HTTPException(404, "Ressource UI introuvable.")
         path = ui_file.parent / filename
         if not path.exists():
@@ -168,7 +203,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.25.0", "project_root": str(root)}
+        return {"ok": True, "version": "0.26.0", "project_root": str(root)}
 
     @app.get("/api/production-run")
     def production_run(
@@ -223,7 +258,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.25.0",
+            "app_version": "0.26.0",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},
@@ -622,6 +657,271 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             }
         except SemanticVisionError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/audio/tracks/status")
+    def audio_tracks_status():
+        tools = detect_audio_track_tools()
+        return {
+            "ready": tools.ready,
+            "ffmpeg": bool(tools.ffmpeg),
+            "ffprobe": bool(tools.ffprobe),
+            "version": AUDIO_TRACK_INTELLIGENCE_VERSION,
+        }
+
+    @app.get("/api/audio/{media_id}/tracks")
+    def audio_tracks_list(media_id: int):
+        try:
+            return {
+                "media_id": media_id,
+                "tracks": list_audio_tracks(root, media_id),
+            }
+        except AudioTrackIntelligenceError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/{media_id}/tracks/analyze")
+    def audio_tracks_analyze(
+        media_id: int,
+        payload: dict = Body(default_factory=dict),
+    ):
+        try:
+            return analyze_audio_tracks(
+                root,
+                media_id,
+                force=bool(payload.get("force", False)),
+            )
+        except AudioTrackIntelligenceError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/audio/{media_id}/tracks/select")
+    def audio_tracks_select(media_id: int, payload: dict = Body(...)):
+        try:
+            return select_audio_track(
+                root,
+                media_id,
+                int(payload["track_index"]),
+            )
+        except (
+            AudioTrackIntelligenceError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/transcripts/status")
+    def transcript_status():
+        return {
+            "version": TRANSCRIPT_ENGINE_VERSION,
+            "providers": ["elevenlabs", "import"],
+            "network_default": False,
+            "policy": {
+                "external_upload_requires_explicit_consent": True,
+                "verbatim_fillers_preserved": True,
+            },
+        }
+
+    @app.get("/api/transcripts/{media_id}")
+    def transcript_get(media_id: int):
+        return {
+            "media_id": media_id,
+            "active": get_transcript(root, media_id),
+            "history": list_transcripts(root, media_id),
+        }
+
+    @app.post("/api/transcripts/{media_id}/import")
+    def transcript_import(media_id: int, payload: dict = Body(...)):
+        raw = payload.get("transcript")
+        if not isinstance(raw, dict):
+            raise HTTPException(422, "transcript doit être un objet.")
+        try:
+            return import_transcript_payload(
+                root,
+                media_id,
+                raw,
+                track_index=(
+                    int(payload["track_index"])
+                    if payload.get("track_index") is not None
+                    else None
+                ),
+                provider=str(payload.get("provider") or "import"),
+                model_id=str(payload.get("model_id") or "external"),
+            )
+        except (
+            TranscriptEngineError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/transcripts/{media_id}/transcribe")
+    def transcript_transcribe(media_id: int, payload: dict = Body(default_factory=dict)):
+        try:
+            return transcribe_media(
+                root,
+                media_id,
+                track_index=(
+                    int(payload["track_index"])
+                    if payload.get("track_index") is not None
+                    else None
+                ),
+                provider=str(payload.get("provider") or "elevenlabs"),
+                model_id=str(payload.get("model_id") or "scribe_v2"),
+                language_code=payload.get("language_code"),
+                num_speakers=(
+                    int(payload["num_speakers"])
+                    if payload.get("num_speakers") is not None
+                    else None
+                ),
+                force=bool(payload.get("force", False)),
+                allow_network=bool(payload.get("allow_network", False)),
+            )
+        except (TranscriptEngineError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/editorial-agent/status")
+    def editorial_agent_status():
+        return {
+            "version": EDITORIAL_AGENT_VERSION,
+            "master_critic_version": MASTER_CRITIC_VERSION,
+            "policy": {
+                "suggestions_only_until_apply": True,
+                "human_validation_required": True,
+                "storyline_transactional_apply": True,
+                "checkpoint_before_apply": True,
+            },
+        }
+
+    @app.get("/api/editorial-agent/candidates/{media_id}")
+    def editorial_agent_candidates(media_id: int):
+        try:
+            return transcript_candidates(root, media_id)
+        except EditorialAgentError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/editorial-agent/timeline-view/{media_id}")
+    def editorial_agent_timeline_view(media_id: int):
+        try:
+            return build_ai_timeline_view(root, media_id)
+        except EditorialAgentError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/compare-takes")
+    def editorial_agent_compare(payload: dict = Body(...)):
+        try:
+            return compare_takes(
+                root,
+                [int(x) for x in payload.get("media_ids") or []],
+                threshold=float(payload.get("threshold", 0.72)),
+                max_pairs=int(payload.get("max_pairs", 40)),
+            )
+        except (EditorialAgentError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/strategy")
+    def editorial_agent_strategy(payload: dict = Body(...)):
+        try:
+            return draft_editorial_strategy(
+                root,
+                edit_name=str(payload.get("edit_name") or "teaser_30"),
+                media_ids=[int(x) for x in payload.get("media_ids") or []],
+                target_seconds=float(payload.get("target_seconds", 45.0)),
+                brief=str(payload.get("brief") or ""),
+                max_spoiler=(
+                    int(payload["max_spoiler"])
+                    if payload.get("max_spoiler") is not None
+                    else None
+                ),
+            )
+        except (EditorialAgentError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/editorial-agent/proposals")
+    def editorial_agent_proposals(
+        edit_name: str | None = None,
+        status: str | None = None,
+    ):
+        return {
+            "proposals": list_proposals(
+                root,
+                edit_name=edit_name,
+                status=status,
+            )
+        }
+
+    @app.get("/api/editorial-agent/proposals/{proposal_id}")
+    def editorial_agent_proposal(proposal_id: int):
+        try:
+            return get_proposal(root, proposal_id)
+        except EditorialAgentError as exc:
+            raise HTTPException(404, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/proposals")
+    def editorial_agent_propose(payload: dict = Body(...)):
+        try:
+            return propose_edit(
+                root,
+                edit_name=str(payload.get("edit_name") or "teaser_30"),
+                media_ids=[int(x) for x in payload.get("media_ids") or []],
+                target_seconds=float(payload.get("target_seconds", 45.0)),
+                brief=str(payload.get("brief") or ""),
+                max_spoiler=(
+                    int(payload["max_spoiler"])
+                    if payload.get("max_spoiler") is not None
+                    else None
+                ),
+            )
+        except (EditorialAgentError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/proposals/{proposal_id}/apply")
+    def editorial_agent_apply(
+        proposal_id: int,
+        payload: dict = Body(default_factory=dict),
+    ):
+        try:
+            return apply_proposal(
+                root,
+                proposal_id,
+                confirm=bool(payload.get("confirm", False)),
+                explicit_soft_unlock=bool(
+                    payload.get("explicit_soft_unlock", False)
+                ),
+            )
+        except EditorialAgentError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/proposals/{proposal_id}/reject")
+    def editorial_agent_reject(proposal_id: int):
+        try:
+            return reject_proposal(root, proposal_id)
+        except EditorialAgentError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/master-critic")
+    def editorial_agent_master_critic(payload: dict = Body(...)):
+        try:
+            return critique_render(
+                root,
+                edit_name=str(payload.get("edit_name") or "teaser_30"),
+                source_path=str(payload["source_path"]),
+                version_label=(
+                    str(payload["version_label"])
+                    if payload.get("version_label")
+                    else None
+                ),
+            )
+        except (MasterCriticError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/editorial-agent/master-critic")
+    def editorial_agent_master_critic_list(edit_name: str | None = None):
+        return {
+            "reports": list_master_critic_reports(
+                root,
+                edit_name=edit_name,
+            )
+        }
 
     @app.get("/api/audio/intelligence/status")
     def audio_intelligence_status():
