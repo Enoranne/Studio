@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "launcher",
+  "description": "Permissions minimales du lanceur PISTE Studio.",
+  "windows": ["launcher"],
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "core:webview:allow-create-webview-window",
+    "core:window:allow-hide"
+  ]
+}
