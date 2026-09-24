@@ -105,3 +105,15 @@ def test_v022_ux_contains_reference_group_quality_patterns():
     assert "/api/vision/reference-groups" in ux
     assert "reference_group_count" in semantic
     assert "quality_distribution" in semantic
+
+
+def test_v022_ux_contains_canon_conflict_patterns():
+    semantic = (UI / "ux-semantic-vision.js").read_text(encoding="utf-8")
+    backend = (UI / "backend.js").read_text(encoding="utf-8")
+    assert "CONFLIT CANON" in semantic
+    assert "CANON ALIGNÉ" in semantic
+    assert "NON VÉRIFIÉ" in semantic
+    assert "Accepter malgré conflit" in semantic
+    assert "requires_explicit_acknowledgement" in semantic
+    assert "Règles sémantiques" in backend
+    assert "Facets fermés" in backend
