@@ -1,3 +1,22 @@
+# V0.28.0 — UX Navigation & Context System
+
+- design tokens contextuels pour Video, Audio, Transcript, Editorial/AI, Delivery et Projet ;
+- contexte actif visible par libellé et accent discret ;
+- couleurs toujours secondaires au texte et neutralisables ;
+- aide contextuelle Guidée / Minimale / Désactivée, persistée localement ;
+- micro-explications orientées conséquence des actions ;
+- palette `Cmd/Ctrl+K` transformée en recherche universelle ;
+- catégories Actions / Aller à / Aide / Ressources ;
+- barre de recherche visible dans la sous-navigation ;
+- FAQ interne et fiches ressources intégrées ;
+- actions rapides **UTILE ICI** selon le domaine actif ;
+- repères ANALYSE / PROPOSITION / APPLICATION / RENDU dans le footer ;
+- préférences Confort / Compact, couleurs contextuelles et actions contextuelles ;
+- aucun impact sur Canon, Storyline, médias ou logique de rendu ;
+- version Python/FastAPI/Tauri alignée sur **0.28.0**.
+
+---
+
 # V0.27.0 — Voice-to-Visual Editorial Bridge
 
 - VO/audio séparée utilisable comme source éditoriale ;
