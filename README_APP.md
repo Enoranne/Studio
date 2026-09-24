@@ -513,7 +513,11 @@ est affiché.
 
 #### Audio
 
-Le statut du Master Check V0.21 est intégré sans être transformé :
+Le statut du Master Check V0.21 est intégré sans être transformé.
+
+Pour un delivery de `Vxxx`, le fingerprint audio est vérifié contre le **snapshot timeline publié Vxxx**, pas contre un working cut éventuellement modifié après publication.
+
+Statuts :
 
 - PASS ;
 - WARN ;
@@ -602,6 +606,8 @@ Après transcodage, ffprobe enregistre :
 - nombre de canaux ;
 - durée ;
 - taille du fichier.
+
+PISTE compare ensuite le résultat réel à la cible annoncée et affiche une **CONFORMITÉ PASS/WARN**. La comparaison porte notamment sur codec vidéo, dimensions, pixel format, fps et caractéristiques audio. Une piste audio attendue mais absente déclenche un WARN.
 
 ### Stockage
 
