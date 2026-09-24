@@ -730,7 +730,6 @@ def test_title_overlay_model_persists_and_normalizes(tmp_path):
     assert title["backgroundColor"] == "#120F0A"
     assert title["backgroundOpacity"] == 0.42
     assert title["opacity"] == 0.9
-    assert title["schema_version"] if False else True
 
 
 def test_title_overlay_validation_rejects_invalid_style(tmp_path):
