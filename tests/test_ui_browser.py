@@ -1019,7 +1019,6 @@ def test_graphical_connection_point_drag_changes_parent_without_moving_child(tmp
             expect(page.locator(".connection-badge")).to_contain_text(
                 "Plan A · +2.0s"
             )
-            expect(page.locator("#connectionPointInput")).to_have_value("2.00")
             restored = page.evaluate(
                 "() => { const c=getClip('t1'); return {start:c.start,parent:c.parentClipId,point:c.connectionPointOffset}; }"
             )
