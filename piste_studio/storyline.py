@@ -491,10 +491,34 @@ def validate_locked_change(
             )
         return float(parent.get("start", 0)) + float(point)
 
+    def presence_operation(clip: dict) -> str:
+        track = str(clip.get("track") or "")
+        if track == "video":
+            return "reorder"
+        if track == "titles":
+            return "graphics"
+        return "audio_change"
+
+    def validate_presence_change(cid: str, clip: dict) -> None:
+        start = float(clip.get("start", 0))
+        end = start + float(clip.get("duration", 0))
+        if end <= start:
+            return
+        decision = check_operation(
+            root,
+            operation=presence_operation(clip),
+            start=start,
+            end=end,
+            target="timeline",
+        )
+        if not decision.allowed:
+            raise StorylineError(f"{cid}: {decision.reason}")
+
     for new in after.get("clips", []):
         cid = str(new.get("id"))
         old = before_by_id.get(cid)
         if old is None:
+            validate_presence_change(cid, new)
             continue
 
         changed_start = abs(
@@ -591,3 +615,8 @@ def validate_locked_change(
             raise StorylineError(
                 f"{cid}: {decision.reason}"
             )
+
+
+    for cid, old in before_by_id.items():
+        if cid not in after_by_id:
+            validate_presence_change(cid, old)
