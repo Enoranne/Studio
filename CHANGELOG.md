@@ -5,7 +5,7 @@
 - Storyline reflow, trim, reorder et connexions calculés sur ticks entiers ;
 - validateur timeline aligné sur le même timebase ;
 - surface canonique `apply_storyline_operation` pour move, trim, connexion, attach/detach, insert, remove et reflow ;
-- endpoint local `POST /api/storyline/operate` avec validation avant/après et contrôle des locks ;
+- endpoint local `POST /api/storyline/operate` avec validation avant/après, contrôle des locks et checkpoint atomique optionnel ;
 - gestes magnétiques principaux délégués au backend lorsqu'il est connecté ;
 - JavaScript conservé pour la preview immédiate et le fallback navigateur autonome ;
 - insert/remove Storyline soumis aux HARD/SOFT LOCKS via la sémantique `reorder` existante ;
