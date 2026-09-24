@@ -606,3 +606,60 @@ Chaque fichier livré doit pouvoir être relié à :
 - sa version publiée.
 
 Le rapport JSON n’est pas un log interne jetable : c’est une trace de delivery.
+
+
+## 62. Les presets intégrés sont des points de départ
+
+Un réglage fourni par l’application ne doit pas dériver silencieusement au fil des projets.
+
+Les presets intégrés sont donc immuables.
+
+La personnalisation passe par une duplication explicite.
+
+## 63. Le défaut appartient au projet
+
+Le preset sélectionné par défaut reflète un contexte de production.
+
+Il est stocké avec le projet plutôt que comme préférence invisible de l’application.
+
+Cela rend le comportement reproductible lorsqu’un projet change de machine.
+
+## 64. La portabilité passe par un document explicite
+
+La réutilisation inter-projets ne doit pas dépendre d’un état global caché.
+
+Exporter/importer un preset JSON :
+- rend la transmission visible ;
+- permet l’archivage avec une fiche technique ;
+- évite qu’une préférence utilisateur modifie tous les projets sans intention.
+
+## 65. Un preset technique n’est pas un consentement éditorial
+
+Un preset peut mémoriser FILL comme cadrage préféré.
+
+Il ne doit jamais mémoriser l’autorisation de perdre du cadre.
+
+Le consentement au crop reste demandé à chaque export.
+
+## 66. Le serveur normalise les combinaisons de codec
+
+L’interface peut proposer des contrôles simples.
+
+La cohérence codec/conteneur/pixel-format/audio doit être imposée par le backend, pas laissée à la bonne volonté du formulaire.
+
+## 67. NATIVE dépend de la source réelle
+
+`native` signifie aucune adaptation de canvas.
+
+Il ne peut être proposé que si le canvas source Tesseract et la sortie demandée correspondent réellement.
+
+Sinon PISTE doit utiliser un mode de transformation explicite.
+
+## 68. L’ID d’un preset est stable, son nom ne l’est pas
+
+Renommer un preset ne doit pas casser :
+- le défaut projet ;
+- les références de configuration ;
+- les fichiers de rapport.
+
+Le label sert à l’humain ; l’ID sert à la stabilité technique.
