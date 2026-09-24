@@ -494,7 +494,10 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         return {"ok": True}
 
     @app.get("/api/vision/proposals/{media_id}")
-    def semantic_vision_proposals(media_id: int):
+    def semantic_vision_proposals(
+        media_id: int,
+        edit_name: str = "teaser_30",
+    ):
         try:
             return {
                 "media_id": media_id,
@@ -502,8 +505,13 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                     "human_validation_required": True,
                     "automatic_tag_write": False,
                     "automatic_storyline_change": False,
+                    "canon_conflicts_require_acknowledgement": True,
                 },
-                "proposals": list_semantic_proposals(root, media_id),
+                "proposals": list_semantic_proposals(
+                    root,
+                    media_id,
+                    edit_name=edit_name,
+                ),
             }
         except SemanticVisionError as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -520,6 +528,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 reset_rejected=bool(
                     payload.get("reset_rejected", False)
                 ),
+                edit_name=str(payload.get("edit_name") or "teaser_30"),
             )
         except SemanticVisionError as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -537,6 +546,10 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                     root,
                     proposal_id,
                     accept=bool(payload["accept"]),
+                    acknowledge_canon_conflict=bool(
+                        payload.get("acknowledge_canon_conflict", False)
+                    ),
+                    edit_name=str(payload.get("edit_name") or "teaser_30"),
                 ),
                 "media": _media_payload(root),
             }
