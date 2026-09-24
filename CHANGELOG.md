@@ -320,6 +320,71 @@
 
 ## V0.23 — Motion & Delivery
 
+### V0.23.4 — Exports festival / social
+
+- Nouveau moteur `piste_studio/delivery.py`.
+- Nouveau **Delivery Center** : le bouton **Export** n’exécute plus directement un export 1080p générique.
+- Cibles intégrées de référence :
+  - Festival · ProRes 422 HQ · 1080p ;
+  - Festival · H.264 haute qualité · 1080p ;
+  - Online · H.264 · 1080p ;
+  - Social · Vertical · 9:16 ;
+  - Social · Carré · 1:1.
+- Les cibles sont explicitement présentées comme des repères techniques, jamais comme des normes universelles.
+- Une fiche technique fournie par un festival/diffuseur reste prioritaire.
+- Chaîne de sortie en deux étages :
+  1. Tesseract rend la version publiée ;
+  2. ffmpeg produit le livrable final demandé.
+- Préflight avant export :
+  - fraîcheur de la version publiée par empreinte de timeline ;
+  - état Audio Master Check ;
+  - état de matérialisation des titres/overlays ;
+  - politique de cadrage ;
+  - estimation de crop lorsque calculable.
+- Les titres conservés dans `unmaterialized_titles` déclenchent un avertissement explicite : le rendu Tesseract peut ne pas les contenir.
+- FIT social :
+  - conserve toute l’image ;
+  - adapte le canvas ;
+  - peut ajouter du padding.
+- FILL/CROP social :
+  - recadrage centré ;
+  - jamais activé silencieusement ;
+  - autorisation explicite obligatoire ;
+  - estimation de la portion de cadre perdue.
+- Pour un master 16:9 vers 9:16, l’estimation de crop horizontal est d’environ **68,4 %**.
+- Transcodage H.264 :
+  - High Profile ;
+  - yuv420p ;
+  - débit cible par livrable ;
+  - GOP court ;
+  - AAC stéréo 48 kHz ;
+  - Fast Start MP4.
+- Festival ProRes :
+  - ProRes 422 HQ via `prores_ks` profile 3 ;
+  - yuv422p10le ;
+  - PCM 24-bit / 48 kHz stéréo.
+- Inspection finale ffprobe :
+  - codec vidéo ;
+  - dimensions ;
+  - pixel format ;
+  - fps ;
+  - informations couleur disponibles ;
+  - codec/sample-rate/canaux audio ;
+  - durée et taille fichier.
+- Livrables stockés sous `exports/<edit>/<version>/`.
+- Rapports JSON sous `reports/delivery/`.
+- API :
+  - `GET /api/delivery/targets` ;
+  - `POST /api/delivery/{version}/preflight` ;
+  - `POST /api/delivery/{version}/export` ;
+  - téléchargement du livrable ;
+  - téléchargement du rapport.
+- Command Palette : **Delivery · Festival / social**.
+- Test ffmpeg réel d’un 16:9 vers un fichier vertical 1080×1920.
+- Test API complet préflight → export → fichier → rapport.
+- Test Chromium : FIT, blocage FILL, consentement crop, estimation, export et liens.
+- CI de référence : **135 tests passés / 135**.
+
 ### V0.23.3 — Point de connexion graphique déplaçable
 
 - Timeline schema **v6**.
