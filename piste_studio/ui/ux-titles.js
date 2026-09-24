@@ -135,6 +135,10 @@ renderInspector=function(){
   if(!c||c.track!=='titles')return;
   normalizeTitleClip(c);
   const root=$('#inspector');
+  [...root.querySelectorAll('.inspector-section')].forEach(section=>{
+    const title=section.querySelector('.inspector-section-title')?.textContent?.trim();
+    if(title==='TEXTE')section.remove();
+  });
   const action=root.querySelector('.inspector-section:last-child');
   if(action)action.insertAdjacentHTML('beforebegin',titleInspectorMarkup(c));
   else root.insertAdjacentHTML('beforeend',titleInspectorMarkup(c));
