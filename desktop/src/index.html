@@ -10,16 +10,28 @@
   <main class="launcher">
     <section class="hero">
       <div class="mark"><span></span></div>
-      <p class="eyebrow">PISTE STUDIO · DESKTOP</p>
-      <h1>Ouvrir un projet</h1>
-      <p class="intro">Choisis le dossier d’un projet PISTE Studio. Le moteur local démarre automatiquement, sans Terminal.</p>
-      <button id="openProject" class="primary">Choisir un projet…</button>
-      <p id="status" class="status">Prêt.</p>
+      <p class="eyebrow">PISTE STUDIO · DESKTOP · V0.25</p>
+      <h1>Commencer</h1>
+      <p class="intro">Ouvre un projet PISTE Studio existant ou crée-en un nouveau. Le moteur local démarre automatiquement, sans Terminal.</p>
+      <div class="actions">
+        <button id="openProject" class="primary">Ouvrir un projet…</button>
+        <button id="newProject" class="secondary">Nouveau projet…</button>
+      </div>
+      <form id="createPanel" class="create-panel" hidden>
+        <label for="projectName">Nom du projet</label>
+        <input id="projectName" name="projectName" autocomplete="off" maxlength="120" placeholder="Mon film">
+        <p class="hint">PISTE Studio créera un dossier portant ce nom dans l’emplacement que tu choisiras.</p>
+        <div class="actions compact">
+          <button id="createProject" class="primary" type="submit">Choisir l’emplacement…</button>
+          <button id="cancelCreate" class="ghost" type="button">Annuler</button>
+        </div>
+      </form>
+      <p id="status" class="status" aria-live="polite">Prêt.</p>
     </section>
     <section class="notes">
       <div><b>LOCAL</b><span>Les médias restent sur cette machine.</span></div>
       <div><b>MASTER</b><span>Le master protégé n’est jamais modifié.</span></div>
-      <div><b>TESSERACT</b><span>Le moteur Tesseract reste installé séparément.</span></div>
+      <div><b>TESSERACT</b><span>Le moteur Tesseract reste installé séparément et contrôlé par Readiness.</span></div>
     </section>
   </main>
   <script src="./launcher.js"></script>

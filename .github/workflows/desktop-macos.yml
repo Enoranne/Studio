@@ -73,7 +73,8 @@ jobs:
           "$SIDECAR" --help >/dev/null
 
           PROJECT="$RUNNER_TEMP/piste-desktop-smoke"
-          python3 -m piste_studio.cli init --root "$PROJECT" --name "Desktop Smoke"
+          "$SIDECAR" --init-project --root "$PROJECT" --name "Desktop Smoke"
+          test -f "$PROJECT/project.yaml"
           PORT="$(python3 - <<'PY'
           import socket
           s=socket.socket()
@@ -103,6 +104,8 @@ jobs:
 
           cat "$RUNNER_TEMP/piste-health.json"
           grep -q '"ok":true' "$RUNNER_TEMP/piste-health.json"
+          grep -q '"version":"0.25.0"' "$RUNNER_TEMP/piste-health.json"
+          grep -q '"project_root":' "$RUNNER_TEMP/piste-health.json"
           kill "$PID"
           wait "$PID" 2>/dev/null || true
           trap - EXIT
