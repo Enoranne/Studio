@@ -1,3 +1,21 @@
+# V0.29.0 — Timeline Core Reliability
+
+- timebase interne entier à 1 MHz pour les opérations temporelles critiques ;
+- conversion déterministe secondes/ticks et calcul rationnel des positions de frames ;
+- Storyline reflow, trim, reorder et connexions calculés sur ticks entiers ;
+- validateur timeline aligné sur le même timebase ;
+- surface canonique `apply_storyline_operation` pour move, trim, connexion, attach/detach, insert, remove et reflow ;
+- endpoint local `POST /api/storyline/operate` avec validation avant/après et contrôle des locks ;
+- gestes magnétiques principaux délégués au backend lorsqu'il est connecté ;
+- JavaScript conservé pour la preview immédiate et le fallback navigateur autonome ;
+- insert/remove Storyline soumis aux HARD/SOFT LOCKS via la sémantique `reorder` existante ;
+- format JSON public toujours en secondes et timeline schema v6 inchangé ;
+- version Python/FastAPI/Tauri alignée sur **0.29.0** ;
+- implémentation originale PISTE Studio inspirée par les conclusions d'audit, sans copie de code tiers.
+
+V0.29 renforce la précision et l'autorité du kernel sans changer le modèle créatif : la Storyline, les connexions, les locks et la validation humaine restent les règles de référence.
+
+---
 # V0.28.0 — UX Navigation & Context System
 
 - design tokens contextuels pour Video, Audio, Transcript, Editorial/AI, Delivery et Projet ;
