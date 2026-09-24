@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PISTE Studio — Local App v0.24.1</title>
+<title>PISTE Studio — Local App v0.26.0</title>
 <link rel="stylesheet" href="/ui/style.css" />
 </head>
 <body class="workspace-edit">
@@ -11,7 +11,7 @@
   <header class="appbar">
     <div class="brand-row">
       <div class="brand-mark"><span></span></div>
-      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.24.1 · LOCAL</small></div>
+      <div class="brand-copy"><strong>PISTE Studio</strong><small>v0.26.0 · LOCAL</small></div>
       <div class="project-pill"><span id="projectName">PISTE 0</span><small id="projectSubtitle">BONUS TRACK (REC)</small></div>
     </div>
     <div class="workspace-switch" role="group" aria-label="Espace de travail">
@@ -45,6 +45,7 @@
       <button class="btn tiny" id="bindAudioBtn">Audio</button>
       <button class="btn tiny" onclick="previewTesseract()">Preview</button>
       <button class="btn tiny" id="readinessBtn" onclick="openProductionReadiness()">Readiness</button>
+      <button class="btn tiny accent" id="editorialAgentBtn" onclick="openEditorialAgent()">Agent</button>
       <button class="btn tiny" onclick="openDeliveryCenter()">Export</button>
       <input id="multiFileInput" type="file" accept="video/*" multiple hidden>
       <input id="singleFileInput" type="file" accept="video/*" hidden>
@@ -159,6 +160,10 @@
   <div class="editorial-drawer-head"><div><small>EDITORIAL SOURCE SELECTOR</small><strong id="editorialDrawerTitle">Alternatives</strong></div><button class="pane-close" onclick="closeEditorialDrawer()">×</button></div>
   <div class="editorial-drawer-body" id="editorialDrawerBody"></div>
 </aside>
+<aside class="editorial-drawer agent-drawer" id="editorialAgentDrawer" hidden>
+  <div class="editorial-drawer-head"><div><small>V0.26</small><strong>EDITORIAL AGENT</strong></div><button class="pane-close" onclick="closeEditorialAgent()">×</button></div>
+  <div class="editorial-drawer-body" id="editorialAgentBody"></div>
+</aside>
 <div class="marker-composer" id="markerComposer" hidden>
   <div class="popover-title">NOUVEAU MARQUEUR</div>
   <input id="markerLabel" placeholder="Ex. respiration à préserver">
@@ -187,5 +192,6 @@
 <script src="/ui/ux-readiness.js"></script>
 <script src="/ui/ux-timeline-continuity.js"></script>
 <script src="/ui/ux-titles.js"></script>
+<script src="/ui/ux-editorial-agent.js"></script>
 </body>
 </html>
