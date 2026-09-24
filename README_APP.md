@@ -1,4 +1,4 @@
-# PISTE Studio Local App — v0.23
+# PISTE Studio Local App — v0.24
 
 L’application locale relie l’interface de montage au moteur PISTE Studio via FastAPI.
 
@@ -947,3 +947,26 @@ La CI installe désormais ffmpeg explicitement et exécute un test réel qui :
 5. vérifie le rapport et l’empreinte du mix.
 
 Ce test n’est pas simulé et n’est pas skipped dans la CI de référence V0.21.
+
+
+## Production Readiness V0.24.0
+
+Endpoint :
+
+`GET /api/readiness`
+
+Paramètres optionnels :
+
+- `edit_name` ;
+- `version`.
+
+Le diagnostic agrège l'état du projet, des médias, de ffmpeg/ffprobe, de Tesseract, de la version timeline publiée, du plan d'authoring, du bootstrap, de l'authoring exécuté et du rendu source.
+
+Capacités exposées :
+
+- `can_start_editing` ;
+- `can_bootstrap` ;
+- `can_author` ;
+- `can_deliver`.
+
+Le champ `next_action` donne l'étape suivante recommandée sans modifier le projet.
