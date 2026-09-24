@@ -227,3 +227,13 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .delivery-conformance.delivery-warn{border-left-color:var(--warn)}
 .delivery-conformance.delivery-warn b{color:var(--warn)}
 .delivery-conformance-reason{display:block;font-size:6.2px;color:#a99877;font-style:normal;margin:2px 0}
+
+
+/* V0.23.5 — Delivery presets */
+.delivery-preset-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.delivery-preset-head>em{font-style:normal;font-size:5.8px;letter-spacing:.7px;color:#7d8790;border:1px solid #303840;border-radius:10px;padding:2px 5px}
+.delivery-preset-actions{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 10px}
+.delivery-preset-editor{margin:8px 0 12px;padding:9px;border:1px solid #2b333b;border-radius:7px;background:#0a0e12}
+.delivery-preset-editor .form-grid{margin-top:6px}
+.delivery-preset-editor .row input,.delivery-preset-editor .row select{min-width:0}
+.delivery-preset-editor .suggestion-actions{margin-top:8px}
