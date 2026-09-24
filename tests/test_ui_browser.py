@@ -1207,7 +1207,9 @@ def test_delivery_center_vertical_crop_preflight_and_export(
                 page.get_by_role("link", name="Rapport JSON")
             ).to_be_visible()
 
-            page.get_by_role("button", name="Dupliquer").click()
+            page.locator("#editorialDrawerBody").get_by_role(
+                "button", name="Dupliquer"
+            ).click()
             expect(page.locator(".delivery-preset-editor")).to_be_visible()
             custom_id = page.locator("#deliveryTarget").input_value()
             assert custom_id.startswith("custom_")
