@@ -2,6 +2,28 @@
 
 ## V0.22 — Editorial Vision Refinement
 
+### V0.22.2 — Références visuelles ciblées
+
+- Nouvelle table SQLite `semantic_references`.
+- Références explicites attachées à un média, un timecode et un tag structuré.
+- Support d’un frame entier ou d’une zone ROI normalisée.
+- Extraction locale du frame/crop avec ffmpeg.
+- Calcul d’embedding sur la zone extraite, pas nécessairement sur le rush complet.
+- Une référence ciblée peut porter `character:`, `prop:`, `decor:` ou `look:` sans ajouter ce tag globalement au média source.
+- Déduplication des références strictement identiques.
+- Les propositions de continuité combinent références ciblées et anciens profils de rush entier.
+- Preuves enrichies : ids des références ciblées, nombre ciblé/legacy, meilleure référence.
+- Auto-référence interdite : une zone d’un rush ne peut pas servir à lui proposer son propre tag.
+- API CRUD pour créer, lister, afficher et supprimer les références ciblées.
+- UI **Référence ciblée** dans SEMANTIC VISION.
+- Command Palette : **Vision · Référence ciblée**.
+- Sélection frame affiché, facet, valeur, timecode et ROI en pourcentages.
+- Aperçu du crop extrait dans la liste de références.
+- Aucun tag global ni changement de Storyline automatique.
+- Test ffmpeg réel d’extraction ROI.
+- Test Chromium de création `prop:fisher` sur une zone et vérification de l’absence de tag global.
+- CI de référence : **91 tests passés / 91**.
+
 ### V0.22.1 — Fenêtres IN/OUT issues de ruptures visuelles
 
 - Détection locale de changements de scène via ffmpeg `select(scene)`.
