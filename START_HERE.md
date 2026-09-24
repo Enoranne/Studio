@@ -219,3 +219,17 @@ Quand **Proposer continuité** affiche un tag :
 Ne transforme pas un facet en facet fermé simplement pour réduire les propositions : un facet fermé signifie que sa liste autorisée est réellement exhaustive.
 
 Pour un conflit, lis la source affichée avant d’utiliser **Accepter malgré conflit**. Cette action ne modifie pas le Canon ; elle documente uniquement une décision humaine consciente d’accepter le tag malgré le signal.
+
+
+## Continuité de voisinage V0.22.5
+
+1. Clique un clip vidéo de la STORYLINE.
+2. Dans l’Inspector, ouvre **Continuité de voisinage → Analyser voisins**.
+3. Lis le triptyque **Précédent / Plan / Suivant**.
+4. Examine les signaux par `character / prop / decor / look`.
+5. **RUPTURE POTENTIELLE** signifie que des tags explicites se contredisent.
+6. **À VÉRIFIER** signifie seulement qu’une preuve structurée manque.
+7. Pour comparer une autre prise, choisis-la dans **Tester un autre rush à cette position**.
+8. Clique **Tester ce candidat**.
+
+Le candidat n’est pas inséré dans le montage. Le résultat sert uniquement à éclairer une décision de remplacement ultérieure.
