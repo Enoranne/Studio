@@ -11,6 +11,7 @@ from piste_studio.project import init_project
 from piste_studio.media_intelligence import _write_analysis
 from piste_studio.semantic_vision import store_semantic_profile, store_targeted_semantic_reference
 from piste_studio.audio_intelligence import _write_analysis as _write_audio_loudness
+from piste_studio.timeline import save_timeline
 
 
 def make_project(tmp_path: Path) -> Path:
@@ -614,3 +615,65 @@ def test_targeted_semantic_reference_api(tmp_path, monkeypatch):
     assert client.get(
         f"/api/vision/references?media_id={video['id']}"
     ).json()["references"] == []
+
+
+
+def test_timeline_continuity_api_can_simulate_candidate_without_editing(tmp_path):
+    root = tmp_path / "ContinuityAPI"
+    init_project(root, "Continuity API")
+    for name in ("prev.mp4", "target.mp4", "next.mp4", "candidate.mp4"):
+        (root / "rushes" / name).write_bytes(name.encode("utf-8"))
+    scan_media(root)
+    rows = {
+        Path(row["relative_path"]).name: row
+        for row in fetch_media_with_metadata(root)
+        if row["kind"] == "video"
+    }
+    for name in ("prev.mp4", "target.mp4", "next.mp4"):
+        set_media_metadata(
+            root,
+            rows[name]["id"],
+            title=name,
+            duration_seconds=8,
+            tags=["character:malo", "prop:fisher"],
+        )
+    set_media_metadata(
+        root,
+        rows["candidate.mp4"]["id"],
+        title="candidate",
+        duration_seconds=8,
+        tags=["character:ronan", "prop:radio"],
+    )
+    save_timeline(
+        root,
+        {
+            "edit_name": "teaser_30",
+            "duration_seconds": 20,
+            "tracks": [{"id": "video", "name": "VIDEO", "kind": "video"}],
+            "clips": [
+                {"id": "v1", "track": "video", "start": 0, "duration": 4, "sourceStart": 0, "mediaDbId": rows["prev.mp4"]["id"]},
+                {"id": "v2", "track": "video", "start": 4, "duration": 4, "sourceStart": 0, "mediaDbId": rows["target.mp4"]["id"]},
+                {"id": "v3", "track": "video", "start": 8, "duration": 4, "sourceStart": 0, "mediaDbId": rows["next.mp4"]["id"]},
+            ],
+        },
+    )
+    before = (root / "edits" / "teaser_30" / "working" / "timeline.json").read_text(encoding="utf-8")
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    response = client.get(
+        "/api/vision/timeline-continuity",
+        params={
+            "edit_name": "teaser_30",
+            "clip_id": "v2",
+            "candidate_media_id": rows["candidate.mp4"]["id"],
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["mode"] == "CANDIDATE"
+    assert body["status"] == "RUPTURE"
+    assert body["previous"]["clip_id"] == "v1"
+    assert body["next"]["clip_id"] == "v3"
+    assert body["policy"]["automatic_edit"] is False
+    after = (root / "edits" / "teaser_30" / "working" / "timeline.json").read_text(encoding="utf-8")
+    assert before == after
