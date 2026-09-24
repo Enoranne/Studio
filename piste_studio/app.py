@@ -87,13 +87,21 @@ from .audio_delivery import (
 from .delivery import (
     DeliveryError,
     DELIVERY_VERSION,
+    all_delivery_targets,
+    create_project_delivery_preset,
+    delete_project_delivery_preset,
     delivery_file_path,
     delivery_report_path,
-    delivery_targets,
+    duplicate_delivery_preset,
+    export_delivery_preset,
+    get_default_delivery_preset_id,
+    import_delivery_preset,
     load_published_timeline,
     preflight_delivery,
     render_delivery_variant,
     resolve_delivery_target,
+    set_default_delivery_preset,
+    update_project_delivery_preset,
     write_delivery_report,
 )
 
@@ -941,12 +949,109 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     def get_delivery_targets():
         return {
             "version": DELIVERY_VERSION,
-            "targets": delivery_targets(),
+            "targets": all_delivery_targets(root),
+            "default_preset_id": get_default_delivery_preset_id(root),
             "policy": {
                 "reference_targets_not_universal_specs": True,
                 "festival_sheet_overrides_builtin_target": True,
                 "no_silent_crop": True,
             },
+        }
+
+    @app.post("/api/delivery/presets")
+    def create_delivery_preset(payload: dict = Body(default_factory=dict)):
+        try:
+            preset = create_project_delivery_preset(root, payload)
+        except (DeliveryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {
+            "ok": True,
+            "preset": preset,
+            "targets": all_delivery_targets(root),
+            "default_preset_id": get_default_delivery_preset_id(root),
+        }
+
+    @app.patch("/api/delivery/presets/{preset_id}")
+    def update_delivery_preset(
+        preset_id: str,
+        payload: dict = Body(default_factory=dict),
+    ):
+        try:
+            preset = update_project_delivery_preset(
+                root,
+                preset_id,
+                payload,
+            )
+        except (DeliveryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {
+            "ok": True,
+            "preset": preset,
+            "targets": all_delivery_targets(root),
+            "default_preset_id": get_default_delivery_preset_id(root),
+        }
+
+    @app.post("/api/delivery/presets/{preset_id}/duplicate")
+    def duplicate_delivery_preset_route(
+        preset_id: str,
+        payload: dict = Body(default_factory=dict),
+    ):
+        try:
+            preset = duplicate_delivery_preset(
+                root,
+                preset_id,
+                label=payload.get("label"),
+            )
+        except (DeliveryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {
+            "ok": True,
+            "preset": preset,
+            "targets": all_delivery_targets(root),
+            "default_preset_id": get_default_delivery_preset_id(root),
+        }
+
+    @app.delete("/api/delivery/presets/{preset_id}")
+    def delete_delivery_preset(preset_id: str):
+        try:
+            delete_project_delivery_preset(root, preset_id)
+        except (DeliveryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {
+            "ok": True,
+            "targets": all_delivery_targets(root),
+            "default_preset_id": get_default_delivery_preset_id(root),
+        }
+
+    @app.post("/api/delivery/presets/{preset_id}/default")
+    def set_delivery_preset_default(preset_id: str):
+        try:
+            default_id = set_default_delivery_preset(root, preset_id)
+        except (DeliveryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"ok": True, "default_preset_id": default_id}
+
+    @app.get("/api/delivery/presets/{preset_id}/export")
+    def export_delivery_preset_route(preset_id: str):
+        try:
+            document = export_delivery_preset(root, preset_id)
+        except (DeliveryError, ValueError) as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return document
+
+    @app.post("/api/delivery/presets/import")
+    def import_delivery_preset_route(
+        payload: dict = Body(default_factory=dict),
+    ):
+        try:
+            preset = import_delivery_preset(root, payload)
+        except (DeliveryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {
+            "ok": True,
+            "preset": preset,
+            "targets": all_delivery_targets(root),
+            "default_preset_id": get_default_delivery_preset_id(root),
         }
 
     @app.post("/api/delivery/{version}/preflight")
@@ -1025,7 +1130,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 f"/api/audio/master/reports/{audio['report_name']}"
             )
         try:
-            target = resolve_delivery_target(target_id)
+            target = resolve_delivery_target(target_id, root=root)
             preflight = preflight_delivery(
                 root,
                 timeline,
