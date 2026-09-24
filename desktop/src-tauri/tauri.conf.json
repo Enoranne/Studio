@@ -26,14 +26,18 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": [
+      "app",
+      "dmg"
+    ],
     "externalBin": [
       "binaries/piste-studio-backend"
     ],
     "shortDescription": "Montage local avec canon, locks, versions et delivery",
     "macOS": {
       "minimumSystemVersion": "10.15",
-      "hardenedRuntime": true
+      "hardenedRuntime": true,
+      "signingIdentity": "-"
     }
   }
 }
