@@ -20,6 +20,7 @@ from .authoring import execute_authoring
 from .timeline import TimelineError, load_timeline, save_timeline, validate_timeline
 from .versioning import list_versions, create_timeline_version
 from .storyline import StorylineError, validate_locked_change
+from .timeline_continuity import TimelineContinuityError, analyze_timeline_continuity
 from .history import HistoryError, create_checkpoint, history_status, undo_checkpoint
 from .editorial import (
     add_marker,
@@ -844,6 +845,22 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         return asdict(decision)
+
+    @app.get("/api/vision/timeline-continuity")
+    def timeline_continuity(
+        clip_id: str,
+        edit_name: str = "teaser_30",
+        candidate_media_id: int | None = None,
+    ):
+        try:
+            return analyze_timeline_continuity(
+                root,
+                edit_name=edit_name,
+                clip_id=clip_id,
+                candidate_media_id=candidate_media_id,
+            )
+        except TimelineContinuityError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.get("/api/tesseract/status")
     def tesseract_status():
