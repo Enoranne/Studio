@@ -25,9 +25,10 @@ function appendSemanticVisionSection(){
     ${semanticVisionSummary(m)}
     <div class="ins-actions">
       <button class="btn" onclick="analyzeSemanticSelected(false)">${m.semanticProfile?.status==='READY'?'Réanalyser vision':'Analyser vision'}</button>
+      <button class="btn" onclick="openTargetedReferenceManager(${m.dbId})">Référence ciblée${m.semanticReferenceCount?` · ${m.semanticReferenceCount}`:''}</button>
       <button class="btn primary" onclick="openSemanticContinuity(${m.dbId})">Proposer continuité</button>
     </div>
-    <div class="hint">Les propositions character / prop / decor / look viennent de références déjà validées. Accept obligatoire avant ajout au catalogue.</div>`;
+    <div class="hint">Les propositions character / prop / decor / look peuvent utiliser des références de rush entier ou des frames/zones explicitement validés.</div>`;
   root.appendChild(section);
 }
 
