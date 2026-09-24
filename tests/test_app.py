@@ -868,3 +868,156 @@ def test_storyline_validate_accepts_connection_point_move_without_child_motion(t
     assert child["parentClipId"] == "v2"
     assert child["anchorOffset"] == -3
     assert child["connectionPointOffset"] == 1
+
+
+
+def test_delivery_targets_preflight_export_and_download(tmp_path, monkeypatch):
+    root = make_project(tmp_path)
+    app = create_app(
+        root,
+        Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html",
+    )
+    client = TestClient(app)
+    media = client.get("/api/state").json()["media"]
+    video_id = next(x["id"] for x in media if x["kind"] == "video")
+    timeline = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 10,
+        "storyline": {"mode": "free", "start": 0},
+        "tracks": [
+            {"id": "video", "name": "VIDEO", "kind": "video"},
+        ],
+        "clips": [
+            {
+                "id": "v1",
+                "track": "video",
+                "label": "clip",
+                "start": 0,
+                "duration": 5,
+                "sourceStart": 0,
+                "mediaDbId": video_id,
+            },
+        ],
+    }
+    assert client.post("/api/timeline", json=timeline).status_code == 200
+    published = client.post(
+        "/api/publish",
+        json={"edit_name": "teaser_30"},
+    )
+    assert published.status_code == 200
+    assert published.json()["version"] == "V001"
+
+    targets = client.get("/api/delivery/targets")
+    assert targets.status_code == 200
+    ids = {x["id"] for x in targets.json()["targets"]}
+    assert "festival_prores_1080" in ids
+    assert "social_vertical_1080x1920" in ids
+    assert targets.json()["policy"]["no_silent_crop"] is True
+
+    blocked = client.post(
+        "/api/delivery/V001/preflight",
+        json={
+            "edit_name": "teaser_30",
+            "target_id": "social_vertical_1080x1920",
+            "framing_mode": "fill",
+            "allow_crop": False,
+        },
+    )
+    assert blocked.status_code == 200
+    assert blocked.json()["can_export"] is False
+    assert blocked.json()["checks"]["framing"]["status"] == "BLOCKED"
+
+    fit = client.post(
+        "/api/delivery/V001/preflight",
+        json={
+            "edit_name": "teaser_30",
+            "target_id": "social_vertical_1080x1920",
+            "framing_mode": "fit",
+        },
+    )
+    assert fit.status_code == 200
+    assert fit.json()["can_export"] is True
+    assert fit.json()["checks"]["published_version"]["status"] == "PASS"
+
+    def fake_execute_export(
+        root_arg,
+        edit_name,
+        version,
+        *,
+        output_name=None,
+        resolution="1080p",
+        fps=24,
+        format_name="mp4",
+    ):
+        path = (
+            root_arg
+            / "edits"
+            / edit_name
+            / version
+            / (output_name or "source.mp4")
+        )
+        path.write_bytes(b"fake-tesseract-source")
+        return path
+
+    def fake_render_delivery(
+        root_arg,
+        source_path,
+        *,
+        edit_name,
+        version,
+        target_id,
+        framing_mode=None,
+        allow_crop=False,
+    ):
+        target = app_module.resolve_delivery_target(target_id)
+        folder = root_arg / "exports" / edit_name / version
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"{edit_name}_{version}_{target_id}.mp4"
+        path.write_bytes(b"fake-delivery")
+        return {
+            "path": path,
+            "relative_path": path.relative_to(root_arg).as_posix(),
+            "target": target,
+            "framing_mode": framing_mode or target["default_framing"],
+            "probe": {
+                "video_codec": "h264",
+                "width": target["width"],
+                "height": target["height"],
+                "pixel_format": "yuv420p",
+                "fps": 24.0,
+                "audio_codec": "aac",
+                "audio_sample_rate": 48000,
+                "audio_channels": 2,
+                "duration_seconds": 10.0,
+                "size_bytes": path.stat().st_size,
+            },
+            "ffmpeg_args": ["ffmpeg"],
+        }
+
+    monkeypatch.setattr(app_module, "execute_export", fake_execute_export)
+    monkeypatch.setattr(
+        app_module,
+        "render_delivery_variant",
+        fake_render_delivery,
+    )
+
+    exported = client.post(
+        "/api/delivery/V001/export",
+        json={
+            "edit_name": "teaser_30",
+            "target_id": "social_vertical_1080x1920",
+            "framing_mode": "fit",
+        },
+    )
+    assert exported.status_code == 200, exported.text
+    body = exported.json()
+    assert body["probe"]["width"] == 1080
+    assert body["probe"]["height"] == 1920
+    assert body["target"]["aspect_ratio"] == "9:16"
+    assert body["file_url"]
+    assert body["report_url"]
+    assert client.get(body["file_url"]).content == b"fake-delivery"
+    report = client.get(body["report_url"])
+    assert report.status_code == 200
+    assert report.json()["target"]["id"] == "social_vertical_1080x1920"
+    assert report.json()["policy"]["no_silent_crop"] is True
