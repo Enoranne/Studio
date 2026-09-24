@@ -126,6 +126,8 @@ function renderSemanticProposals(result,m){
           <div class="semantic-facet">${p.facet.toUpperCase()} · seuil ${threshold} %</div>
           <div class="suggestion-reasons">
             <span>${p.evidence?.reference_count||0} référence(s)</span>
+            ${p.evidence?.targeted_reference_count?`<span>${p.evidence.targeted_reference_count} ciblée(s)</span>`:'' }
+            ${p.evidence?.best_targeted_reference_id?`<span>cible #${p.evidence.best_targeted_reference_id}</span>`:'' }
             ${refs.slice(0,3).map(x=>`<span>${x}</span>`).join('')}
           </div>
           <div class="vision-evidence">Meilleure référence : ${Math.round((+p.evidence?.best_reference_similarity||0)*100)} %</div>
