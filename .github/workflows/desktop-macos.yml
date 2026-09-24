@@ -54,6 +54,14 @@ jobs:
         working-directory: desktop
         run: npx tauri build --bundles app,dmg
 
+      - name: Verify macOS code signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$(find desktop/src-tauri/target/release/bundle/macos -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
       - name: Smoke test bundled backend
         shell: bash
         run: |
