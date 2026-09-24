@@ -629,6 +629,52 @@ def list_targeted_semantic_references(
     return [_reference_row_to_dict(row) for row in rows]
 
 
+def summarize_targeted_reference_groups(
+    root: Path,
+    *,
+    media_id: int | None = None,
+) -> list[dict]:
+    references = list_targeted_semantic_references(
+        root,
+        media_id=media_id,
+    )
+    groups: dict[tuple[str, str], list[dict]] = {}
+    for reference in references:
+        group_name = normalize_reference_group(reference.get("group_name"))
+        if not group_name:
+            continue
+        key = (str(reference["tag"]), group_name.casefold())
+        groups.setdefault(key, []).append(reference)
+
+    out: list[dict] = []
+    for (tag, _normalized_name), members in sorted(
+        groups.items(),
+        key=lambda item: (item[0][0], item[0][1]),
+    ):
+        group_name = str(members[0]["group_name"])
+        distribution = {
+            quality: sum(
+                1 for member in members
+                if member.get("quality") == quality
+            )
+            for quality in REFERENCE_QUALITY_WEIGHTS
+        }
+        out.append({
+            "tag": tag,
+            "facet": str(members[0]["facet"]),
+            "group_name": group_name,
+            "reference_ids": [int(member["id"]) for member in members],
+            "reference_count": len(members),
+            "media_ids": sorted({int(member["media_id"]) for member in members}),
+            "quality_distribution": distribution,
+            "total_quality_weight": round(
+                sum(float(member.get("quality_weight") or 1.0) for member in members),
+                4,
+            ),
+        })
+    return out
+
+
 def update_targeted_semantic_reference_metadata(
     root: Path,
     reference_id: int,
