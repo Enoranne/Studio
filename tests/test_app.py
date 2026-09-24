@@ -229,6 +229,26 @@ def test_editorial_api_persists_ranges_markers_and_suggestions(tmp_path):
 
     app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
     client = TestClient(app)
+    groups = client.get(
+        f"/api/vision/reference-groups?media_id={video['id']}"
+    )
+    assert groups.status_code == 200
+    group = groups.json()["groups"][0]
+    assert group["group_name"] == "Fisher principal"
+    assert group["reference_count"] == 1
+    assert group["total_quality_weight"] == 1.5
+    assert groups.json()["policy"]["group_balanced"] is True
+
+    updated = client.patch(
+        f"/api/vision/references/{ref['id']}",
+        json={"group_name": "Fisher secondaire", "quality": "low"},
+    )
+    assert updated.status_code == 200, updated.text
+    updated_ref = updated.json()["reference"]
+    assert updated_ref["group_name"] == "Fisher secondaire"
+    assert updated_ref["quality"] == "low"
+    assert updated_ref["quality_weight"] == 0.5
+
     state = client.get("/api/state").json()
     vids = [x for x in state["media"] if x["kind"] == "video"]
     reference, candidate = vids[0], vids[1]
@@ -540,6 +560,8 @@ def test_targeted_semantic_reference_api(tmp_path, monkeypatch):
             roi=roi,
             embedding=[1.0, 0.0, 0.0],
             image_path=image,
+            group_name=kwargs.get("group_name"),
+            quality=kwargs.get("quality", "secondary"),
         )
 
     monkeypatch.setattr(
@@ -560,12 +582,17 @@ def test_targeted_semantic_reference_api(tmp_path, monkeypatch):
             "tag": "prop:fisher",
             "timestamp_seconds": 3.4,
             "roi": {"x": 0.2, "y": 0.25, "width": 0.5, "height": 0.4},
+            "group_name": "Fisher principal",
+            "quality": "primary",
         },
     )
     assert created.status_code == 200, created.text
     ref = created.json()["reference"]
     assert ref["tag"] == "prop:fisher"
     assert ref["roi"]["width"] == 0.5
+    assert ref["group_name"] == "Fisher principal"
+    assert ref["quality"] == "primary"
+    assert ref["quality_weight"] == 1.5
     assert "embedding" not in ref
     assert ref["image_url"].endswith(f"/{ref['id']}/image")
 
