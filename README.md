@@ -75,6 +75,39 @@ Les noms de groupes existants sont proposés dans le gestionnaire pour favoriser
 
 Les propositions de continuité rendent cette logique visible : nombre de références, nombre de groupes, répartition Primaire/Secondaire/Faible et meilleure référence ciblée éventuelle.
 
+
+### Conflits Canon et HARD LOCKS
+
+V0.22.4 compare chaque proposition sémantique au Canon courant.
+
+Statuts possibles :
+
+- **CANON ALIGNÉ** : le tag correspond à une règle ou une entrée canonique explicite ;
+- **NON VÉRIFIÉ** : le Canon ne confirme ni n’interdit ce tag ;
+- **CONFLIT CANON** : le tag est explicitement interdit ou sort d’un facet fermé ;
+- **HARD LOCK** : le média est utilisé dans une zone verrouillée qui couvre explicitement les opérations sémantiques ;
+- **À REVOIR** : contexte SOFT LOCK.
+
+La règle essentielle est : **absence ≠ contradiction**. Un tag absent du Canon n’est conflictuel que si le facet correspondant est déclaré fermé.
+
+Le Canon peut désormais contenir :
+
+```yaml
+semantic:
+  allowed_tags:
+    - character:malo
+    - prop:fisher
+  forbidden_tags:
+    - prop:smartphone
+    - look:modern-glossy
+  closed_facets:
+    - character
+```
+
+Les entrées `characters`, `props`, `decors` et `visual.look` participent aussi aux alignements. `visual.avoid` participe aux interdictions de look.
+
+En cas de conflit bloquant, PISTE Studio ne rejette pas la proposition automatiquement. Il empêche uniquement une acceptation silencieuse : l’utilisateur doit lire la raison puis choisir explicitement **Accepter malgré conflit**. Le Canon, les locks et la Storyline restent inchangés.
+
 ## V0.21 — Audio Delivery & Master Check
 
 La V0.21 ferme le principal écart audio restant : PISTE Studio peut désormais contrôler **le mix réellement rendu**, après sommation des sources audibles de la timeline.
