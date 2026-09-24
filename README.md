@@ -261,7 +261,7 @@ L’analyse locale peut également repérer des plages silencieuses via ffmpeg.
 
 V0.20 ne prétend pas encore détecter automatiquement une « bonne respiration » ou une intention vocale : elle identifie des zones de silence mesurables qui pourront alimenter de futures suggestions éditoriales.
 
-## Timeline schema v4
+## Timeline schema v4 — étape V0.20
 
 La timeline conserve désormais explicitement les crossfades en plus du modèle audio V0.19 :
 
