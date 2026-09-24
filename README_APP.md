@@ -541,7 +541,7 @@ Le rapport de clipping V0.20 reste volontairement une estimation **par clip**. L
 
 ## Timeline
 
-Schema courant : **v4**.
+Schema timeline courant : **v6**. Le schema v4 reste l’étape historique qui a introduit les fonctions audio V0.20.
 
 Les propriétés audio couvrent :
 
