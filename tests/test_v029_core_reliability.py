@@ -1,8 +1,11 @@
 from pathlib import Path
+import json
+import tomllib
 
 from fastapi.testclient import TestClient
 import pytest
 
+from piste_studio import __version__
 from piste_studio.app import create_app
 from piste_studio.locks import add_lock
 from piste_studio.project import init_project
@@ -242,3 +245,38 @@ def test_magnetic_ui_delegates_insert_remove_and_serializes_media_for_kernel():
     assert "{clip:backendClipPayload(c)}" in script
     assert "'remove'," in script
     assert "{clip_id:c.id}" in script
+
+
+def test_v029_version_is_aligned_across_python_desktop_ui_and_smoke_test():
+    expected = "0.29.0"
+    assert __version__ == expected
+
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["version"] == expected
+
+    package = json.loads(
+        (ROOT / "desktop" / "package.json").read_text(encoding="utf-8")
+    )
+    tauri = json.loads(
+        (ROOT / "desktop" / "src-tauri" / "tauri.conf.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert package["version"] == expected
+    assert tauri["version"] == expected
+
+    cargo = (ROOT / "desktop" / "src-tauri" / "Cargo.toml").read_text(
+        encoding="utf-8"
+    )
+    assert f'version = "{expected}"' in cargo
+
+    html = (ROOT / "piste_studio" / "ui" / "index.html").read_text(
+        encoding="utf-8"
+    )
+    assert f"Local App v{expected}" in html
+    assert f"v{expected} · LOCAL" in html
+
+    workflow = (
+        ROOT / ".github" / "workflows" / "desktop-macos.yml"
+    ).read_text(encoding="utf-8")
+    assert f'\"version\":\"{expected}\"' in workflow
