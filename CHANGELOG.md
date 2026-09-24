@@ -1,3 +1,20 @@
+# V0.24.0 — Production Readiness
+
+- ajout du moteur `piste_studio.readiness` ;
+- ajout de `piste-studio readiness` ;
+- ajout de `GET /api/readiness` ;
+- vérification structure projet, master, catalogue média, ffmpeg, ffprobe et Tesseract ;
+- sélection prudente de la dernière version timeline publiée ;
+- validation non destructive du plan d'authoring ;
+- détection bootstrap, authoring et rendu source Tesseract ;
+- capacités `can_start_editing / can_bootstrap / can_author / can_deliver` ;
+- prochaine action explicite selon l'état réel ;
+- recette de validation PISTE 0 documentée dans `PRODUCTION_TEST_V0.24.md`.
+
+La recette **V0.24.1** sur un vrai teaser PISTE 0 reste à exécuter avant de déclarer la validation de production terminée.
+
+---
+
 # Changelog
 
 ## V0.22 — Editorial Vision Refinement
