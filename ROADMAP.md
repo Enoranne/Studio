@@ -90,7 +90,9 @@ Validation de code V0.26 : **162 tests passés / 162** après ajout de la recett
 - ✅ **V0.28.6 — Action Semantics** : repères Analyse / Proposition / Application / Rendu ;
 - ✅ **V0.28.7 — UX Preferences** : Confort/Compact, couleurs et actions contextuelles configurables localement.
 
-**V0.28 — IMPLÉMENTÉE SUR BRANCHE DE VALIDATION ⏳**
+**V0.28 — UX NAVIGATION & CONTEXT SYSTEM FUSIONNÉE DANS MAIN ✅**
+
+Validation V0.28 : **170 tests passés / 170**, syntaxe JavaScript validée sur la tête finale de la PR #4. Les builds macOS 0.28.0 restent une validation packaging distincte tant qu’ils ne sont pas terminés.
 
 ## Avant V1
 
