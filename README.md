@@ -1,6 +1,23 @@
 # PISTE Studio
 
-PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média, continuité visuelle et mixage audio non destructif**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
+PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média, transcripts, continuité visuelle, agent éditorial et mixage audio non destructif**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
+
+## V0.26 — Editorial Agent & Transcript Intelligence
+
+V0.26 ajoute une couche agentique **au-dessus** de la Storyline, sans remplacer le moteur de montage :
+
+- choix explicite de la piste audio à transcrire ;
+- transcript mot-à-mot avec locuteurs, cache et consentement réseau ;
+- transcript synchronisé SOURCE/PROGRAM ;
+- suggestions de silences, fillers et reprises ;
+- AI Timeline View multimodale ;
+- comparaison de prises ;
+- stratégie de montage et EDL virtuelle ;
+- validation humaine obligatoire avant application ;
+- checkpoint, locks et contrôle anti-stale lors de l’application ;
+- diagnostic technique du master rendu après Tesseract.
+
+Une proposition de l’Editorial Agent ne modifie jamais la Storyline tant que l’utilisateur n’a pas demandé explicitement son application. Les analyses locales restent locales ; l’envoi d’audio à un fournisseur de transcription exige un consentement explicite.
 
 ## V0.22 — Editorial Vision Refinement
 

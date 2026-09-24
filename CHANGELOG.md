@@ -1,3 +1,23 @@
+# V0.26.0 — Editorial Agent & Transcript Intelligence
+
+- Audio Track Intelligence pour les rushes vidéo/audio multipistes ;
+- sélection explicite de la piste de transcription et refus des pistes silencieuses ;
+- Transcript Engine avec cache source/piste/modèle et import de transcripts word-level ;
+- intégration ElevenLabs Scribe v2 uniquement après consentement réseau explicite ;
+- panneau Editorial Agent synchronisé SOURCE/PROGRAM ;
+- candidats silence, filler et retake sans suppression automatique ;
+- AI Timeline View : filmstrip, waveform, transcript, vision et preuves ciblées ;
+- Take Comparator entre rushes ;
+- Editorial Strategy et Proposed Edit non destructifs ;
+- application transactionnelle : confirmation humaine, contrôle anti-stale, locks, checkpoint et validation Storyline ;
+- Rendered Master Critic avec contrôle technique et loudness, sans correction silencieuse ;
+- nouvelles tables SQLite pour pistes audio, transcripts, propositions et rapports Critic ;
+- version Python/FastAPI/Tauri alignée sur **0.26.0**.
+
+La V0.26 reprend des principes d’architecture observés dans le projet open source `browser-use/video-use` (MIT), mais conserve Tesseract comme moteur externe et la Storyline PISTE Studio comme source de vérité. La transcription externe n’est jamais déclenchée automatiquement.
+
+---
+
 # V0.25.0 — Desktop Packaging & First Run
 
 - application desktop macOS basée sur Tauri v2 avec backend local PyInstaller embarqué ;

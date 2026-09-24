@@ -52,6 +52,23 @@
 
 **V0.25 — FONDATION PACKAGING UTILISATEUR TERMINÉE ✅**
 
+## V0.26 — Editorial Agent & Transcript Intelligence
+
+- ✅ **V0.26.1 — Audio Track Intelligence** : inventaire des pistes audio embarquées, codec/canaux/sample-rate, mesure peak/mean, détection de piste silencieuse, recommandation non contraignante et sélection explicite persistée pour transcription ;
+- ✅ **V0.26.2 — Transcript Engine** : extraction de la piste choisie, cache par média/piste/provider/modèle/hash source, import de transcript, Scribe v2 opt-in, timestamps mot, diarisation et regroupement en phrases ;
+- ✅ **V0.26.3 — Transcript Panel SOURCE/PROGRAM** : transcript cliquable, navigation SOURCE et suivi de la phrase correspondant au playhead PROGRAM ;
+- ✅ **V0.26.4 — Silence / filler / retake candidates** : pauses, disfluences et formulations répétées deviennent des signaux explicables, jamais des coupes automatiques ;
+- ✅ **V0.26.5 — AI Timeline View** : filmstrip, waveform compacte, transcript, pistes audio, références Semantic Vision et candidats de coupe réunis dans une vue machine compacte ;
+- ✅ **V0.26.6 — Take Comparator** : comparaison de formulations entre rushes transcrits avec similarité textuelle, sans désigner automatiquement une « meilleure » prise ;
+- ✅ **V0.26.7 — Editorial Strategy** : stratégie en langage naturel construite à partir du brief, de la cible de durée, des transcripts, favoris/rejets et niveau spoiler ;
+- ✅ **V0.26.8 — Proposed Edit** : EDL virtuelle persistée avec timeline candidate, Storyline inchangée tant que la proposition reste PENDING ;
+- ✅ **V0.26.9 — Apply Proposal** : confirmation humaine, contrôle anti-stale par hash, validation timeline, locks, checkpoint Undo puis transaction Storyline ;
+- ✅ **V0.26.10 — Rendered Master Critic** : ffprobe, durée, présence audio/vidéo, plages noires, LUFS/true peak et rapport persistant ; diagnostic uniquement, revue humaine toujours requise.
+
+**V0.26 — FONDATION EDITORIAL AGENT IMPLÉMENTÉE SUR BRANCHE DE VALIDATION ✅**
+
+Validation restante avant fusion : CI complète, smoke desktop et première utilisation sur médias réels PISTE 0. Les appels de transcription externes restent explicitement opt-in.
+
 ## Avant V1
 
 - valider **V0.24.1** sur le vrai projet PISTE 0 ;
