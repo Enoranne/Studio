@@ -210,6 +210,13 @@ def _write_preset_store(root: Path, doc: dict) -> None:
     )
 
 
+def _validate_custom_preset_id(preset_id: str) -> str:
+    value = str(preset_id or "")
+    if not re.fullmatch(r"custom_[a-z0-9_]{1,96}", value):
+        raise DeliveryError("Identifiant de preset personnalisé invalide.")
+    return value
+
+
 def _custom_preset_id(label: str, existing: set[str]) -> str:
     stem = slugify(str(label or "preset")).replace("-", "_")
     stem = re.sub(r"[^a-z0-9_]+", "_", stem).strip("_") or "preset"
@@ -236,6 +243,7 @@ def _normalize_custom_preset(
 ) -> dict:
     if not isinstance(payload, dict):
         raise DeliveryError("Preset delivery invalide.")
+    preset_id = _validate_custom_preset_id(preset_id)
 
     label = str(payload.get("label") or "").strip()
     if not label or len(label) > 100:
@@ -297,7 +305,15 @@ def _normalize_custom_preset(
         "custom": True,
         "created_at": created_at or now,
         "updated_at": now,
-        "notes": [str(x).strip() for x in (payload.get("notes") or []) if str(x).strip()][:8],
+        "notes": [
+            str(x).strip()
+            for x in (
+                [payload.get("notes")]
+                if isinstance(payload.get("notes"), str)
+                else (payload.get("notes") or [])
+            )
+            if str(x).strip()
+        ][:8],
     }
 
     if codec == "prores_ks":
