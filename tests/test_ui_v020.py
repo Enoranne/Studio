@@ -34,6 +34,7 @@ def test_v022_ui_structure_and_assets(tmp_path):
         "ux-media-intelligence.js",
         "ux-editorial-vision.js",
         "ux-semantic-vision.js",
+        "ux-targeted-references.js",
         "ux-audio-mix.js",
         "ux-audio-intelligence.js",
         "ux-audio-delivery.js",
@@ -78,3 +79,16 @@ def test_v022_ux_contains_editorial_vision_patterns():
     assert "Charger IN/OUT" in ux
     assert "Fenêtres IN/OUT" in media_ux
     assert "Vision · Fenêtres IN/OUT" in polish
+
+
+def test_v022_ux_contains_targeted_reference_patterns():
+    ux = (UI / "ux-targeted-references.js").read_text(encoding="utf-8")
+    semantic = (UI / "ux-semantic-vision.js").read_text(encoding="utf-8")
+    polish = (UI / "ux-polish.js").read_text(encoding="utf-8")
+    assert "RÉFÉRENCE CIBLÉE" in ux
+    assert "Utiliser le frame affiché" in ux
+    assert "Zone de l’image" in ux
+    assert "aucun tag global ajouté au rush" in ux
+    assert "openTargetedReferenceManager" in semantic
+    assert "targeted_reference_count" in semantic
+    assert "Vision · Référence ciblée" in polish
