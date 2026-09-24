@@ -466,7 +466,8 @@ def duplicate_delivery_preset(
 ) -> dict:
     source = resolve_delivery_target(preset_id, root=root)
     payload = dict(source)
-    payload["label"] = str(label or f"{source['label']} · copie")
+    duplicate_label = str(label or f"{source['label']} · copie").strip()
+    payload["label"] = duplicate_label[:100].rstrip()
     for key in ("id", "custom", "reference_only", "created_at", "updated_at"):
         payload.pop(key, None)
     return create_project_delivery_preset(root, payload)
