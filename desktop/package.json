@@ -7,5 +7,6 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0"
-  }
+  },
+  "description": "PISTE Studio desktop shell with embedded local backend"
 }
