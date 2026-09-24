@@ -515,7 +515,7 @@ def test_audio_intelligence_api_normalize_clipping_ducking_and_crossfade(tmp_pat
     )
     assert applied.status_code == 200, applied.text
     after = applied.json()["timeline"]
-    assert after["schema_version"] == 4
+    assert after["schema_version"] == 5
     m1 = next(x for x in after["clips"] if x["id"] == "m1")
     m2 = next(x for x in after["clips"] if x["id"] == "m2")
     assert m1["crossfadeWith"] == "m2"
