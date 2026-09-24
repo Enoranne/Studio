@@ -124,7 +124,7 @@ def test_candidate_simulation_reports_explicit_neighbor_ruptures_without_mutatio
         for x in result["findings"]
     )
     assert any(
-        x["kind"] == "BRIDGE_GAP"
+        x["kind"] == "BRIDGE_EVIDENCE_GAP"
         and x["facet"] == "prop"
         for x in result["findings"]
     )
@@ -146,7 +146,7 @@ def test_missing_candidate_tags_are_missing_evidence_not_claimed_visual_absence(
         x["kind"] == "TARGET_EVIDENCE_MISSING"
         for x in result["findings"]
     )
-    gaps = [x for x in result["findings"] if x["kind"] == "BRIDGE_GAP"]
+    gaps = [x for x in result["findings"] if x["kind"] == "BRIDGE_EVIDENCE_GAP"]
     assert len(gaps) == 4
     assert all("preuve" in x["message"] for x in gaps)
 
