@@ -32,7 +32,7 @@
 
 ## V0.23 — Motion & Delivery
 
-- titres et overlays éditables ;
+- ✅ **V0.23.1** — titres et overlays éditables : timeline schema v5, presets centre/lower-third/haut/custom, style/position/fond/opacité, preview Viewer live et conservation intégrale dans le plan d’authoring ;
 - carton final ;
 - point de connexion graphique déplaçable ;
 - exports festival / social ;
