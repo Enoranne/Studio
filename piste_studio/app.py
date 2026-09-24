@@ -48,11 +48,15 @@ from .semantic_vision import (
     SemanticVisionError,
     analyze_semantic_catalog,
     analyze_semantic_media,
+    create_targeted_semantic_reference,
+    delete_targeted_semantic_reference,
     detect_semantic_vision,
     list_semantic_profiles,
     list_semantic_proposals,
+    list_targeted_semantic_references,
     propose_semantic_tags,
     resolve_semantic_proposal,
+    targeted_reference_image_path,
 )
 from .audio_intelligence import (
     AudioIntelligenceError,
@@ -86,6 +90,10 @@ def _media_payload(root: Path) -> list[dict]:
         ranges_by_media.setdefault(int(r["media_id"]), []).append(r)
     analyses = list_media_analysis(root)
     semantic_profiles = list_semantic_profiles(root)
+    semantic_refs_by_media: dict[int, int] = {}
+    for ref in list_targeted_semantic_references(root):
+        rid = int(ref["media_id"])
+        semantic_refs_by_media[rid] = semantic_refs_by_media.get(rid, 0) + 1
     audio_analyses = list_audio_analysis(root)
     for item in fetch_media_with_metadata(root):
         row = dict(item)
@@ -97,6 +105,7 @@ def _media_payload(root: Path) -> list[dict]:
         analysis = analyses.get(int(row["id"]))
         row["analysis"] = analysis
         row["semantic_profile"] = semantic_profiles.get(int(row["id"]))
+        row["semantic_reference_count"] = semantic_refs_by_media.get(int(row["id"]), 0)
         row["audio_loudness"] = audio_analyses.get(int(row["id"]))
         filmstrip_rel = analysis.get("filmstrip_path") if analysis else None
         row["filmstrip_url"] = (
@@ -346,6 +355,75 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             )
         except SemanticVisionError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/vision/references")
+    def semantic_vision_references(media_id: int | None = None):
+        try:
+            rows = list_targeted_semantic_references(
+                root,
+                media_id=media_id,
+            )
+            for row in rows:
+                row.pop("embedding", None)
+                row["image_url"] = (
+                    f"/api/vision/references/{row['id']}/image"
+                    if row.get("image_path")
+                    else None
+                )
+            return {
+                "references": rows,
+                "policy": {
+                    "targeted_reference_is_explicit": True,
+                    "automatic_media_tag_write": False,
+                    "local_processing": True,
+                },
+            }
+        except SemanticVisionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/vision/references")
+    def semantic_vision_reference_create(payload: dict = Body(...)):
+        try:
+            row = create_targeted_semantic_reference(
+                root,
+                int(payload["media_id"]),
+                tag=str(payload["tag"]),
+                timestamp_seconds=float(payload.get("timestamp_seconds", 0.0)),
+                roi=payload.get("roi"),
+                allow_model_download=bool(
+                    payload.get("allow_model_download", False)
+                ),
+            )
+            row.pop("embedding", None)
+            row["image_url"] = (
+                f"/api/vision/references/{row['id']}/image"
+                if row.get("image_path")
+                else None
+            )
+            return {
+                "reference": row,
+                "policy": {
+                    "explicit_human_reference": True,
+                    "automatic_media_tag_write": False,
+                    "automatic_storyline_change": False,
+                },
+            }
+        except (SemanticVisionError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/vision/references/{reference_id}/image")
+    def semantic_vision_reference_image(reference_id: int):
+        try:
+            path = targeted_reference_image_path(root, reference_id)
+        except SemanticVisionError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return FileResponse(path, media_type="image/jpeg")
+
+    @app.delete("/api/vision/references/{reference_id}")
+    def semantic_vision_reference_delete(reference_id: int):
+        if not delete_targeted_semantic_reference(root, reference_id):
+            raise HTTPException(404, "Référence ciblée introuvable.")
+        return {"ok": True}
 
     @app.get("/api/vision/proposals/{media_id}")
     def semantic_vision_proposals(media_id: int):
