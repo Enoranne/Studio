@@ -92,6 +92,29 @@ CREATE TABLE IF NOT EXISTS semantic_tag_proposals (
 CREATE INDEX IF NOT EXISTS idx_semantic_proposals_media
 ON semantic_tag_proposals(media_id, status);
 
+CREATE TABLE IF NOT EXISTS semantic_references (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    media_id INTEGER NOT NULL,
+    tag TEXT NOT NULL,
+    facet TEXT NOT NULL,
+    timestamp_seconds REAL NOT NULL,
+    roi_json TEXT NOT NULL DEFAULT '{"x":0,"y":0,"width":1,"height":1}',
+    provider TEXT NOT NULL,
+    model_id TEXT NOT NULL,
+    embedding_json TEXT NOT NULL DEFAULT '[]',
+    image_path TEXT,
+    status TEXT NOT NULL DEFAULT 'READY',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_semantic_references_tag
+ON semantic_references(tag, facet, status);
+
+CREATE INDEX IF NOT EXISTS idx_semantic_references_media
+ON semantic_references(media_id, status);
+
 CREATE TABLE IF NOT EXISTS edit_versions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     edit_name TEXT NOT NULL,
