@@ -13,6 +13,18 @@ Les composants, dépendances, références et services tiers restent soumis à *
 Le fait que ce dépôt soit public sur GitHub ne constitue pas, à lui seul, une autorisation générale de copier, modifier, redistribuer, sous-licencier ou commercialiser PISTE Studio.
 
 
+## V0.29 — Timeline Core Reliability
+
+V0.29 consolide la Storyline sans changer son modèle créatif :
+
+- timebase interne entier à **1 MHz** ;
+- calcul déterministe des reflows, trims, reorders et connexions ;
+- kernel backend unique pour les opérations magnétiques ;
+- gestes UI délégués à ce kernel lorsque le backend est connecté ;
+- insertion/suppression soumises aux mêmes HARD/SOFT LOCKS que les reorders ;
+- secondes et timeline schema v6 conservés dans les fichiers projet pour compatibilité.
+
+Le JavaScript reste responsable de la preview interactive et du fallback navigateur autonome, mais le backend devient la source de vérité des mutations Storyline en utilisation normale.
 ## V0.28 — UX Navigation & Context System
 
 V0.28 rend l’interface plus lisible sans supprimer les fonctions avancées :
