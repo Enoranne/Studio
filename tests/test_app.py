@@ -3,12 +3,13 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from piste_studio.app import create_app
+import piste_studio.app as app_module
 from piste_studio.config import write_yaml
 from piste_studio.media import scan_media
 from piste_studio.metadata import set_media_metadata, fetch_media_with_metadata
 from piste_studio.project import init_project
 from piste_studio.media_intelligence import _write_analysis
-from piste_studio.semantic_vision import store_semantic_profile
+from piste_studio.semantic_vision import store_semantic_profile, store_targeted_semantic_reference
 from piste_studio.audio_intelligence import _write_analysis as _write_audio_loudness
 
 
@@ -518,3 +519,71 @@ def test_audio_intelligence_api_normalize_clipping_ducking_and_crossfade(tmp_pat
     m2 = next(x for x in after["clips"] if x["id"] == "m2")
     assert m1["crossfadeWith"] == "m2"
     assert m2["crossfadeWith"] == "m1"
+
+
+def test_targeted_semantic_reference_api(tmp_path, monkeypatch):
+    root = make_project(tmp_path)
+    video = next(
+        x for x in fetch_media_with_metadata(root)
+        if x["kind"] == "video"
+    )
+    image = root / "cache" / "vision" / "references" / "api_ref.jpg"
+    image.parent.mkdir(parents=True, exist_ok=True)
+    image.write_bytes(b"jpeg")
+
+    def fake_create(root, media_id, *, tag, timestamp_seconds, roi=None, **kwargs):
+        return store_targeted_semantic_reference(
+            root,
+            media_id,
+            tag=tag,
+            timestamp_seconds=timestamp_seconds,
+            roi=roi,
+            embedding=[1.0, 0.0, 0.0],
+            image_path=image,
+        )
+
+    monkeypatch.setattr(
+        app_module,
+        "create_targeted_semantic_reference",
+        fake_create,
+    )
+    app = create_app(
+        root,
+        Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html",
+    )
+    client = TestClient(app)
+
+    created = client.post(
+        "/api/vision/references",
+        json={
+            "media_id": video["id"],
+            "tag": "prop:fisher",
+            "timestamp_seconds": 3.4,
+            "roi": {"x": 0.2, "y": 0.25, "width": 0.5, "height": 0.4},
+        },
+    )
+    assert created.status_code == 200, created.text
+    ref = created.json()["reference"]
+    assert ref["tag"] == "prop:fisher"
+    assert ref["roi"]["width"] == 0.5
+    assert "embedding" not in ref
+    assert ref["image_url"].endswith(f"/{ref['id']}/image")
+
+    listed = client.get(f"/api/vision/references?media_id={video['id']}")
+    assert listed.status_code == 200
+    assert listed.json()["references"][0]["id"] == ref["id"]
+    assert listed.json()["policy"]["automatic_media_tag_write"] is False
+
+    state = client.get("/api/state").json()
+    media_state = next(x for x in state["media"] if x["id"] == video["id"])
+    assert media_state["semantic_reference_count"] == 1
+
+    fetched = client.get(ref["image_url"])
+    assert fetched.status_code == 200
+    assert fetched.content == b"jpeg"
+
+    deleted = client.delete(f"/api/vision/references/{ref['id']}")
+    assert deleted.status_code == 200
+    assert client.get(
+        f"/api/vision/references?media_id={video['id']}"
+    ).json()["references"] == []
