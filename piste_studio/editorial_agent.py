@@ -7,7 +7,7 @@ from pathlib import Path
 import json
 import re
 
-from .audio_tracks import list_audio_tracks
+from .audio_tracks import audio_waveform_samples, list_audio_tracks
 from .db import connect
 from .editorial import list_editorial_ranges
 from .history import create_checkpoint
@@ -193,6 +193,7 @@ def build_ai_timeline_view(root: Path, media_id: int) -> dict:
         "technical": analysis.get("technical") or {},
         "filmstrip_path": analysis.get("filmstrip_path"),
         "audio_tracks": list_audio_tracks(root, media_id),
+        "waveform": audio_waveform_samples(root, media_id),
         "transcript": (
             {
                 "id": transcript.get("id"),
