@@ -46,6 +46,13 @@ def attach_clip(
     )
     child["parentClipId"] = parent_id
     child["anchorOffset"] = round(offset, 6)
+    child["connectionPointOffset"] = round(
+        min(
+            max(offset, 0.0),
+            float(parent.get("duration", 0)),
+        ),
+        6,
+    )
     child["connectionMode"] = "follow"
     child["start"] = round(float(parent.get("start", 0)) + offset, 6)
     return doc
@@ -59,7 +66,70 @@ def detach_clip(payload: dict, child_id: str) -> dict:
         raise StorylineError("Clip enfant introuvable.")
     child.pop("parentClipId", None)
     child.pop("anchorOffset", None)
+    child.pop("connectionPointOffset", None)
     child.pop("connectionMode", None)
+    return doc
+
+
+def move_connection_point(
+    payload: dict,
+    child_id: str,
+    target_time: float,
+) -> dict:
+    doc = deepcopy(payload)
+    clips = _clips(doc)
+    child = next(
+        (c for c in clips if str(c.get("id")) == str(child_id)),
+        None,
+    )
+    if child is None:
+        raise StorylineError("Clip enfant introuvable.")
+    if child.get("track") == "video":
+        raise StorylineError(
+            "Un plan STORY ne possède pas de point de connexion enfant."
+        )
+
+    story = _story(clips)
+    if not story:
+        raise StorylineError("Aucun plan STORY disponible.")
+
+    target_time = float(target_time)
+    story_start = float(story[0].get("start", 0))
+    story_end = float(story[-1].get("start", 0)) + float(
+        story[-1].get("duration", 0)
+    )
+    if target_time < story_start - 1e-6 or target_time > story_end + 1e-6:
+        raise StorylineError(
+            "Le point de connexion doit rester sur la STORYLINE."
+        )
+
+    parent = next(
+        (
+            clip
+            for clip in story
+            if target_time >= float(clip.get("start", 0)) - 1e-6
+            and target_time
+            < float(clip.get("start", 0))
+            + float(clip.get("duration", 0))
+            - 1e-6
+        ),
+        None,
+    )
+    if parent is None:
+        parent = story[-1]
+
+    parent_start = float(parent.get("start", 0))
+    parent_duration = float(parent.get("duration", 0))
+    point_offset = min(
+        max(target_time - parent_start, 0.0),
+        parent_duration,
+    )
+
+    child_start = float(child.get("start", 0))
+    child["parentClipId"] = str(parent.get("id"))
+    child["anchorOffset"] = round(child_start - parent_start, 6)
+    child["connectionPointOffset"] = round(point_offset, 6)
+    child["connectionMode"] = "follow"
     return doc
 
 
@@ -111,6 +181,23 @@ def magnetic_reflow(
                 6,
             )
         child["connectionMode"] = "follow"
+        parent = by_id[parent_id]
+        if child.get("connectionPointOffset") is None:
+            child["connectionPointOffset"] = round(
+                min(
+                    max(float(child["anchorOffset"]), 0.0),
+                    float(parent.get("duration", 0)),
+                ),
+                6,
+            )
+        else:
+            child["connectionPointOffset"] = round(
+                min(
+                    max(float(child["connectionPointOffset"]), 0.0),
+                    float(parent.get("duration", 0)),
+                ),
+                6,
+            )
         child["start"] = round(
             new_parent_starts[parent_id]
             + float(child["anchorOffset"]),
