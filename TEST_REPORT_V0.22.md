@@ -4,20 +4,20 @@ Date : 24 septembre 2026
 
 ## Périmètre validé
 
-Ce rapport couvre deux briques de V0.22 :
+Ce rapport couvre trois briques de V0.22 :
 
 1. **V0.22.1 — Fenêtres SOURCE IN/OUT issues de ruptures visuelles** ;
-2. **V0.22.2 — Références visuelles ciblées sur un frame ou une zone ROI**.
+2. **V0.22.2 — Références visuelles ciblées sur un frame ou une zone ROI** ;
+3. **V0.22.3 — Groupes de références et qualité de preuve**.
 
 Restent ouverts dans V0.22 :
 
-- groupes de références et qualité de référence ;
 - détection de conflit entre tags sémantiques et Canon ;
 - comparaison de continuité plan précédent / plan suivant.
 
 ## Résultat global
 
-- Python/API/UI : **91 tests passés / 91** sur le run fonctionnel V0.22.2.
+- Python/API/UI : **96 tests passés / 96** sur le run fonctionnel V0.22.2.
 - JavaScript : tous les modules UI passent `node --check`.
 - Chromium / Playwright : succès.
 - ffmpeg système installé explicitement dans la CI.
@@ -259,6 +259,128 @@ Le scénario réel valide :
 9. affichage de la zone ;
 10. absence de `prop:fisher` dans les tags globaux de l’Inspector.
 
+# V0.22.3 — Groupes et qualité
+
+## Modèle de données et migration
+
+La table `semantic_references` porte désormais :
+
+- `group_name` ;
+- `quality`.
+
+La migration est exécutée à l’ouverture d’une base existante.
+
+Une base V0.22.2 sans ces colonnes est migrée automatiquement et les anciennes références reçoivent la qualité `secondary`.
+
+Cette migration est couverte par un test construit à partir d’un schéma V0.22.2 simulé.
+
+## Niveaux de qualité
+
+Trois niveaux sont définis :
+
+- **Primaire / primary** : poids 1,5 ;
+- **Secondaire / secondary** : poids 1,0 ;
+- **Faible / low** : poids 0,5.
+
+Ces valeurs sont des poids de calcul, pas des probabilités ni des scores de vérité.
+
+## Pondération à deux niveaux
+
+Le calcul de continuité évite qu’un grand nombre d’images proches domine artificiellement.
+
+Pour chaque tag :
+
+1. les références portant le même `group_name` sont réunies ;
+2. leur centroïde est calculé avec leur poids de qualité ;
+3. chaque référence ciblée sans groupe reste une preuve indépendante ;
+4. chaque ancienne référence legacy de rush entier reste une preuve indépendante ;
+5. les centroïdes de groupes/preuves sont ensuite moyennés à poids égal.
+
+Un groupe de dix références n’a donc pas automatiquement dix fois plus d’influence qu’un groupe d’une seule référence.
+
+## Test de pondération
+
+Le test principal construit un groupe `prop:radio` avec :
+
+- une référence primaire alignée avec la cible ;
+- une référence faible orthogonale.
+
+Le poids 1,5 / 0,5 maintient une similarité supérieure à 0,94 et permet la proposition au-dessus du seuil `prop`.
+
+Le rapport de preuve confirme :
+
+- méthode `grouped_weighted_reference_centroid` ;
+- 1 groupe ;
+- 2 références ciblées ;
+- distribution qualité 1 / 0 / 1 ;
+- poids total du groupe = 2,0.
+
+## Test d’équilibrage des groupes
+
+Un second test utilise quatre références :
+
+- trois dans `Ambre principal` ;
+- une dans `Ambre alternatif`.
+
+Le résultat doit indiquer :
+
+- 4 références ;
+- seulement 2 groupes de preuve.
+
+Cela valide que les trois images du premier groupe ne sont pas comptées comme trois groupes indépendants.
+
+## Résumé de groupes
+
+PISTE Studio peut produire pour chaque groupe :
+
+- tag ;
+- facet ;
+- nom du groupe ;
+- ids de références ;
+- médias sources ;
+- nombre de références ;
+- distribution Primaire / Secondaire / Faible ;
+- poids qualité total.
+
+L’interface réutilise les noms de groupes déjà présents dans le projet.
+
+## Modification après création
+
+`PATCH /api/vision/references/{id}` permet de modifier :
+
+- groupe ;
+- qualité.
+
+Cette action ne modifie ni crop, ni embedding, ni tag global du média, ni Storyline.
+
+## Chromium V0.22.3
+
+Le scénario navigateur valide :
+
+1. création de `prop:fisher` ;
+2. groupe **Fisher principal** ;
+3. qualité **Primaire** ;
+4. affichage du groupe et du poids ;
+5. affichage du groupe dans le résumé projet ;
+6. changement vers **Fisher secondaire** ;
+7. reclassement **Faible** ;
+8. persistance après PATCH ;
+9. absence de tag global automatique.
+
+## Preuves de continuité enrichies
+
+Les propositions peuvent maintenant exposer :
+
+- nombre total de références ;
+- nombre de groupes ;
+- nombre de références ciblées ;
+- distribution Primaire / Secondaire / Faible ;
+- groupes impliqués ;
+- poids qualité par groupe ;
+- meilleure référence ciblée éventuelle.
+
+L’UI affiche notamment le nombre de groupes et la distribution **P/S/F**.
+
 ## Politique de sécurité éditoriale
 
 V0.22.1 et V0.22.2 respectent les mêmes principes :
@@ -273,7 +395,6 @@ V0.22.1 et V0.22.2 respectent les mêmes principes :
 ## Limites connues
 
 - la référence ciblée utilise encore un rectangle ROI renseigné par coordonnées ; un geste direct de sélection dans le Viewer pourra améliorer l’ergonomie ;
-- les références n’ont pas encore de groupe ni de niveau de qualité ;
 - aucune règle Canon n’est encore comparée automatiquement aux tags proposés ;
 - la continuité n’est pas encore évaluée explicitement entre plan précédent et plan suivant ;
 - le modèle CLIP local reste optionnel et son téléchargement nécessite une action explicite.
@@ -284,4 +405,4 @@ V0.22 transforme progressivement la vision de PISTE Studio d’une analyse « pa
 
 La chaîne validée devient :
 
-**repérer une rupture → choisir une plage SOURCE → choisir un frame → isoler une zone → nommer explicitement la référence → comparer → expliquer la preuve → laisser l’utilisateur décider.**
+**repérer une rupture → choisir une plage SOURCE → choisir un frame → isoler une zone → nommer la référence → l’associer à un groupe → qualifier sa force → comparer des groupes équilibrés → expliquer la preuve → laisser l’utilisateur décider.**
