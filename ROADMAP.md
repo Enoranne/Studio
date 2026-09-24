@@ -104,6 +104,17 @@ Validation V0.28 : **170 tests passés / 170**, syntaxe JavaScript validée sur 
 **V0.29 — TIMELINE CORE RELIABILITY FUSIONNÉE DANS MAIN ✅**
 
 Validation V0.29 : **187 tests passés / 187**, syntaxe JavaScript et Chromium validés sur la PR #5. Compatibilité : timeline schema v6 inchangé, JSON public toujours en secondes, anciens projets conservés. Le backend devient l'autorité des mutations magnétiques en mode connecté ; le JS garde la preview immédiate et le fallback autonome. Les builds macOS 0.29.0 restent une validation packaging distincte.
+## V0.30 — Transaction Journal
+
+- ✅ **V0.30.1 — Reversible Journal** : history schema v2, snapshots avant/après, Undo/Redo persistants et migration v1 ;
+- ✅ **V0.30.2 — Provenance** : acteurs user/agent/system, opération, transaction ID et entités affectées ; Storyline, audio et Apply Proposal reliés au journal ;
+- ✅ **V0.30.3 — Undo / Redo UX** : endpoint Redo, bouton visible, Cmd/Ctrl+Shift+Z, Ctrl+Y et fallback navigateur ;
+- ✅ **V0.30.4 — Branch & Coalescing Safety** : suppression de la branche Redo après divergence, IDs monotones, coalescing explicite et rollback si l'index ne peut pas être validé.
+
+**V0.30 — TRANSACTION JOURNAL IMPLÉMENTÉE SUR BRANCHE DE VALIDATION ⏳**
+
+Compatibilité : timeline schema v6 et secondes publiques inchangés ; les anciens checkpoints restent lisibles. La validation CI complète est requise avant fusion.
+
 ## Avant V1
 
 - valider **V0.24.1** sur le vrai projet PISTE 0 ;
