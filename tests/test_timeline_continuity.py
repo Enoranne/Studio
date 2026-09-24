@@ -3,6 +3,7 @@ import json
 
 from piste_studio.config import read_yaml, write_yaml
 from piste_studio.media import scan_media
+from piste_studio.locks import add_lock
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.project import init_project
 from piste_studio.timeline import load_timeline, save_timeline
@@ -183,3 +184,29 @@ def test_candidate_canon_assessments_are_exposed(tmp_path):
     assessments = {x["tag"]: x for x in result["canon_assessments"]}
     assert assessments["character:ronan"]["status"] == "CONFLICT"
     assert assessments["character:ronan"]["requires_explicit_acknowledgement"] is True
+
+
+
+def test_candidate_inherits_semantic_lock_from_simulated_clip_position(tmp_path):
+    root, rows = make_project(tmp_path)
+    add_lock(
+        root,
+        "Middle semantic lock",
+        4,
+        8,
+        "HARD",
+        ["semantic_tag_accept"],
+    )
+    result = analyze_timeline_continuity(
+        root,
+        clip_id="v-target",
+        candidate_media_id=rows["candidate.mp4"]["id"],
+    )
+    assessments = {x["tag"]: x for x in result["canon_assessments"]}
+    assert assessments["character:ronan"]["status"] == "HARD_LOCK"
+    hard = next(
+        x for x in assessments["character:ronan"]["findings"]
+        if x["kind"] == "HARD_LOCK"
+    )
+    assert hard["clip_id"] == "v-target"
+    assert hard["lock_name"] == "Middle semantic lock"
