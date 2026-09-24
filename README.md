@@ -350,7 +350,7 @@ Les positions et dimensions sont normalisées par rapport au canvas, afin de res
 
 Le Viewer PROGRAM affiche les changements en direct.
 
-Le modèle est persisté dans la timeline schema v5 et conservé intégralement dans les `title_cuts` de l’authoring plan.
+Le modèle de titre a été introduit avec la timeline schema v5. Le schema courant est **v6**, qui ajoute les points de connexion graphiques, et les titres restent conservés intégralement dans les `title_cuts` de l’authoring plan.
 
 PISTE Studio ne fabrique pas une couche texte Tesseract à partir d’hypothèses. Si le schéma Tesseract installé ne documente pas précisément une couche Text compatible, le titre reste explicitement listé dans `unmaterialized_titles` pour la phase de delivery au lieu d’être perdu silencieusement.
 
@@ -379,3 +379,30 @@ Le noir final est intégré au même clip. Il ne crée pas de média noir artifi
 Le backend refuse une durée de noir final supérieure ou égale à la durée du carton.
 
 Comme les autres titres, le carton final est conservé intégralement dans `title_cuts` pour l’authoring et n’est jamais perdu silencieusement si le moteur cible ne peut pas encore le matérialiser.
+
+
+### Point de connexion graphique — V0.23.3
+
+Les éléments connectés — titres, VO, musique et SFX — possèdent maintenant une connexion visible avec la Storyline.
+
+PISTE Studio distingue deux notions :
+
+- `anchorOffset` : la position temporelle de l’élément connecté relativement au début de son parent ;
+- `connectionPointOffset` : l’endroit graphique où la ligne de connexion touche le plan parent.
+
+Cette séparation permet de **déplacer le point de connexion sans déplacer l’élément connecté**.
+
+Quand un élément connecté est sélectionné :
+
+- sa ligne d’attache est mise en évidence ;
+- une poignée apparaît sur la Storyline ;
+- la poignée peut être déplacée horizontalement ;
+- le snap courant reste appliqué.
+
+Si la poignée reste dans le même plan parent, seul `connectionPointOffset` change.
+
+Si elle franchit une coupe, PISTE Studio peut rattacher l’élément au nouveau plan parent. La position absolue du titre ou du son reste identique ; `anchorOffset` est recalculé pour que le futur déplacement du nouveau parent entraîne correctement son enfant.
+
+L’Inspector **CONNEXION STORY** propose également **Point sur parent (s)** pour un réglage numérique précis sans drag.
+
+Tous les changements passent par les checkpoints, la validation backend et les HARD/SOFT LOCKS. Un Undo restaure le parent et le point de connexion précédents.
