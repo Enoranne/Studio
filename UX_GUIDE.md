@@ -537,3 +537,72 @@ Le champ **Point sur parent (s)** sert aux ajustements précis et aux usages san
 Déplacer seulement une ligne graphique peut modifier la dépendance éditoriale du montage.
 
 Cette action doit donc passer par les mêmes checkpoints et contrôles HARD/SOFT LOCK qu’un autre changement structurel.
+
+
+## 56. Exporter n’est pas juste rendre
+
+Un bouton Export unique qui lance immédiatement un fichier générique masque trop de décisions.
+
+Le delivery doit séparer :
+- le montage ;
+- le rendu moteur ;
+- le format de destination ;
+- le contrôle final.
+
+PISTE Studio ouvre donc un Delivery Center avant toute sortie destinée à être livrée.
+
+## 57. Un profil intégré reste un repère
+
+Un festival, diffuseur ou réseau peut modifier ses exigences.
+
+Les cibles intégrées doivent être présentées comme des références techniques pratiques, jamais comme des normes absolues.
+
+La fiche de livraison reçue du destinataire prime toujours.
+
+## 58. Aucun crop silencieux
+
+Changer un 16:9 en 9:16 n’est pas une simple opération technique.
+
+C’est une décision de cadre.
+
+Par défaut :
+- FIT préserve l’intégralité de l’image ;
+- FILL exige une action explicite.
+
+Le logiciel doit afficher la perte géométrique estimée avant validation.
+
+## 59. Le préflight doit inclure ce que le rendu peut perdre
+
+Un fichier techniquement valide peut être éditorialement faux.
+
+Avant delivery, PISTE vérifie donc aussi :
+- la fraîcheur de la version publiée ;
+- le Master Check audio ;
+- les titres non matérialisés ;
+- le cadrage.
+
+Le préflight ne doit pas se limiter au codec et à la résolution.
+
+## 60. WARN reste exportable, BLOCKED exige une action
+
+Un avertissement documenté peut être assumé par l’utilisateur.
+
+Un crop non autorisé explicitement ne le peut pas.
+
+Le langage UI doit donc distinguer :
+- PASS ;
+- WARN / STALE / MISSING ;
+- BLOCKED.
+
+## 61. Le rapport fait partie du livrable
+
+Un export professionnel doit rester vérifiable après coup.
+
+Chaque fichier livré doit pouvoir être relié à :
+- sa cible ;
+- son préflight ;
+- son mode de cadrage ;
+- son inspection ffprobe ;
+- sa version publiée.
+
+Le rapport JSON n’est pas un log interne jetable : c’est une trace de delivery.
