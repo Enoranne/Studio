@@ -125,8 +125,15 @@ function validateCandidate(candidate,original=clips){
   const story=storyClipsSorted(candidate);let cursor=getStorylineStart();for(const c of story){if(Math.abs(c.start-cursor)>1e-4)return 'Storyline non contiguë';cursor+=c.duration}
   return null
 }
+function backendClipPayload(c){
+  const n={...c},m=c.mediaId&&getMedia(c.mediaId),a=c.audioId&&getAudio(c.audioId);
+  if(m?.dbId)n.mediaDbId=m.dbId;
+  if(a?.dbId)n.audioDbId=a.dbId;
+  delete n.mediaId;delete n.audioId;
+  return n
+}
 function backendTimelinePayload(list=clips,mode=storylineMode){
-  return {edit_name:activeEditName,duration_seconds:DURATION,storyline:{mode,start:getStorylineStart()},tracks,clips:list.map(c=>{const n={...c};const m=c.mediaId&&getMedia(c.mediaId),a=c.audioId&&getAudio(c.audioId);if(m?.dbId)n.mediaDbId=m.dbId;if(a?.dbId)n.audioDbId=a.dbId;delete n.mediaId;delete n.audioId;return n})}
+  return {edit_name:activeEditName,duration_seconds:DURATION,storyline:{mode,start:getStorylineStart()},tracks,clips:list.map(backendClipPayload)}
 }
 async function validateMagneticWithBackend(before,candidate){
   if(!backendConnected)return true;
@@ -263,20 +270,51 @@ dropLibraryOnLane=function(e,trackId,lane){
   if(trackId!=='video'){_legacyDropLibrary(e,trackId,lane);const c=getClip(selectedClip);if(c&&c.track!=='video')connectChild(c);renderTracks();return}
   e.preventDefault();lane.classList.remove('dragover');const mid=e.dataTransfer.getData('text/piste-media');if(!mid)return;
   const m=getMedia(mid);if(!m)return;const d=Math.max(MIN_CLIP,(m.out??m.duration)-(m.in||0)),start=snapTime(laneTimeFromEvent(e,lane));
-  const before=cloneClips(),candidate=cloneClips(),newClip={id:'v'+Date.now(),track:'video',mediaId:m.id,label:m.label,start,duration:d,sourceStart:m.in||0};candidate.push(newClip);
-  const others=storyClipsSorted(candidate).filter(c=>c.id!==newClip.id),idx=others.filter(c=>start>=c.start+c.duration/2).length,order=others.map(c=>c.id);order.splice(idx,0,newClip.id);reflowCandidate(candidate,order);selectedClip=newClip.id;selectedMedia=m.id;commitMagneticCandidate(candidate,`${m.label} inséré dans la Storyline`,before)
+  const before=cloneClips(),newClip={id:'v'+Date.now(),track:'video',mediaId:m.id,label:m.label,start,duration:d,sourceStart:m.in||0};
+  selectedClip=newClip.id;selectedMedia=m.id;
+  if(backendConnected){
+    commitBackendMagneticOperation(
+      'insert',
+      {clip:backendClipPayload(newClip),target_time:start},
+      `${m.label} inséré dans la Storyline`,
+      before,
+    );
+    return
+  }
+  const candidate=cloneClips();candidate.push(newClip);
+  const others=storyClipsSorted(candidate).filter(c=>c.id!==newClip.id),idx=others.filter(c=>start>=c.start+c.duration/2).length,order=others.map(c=>c.id);order.splice(idx,0,newClip.id);reflowCandidate(candidate,order);commitMagneticCandidate(candidate,`${m.label} inséré dans la Storyline`,before)
 }
 
 addMedia=function(){
   const m=getMedia(selectedMedia);if(!m)return;if(!updateMediaRange())return;
-  const before=cloneClips(),candidate=cloneClips(),story=storyClipsSorted(candidate),start=story.length?story[story.length-1].start+story[story.length-1].duration:getStorylineStart(),d=(m.out??m.duration)-(m.in||0);
-  const c={id:'v'+Date.now(),track:'video',mediaId:m.id,label:m.label,start,duration:d,sourceStart:m.in||0};candidate.push(c);reflowCandidate(candidate);selectedClip=c.id;commitMagneticCandidate(candidate,m.label+' ajouté à la Storyline',before)
+  const before=cloneClips(),story=storyClipsSorted(before),start=story.length?story[story.length-1].start+story[story.length-1].duration:getStorylineStart(),d=(m.out??m.duration)-(m.in||0);
+  const c={id:'v'+Date.now(),track:'video',mediaId:m.id,label:m.label,start,duration:d,sourceStart:m.in||0};selectedClip=c.id;
+  if(backendConnected){
+    commitBackendMagneticOperation(
+      'insert',
+      {clip:backendClipPayload(c)},
+      m.label+' ajouté à la Storyline',
+      before,
+    );
+    return
+  }
+  const candidate=cloneClips();candidate.push(c);reflowCandidate(candidate);commitMagneticCandidate(candidate,m.label+' ajouté à la Storyline',before)
 }
 
 const _legacyRemoveClip=removeClip;
 removeClip=function(){
   const c=getClip(selectedClip);if(!c||c.track!=='video')return _legacyRemoveClip();
-  const before=cloneClips(),candidate=cloneClips().filter(x=>x.id!==c.id);candidate.forEach(x=>{if(x.parentClipId===c.id)detachChild(x)});reflowCandidate(candidate);selectedClip=candidate[0]?.id||null;commitMagneticCandidate(candidate,'Plan supprimé · Storyline refermée',before)
+  const before=cloneClips();
+  if(backendConnected){
+    commitBackendMagneticOperation(
+      'remove',
+      {clip_id:c.id},
+      'Plan supprimé · Storyline refermée',
+      before,
+    );
+    return
+  }
+  const candidate=cloneClips().filter(x=>x.id!==c.id);candidate.forEach(x=>{if(x.parentClipId===c.id)detachChild(x)});reflowCandidate(candidate);selectedClip=candidate[0]?.id||null;commitMagneticCandidate(candidate,'Plan supprimé · Storyline refermée',before)
 }
 
 const _v012RenderInspector=renderInspector;
