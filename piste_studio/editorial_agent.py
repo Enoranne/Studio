@@ -125,11 +125,15 @@ def transcript_candidates(root: Path, media_id: int) -> dict:
             })
 
     retakes = []
+    # A full O(n²) pass becomes expensive on long interviews. Retakes are
+    # normally clustered, so compare a bounded forward window and cap output.
     for i, left in enumerate(phrases):
+        if len(retakes) >= 100:
+            break
         left_text = _normal_text(str(left.get("text") or ""))
         if len(left_text) < 12:
             continue
-        for right in phrases[i + 1:]:
+        for right in phrases[i + 1:i + 21]:
             right_text = _normal_text(str(right.get("text") or ""))
             if len(right_text) < 12:
                 continue
@@ -251,15 +255,26 @@ def compare_takes(
         raise EditorialAgentError(
             "Comparer au moins deux médias."
         )
-    transcripts = {
-        media_id: _latest_transcript(root, media_id)
-        for media_id in ids
-    }
+    transcripts = {}
+    skipped_media_ids = []
+    for media_id in ids:
+        transcript = get_transcript(root, media_id)
+        if transcript:
+            transcripts[media_id] = transcript
+        else:
+            skipped_media_ids.append(media_id)
+    usable_ids = [media_id for media_id in ids if media_id in transcripts]
+    if len(usable_ids) < 2:
+        raise EditorialAgentError(
+            "Au moins deux médias transcrits sont requis pour comparer les prises."
+        )
+
     matches = []
-    for left_index, left_id in enumerate(ids):
-        for right_id in ids[left_index + 1:]:
-            left_phrases = transcripts[left_id].get("phrases") or []
-            right_phrases = transcripts[right_id].get("phrases") or []
+    for left_index, left_id in enumerate(usable_ids):
+        for right_id in usable_ids[left_index + 1:]:
+            # Keep comparison bounded on unusually long recordings.
+            left_phrases = (transcripts[left_id].get("phrases") or [])[:1000]
+            right_phrases = (transcripts[right_id].get("phrases") or [])[:1000]
             for left in left_phrases:
                 a = _normal_text(str(left.get("text") or ""))
                 if len(a) < 10:
@@ -292,7 +307,8 @@ def compare_takes(
                     })
     matches.sort(key=lambda x: x["similarity"], reverse=True)
     return {
-        "media_ids": ids,
+        "media_ids": usable_ids,
+        "skipped_media_ids": skipped_media_ids,
         "threshold": float(threshold),
         "matches": matches[: max(1, int(max_pairs))],
         "policy": {
