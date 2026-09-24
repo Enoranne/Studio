@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "piste-studio"
-version = "0.0.24"
+version = "0.24.1"
 description = "Local AI filmmaking workspace with canon, locks, versioned edits, Tesseract bridge and an integrated local web UI with timeline publishing and Tesseract authoring."
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0", "fastapi>=0.110", "uvicorn>=0.30"]
@@ -18,7 +18,7 @@ include = ["piste_studio*"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "httpx>=0.27", "playwright>=1.48"]
-vision = ["transformers>=4.40", "torch>=2.2", "Pillow>=10"]
+vision = ["transformers>=4.40", "torch>=2.2", "Pillow>=10"]\npackaging = ["pyinstaller>=6.22,<7"]
 
 [tool.setuptools.package-data]
 piste_studio = ["ui/*"]
