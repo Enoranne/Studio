@@ -42,16 +42,20 @@ async function openTargetedReferenceManager(dbId=null){
   $('#editorialDrawerTitle').textContent=`Références ciblées · ${m.label}`;
   body.innerHTML='<div class="editorial-loading">Chargement des références…</div>';
   try{
-    const r=await api(`/api/vision/references?media_id=${m.dbId}`);
-    renderTargetedReferenceManager(m,r.references||[]);
+    const [r,g]=await Promise.all([
+      api(`/api/vision/references?media_id=${m.dbId}`),
+      api(`/api/vision/reference-groups?media_id=${m.dbId}`),
+    ]);
+    renderTargetedReferenceManager(m,r.references||[],g.groups||[]);
   }catch(err){
     body.innerHTML=`<div class="warn">Références indisponibles : ${err.message}</div>`;
   }
 }
 
-function renderTargetedReferenceManager(m,refs){
+function renderTargetedReferenceManager(m,refs,groups=[]){
   const body=$('#editorialDrawerBody');
   const t=currentReferenceFrameTime(m);
+  const groupSummary=groups.length?groups.map(group=>`<div class="semantic-resolved-row"><span>${group.tag} · ${group.group_name}</span><b>${group.reference_count} réf. · poids ${(+group.total_quality_weight||0).toFixed(1)}</b></div>`).join(''):'<div class="hint">Aucun groupe défini : les références sans groupe restent des preuves indépendantes.</div>';
   const cards=refs.length?refs.map(ref=>{
     const roi=ref.roi||{x:0,y:0,width:1,height:1};
     const full=Math.abs((roi.width||1)-1)<.001&&Math.abs((roi.height||1)-1)<.001&&Math.abs(roi.x||0)<.001&&Math.abs(roi.y||0)<.001;
@@ -77,6 +81,8 @@ function renderTargetedReferenceManager(m,refs){
   body.innerHTML=`
     <div class="selector-policy"><span>RÉFÉRENCE CIBLÉE</span><b>${m.label}</b><small>Frame/zone explicitement choisie · aucun tag global ajouté au rush</small></div>
     <div id="targetedReferenceError"></div>
+    <div class="inspector-section-title">GROUPES DE RÉFÉRENCES</div>
+    <div class="semantic-resolved">${groupSummary}</div>
     <div class="form-grid">
       <div class="row"><label>Facet</label><select id="targetedReferenceFacet"><option value="character">Character</option><option value="prop">Prop</option><option value="decor">Decor</option><option value="look">Look</option></select></div>
       <div class="row"><label>Valeur</label><input id="targetedReferenceValue" placeholder="ex. fisher"></div>
