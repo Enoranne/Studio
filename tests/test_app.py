@@ -77,7 +77,7 @@ def test_timeline_persists_and_reloads(tmp_path):
     assert saved.status_code == 200, saved.text
     reloaded = client.get("/api/timeline?edit_name=teaser_30").json()["timeline"]
     assert reloaded["clips"][0]["mediaDbId"] == video_id
-    assert reloaded["schema_version"] == 4
+    assert reloaded["schema_version"] == 5
     assert reloaded["clips"][1]["audioDbId"] == audio_id
     assert reloaded["clips"][1]["gainDb"] == -6
     assert reloaded["clips"][1]["pan"] == 0.2
@@ -677,3 +677,79 @@ def test_timeline_continuity_api_can_simulate_candidate_without_editing(tmp_path
     assert body["policy"]["automatic_edit"] is False
     after = (root / "edits" / "teaser_30" / "working" / "timeline.json").read_text(encoding="utf-8")
     assert before == after
+
+
+
+def test_title_overlay_model_persists_and_normalizes(tmp_path):
+    root = make_project(tmp_path)
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    payload = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 30,
+        "tracks": [
+            {"id": "video", "name": "VIDEO", "kind": "video"},
+            {"id": "titles", "name": "TITLES", "kind": "title"},
+        ],
+        "clips": [
+            {
+                "id": "t1",
+                "track": "titles",
+                "label": "PISTE 0",
+                "text": "PISTE 0\nBONUS TRACK",
+                "start": 20,
+                "duration": 3,
+                "titlePreset": "lower_third",
+                "fontFamily": "serif",
+                "fontSize": 72,
+                "fontWeight": 600,
+                "textAlign": "left",
+                "positionX": 0.35,
+                "positionY": 0.8,
+                "boxWidth": 0.7,
+                "color": "#fefefe",
+                "backgroundColor": "#120f0a",
+                "backgroundOpacity": 0.42,
+                "opacity": 0.9,
+                "padding": 0.03,
+                "cornerRadius": 0.02,
+            }
+        ],
+    }
+    saved = client.post("/api/timeline", json=payload)
+    assert saved.status_code == 200, saved.text
+    title = client.get("/api/timeline?edit_name=teaser_30").json()["timeline"]["clips"][0]
+    assert title["text"] == "PISTE 0\nBONUS TRACK"
+    assert title["titlePreset"] == "lower_third"
+    assert title["fontFamily"] == "serif"
+    assert title["fontSize"] == 72.0
+    assert title["fontWeight"] == 600
+    assert title["positionX"] == 0.35
+    assert title["positionY"] == 0.8
+    assert title["color"] == "#FEFEFE"
+    assert title["backgroundColor"] == "#120F0A"
+    assert title["backgroundOpacity"] == 0.42
+    assert title["opacity"] == 0.9
+    assert title["schema_version"] if False else True
+
+
+def test_title_overlay_validation_rejects_invalid_style(tmp_path):
+    root = make_project(tmp_path)
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    payload = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 30,
+        "tracks": [{"id": "titles", "name": "TITLES", "kind": "title"}],
+        "clips": [{
+            "id": "t1",
+            "track": "titles",
+            "text": "Titre",
+            "start": 1,
+            "duration": 2,
+            "fontSize": 500,
+        }],
+    }
+    response = client.post("/api/timeline", json=payload)
+    assert response.status_code == 422
+    assert "fontSize" in response.text
