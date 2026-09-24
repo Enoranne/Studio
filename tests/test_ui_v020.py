@@ -127,6 +127,7 @@ def test_v022_ux_contains_timeline_neighbor_continuity_patterns():
     assert "Tester un autre rush à cette position" in ux
     assert "Tester ce candidat" in ux
     assert "RUPTURE POTENTIELLE" in ux
-    assert "BRIDGE_EVIDENCE_GAP" in ux\n    assert "À VÉRIFIER" in ux
+    assert "BRIDGE_EVIDENCE_GAP" in ux
+    assert "À VÉRIFIER" in ux
     assert "Aucun remplacement n’est appliqué automatiquement" in ux
     assert "Vision · Continuité voisins" in ux
