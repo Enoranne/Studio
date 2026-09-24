@@ -172,7 +172,8 @@ function renderSemanticProposals(result,m){
             ${refs.slice(0,3).map(x=>`<span>${x}</span>`).join('')}
           </div>
           <div class="vision-evidence">Meilleure référence : ${Math.round((+p.evidence?.best_reference_similarity||0)*100)} %</div>
-          <div class="suggestion-actions"><button class="btn primary" onclick="resolveSemanticProposalUI(${p.id},true,${m.dbId})">Accepter</button><button class="btn" onclick="resolveSemanticProposalUI(${p.id},false,${m.dbId})">Rejeter</button></div>
+          ${canonAssessmentMarkup(p.canon_assessment)}
+          <div class="suggestion-actions"><button class="btn primary" onclick="${p.canon_assessment?.requires_explicit_acknowledgement?`openCanonConflictConfirmation(${p.id},${m.dbId})`:`resolveSemanticProposalUI(${p.id},true,${m.dbId})`}">${p.canon_assessment?.requires_explicit_acknowledgement?'Examiner conflit':'Accepter'}</button><button class="btn" onclick="resolveSemanticProposalUI(${p.id},false,${m.dbId})">Rejeter</button></div>
         </div>
       </article>`;
     }).join('');
