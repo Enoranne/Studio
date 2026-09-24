@@ -92,7 +92,7 @@ def test_timeline_validator_accepts_connections_and_rejects_drift(tmp_path):
     root = tmp_path / "Project"
     init_project(root, "Test")
     clean = validate_timeline(root, base_doc())
-    assert clean["schema_version"] == 5
+    assert clean["schema_version"] == 6
     assert clean["storyline"]["mode"] == "magnetic"
     assert next(c for c in clean["clips"] if c["id"] == "t1")["parentClipId"] == "v2"
 
