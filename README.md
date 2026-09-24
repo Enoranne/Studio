@@ -326,3 +326,30 @@ Lancer :
     pytest -q
 
 Voir aussi `START_HERE.md`, `ROADMAP.md`, `UX_GUIDE.md`, `README_APP.md`, `THIRD_PARTY.md` et `LICENSE_NOTE.md`.
+
+
+### Titres et overlays éditables — V0.23.1
+
+Les clips de la piste **TITLES** disposent maintenant d’un modèle visuel complet.
+
+Dans l’Inspector, **TITRE / OVERLAY** permet de régler :
+
+- texte ;
+- preset **Centre / Lower third / Haut / Personnalisé** ;
+- famille générique **Sans / Serif / Mono** ;
+- taille et graisse ;
+- alignement ;
+- position X/Y ;
+- largeur de boîte ;
+- couleur et opacité ;
+- couleur/opacité du fond ;
+- padding ;
+- arrondi.
+
+Les positions et dimensions sont normalisées par rapport au canvas, afin de rester cohérentes entre le Viewer et les futurs formats de delivery.
+
+Le Viewer PROGRAM affiche les changements en direct.
+
+Le modèle est persisté dans la timeline schema v5 et conservé intégralement dans les `title_cuts` de l’authoring plan.
+
+PISTE Studio ne fabrique pas une couche texte Tesseract à partir d’hypothèses. Si le schéma Tesseract installé ne documente pas précisément une couche Text compatible, le titre reste explicitement listé dans `unmaterialized_titles` pour la phase de delivery au lieu d’être perdu silencieusement.
