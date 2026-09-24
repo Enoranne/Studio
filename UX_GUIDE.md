@@ -449,3 +449,44 @@ Si le moteur cible ne sait pas matérialiser un titre, le système doit :
 Le Viewer PROGRAM doit être fidèle au modèle PISTE, mais un aperçu navigateur réussi ne prouve pas qu’un moteur externe sait produire exactement le même résultat.
 
 La chaîne de delivery doit donc vérifier séparément la matérialisation finale.
+
+
+## 46. Le carton final reste un clip
+
+Un carton final ne doit pas être une exception cachée dans l’export.
+
+Il reste un clip visible sur TITLES, avec :
+- début ;
+- durée ;
+- texte ;
+- style ;
+- fond canvas ;
+- éventuelle queue finale.
+
+## 47. Fond canvas ≠ fond du texte
+
+Le fond d’une boîte de texte et un carton plein ne sont pas la même chose.
+
+L’interface doit distinguer :
+- `backgroundColor / backgroundOpacity` : boîte du texte ;
+- `canvasBackgroundColor / canvasBackgroundOpacity` : image entière.
+
+## 48. Noir final sans média artificiel
+
+Une queue noire peut être décrite par le comportement temporel du carton final.
+
+Créer automatiquement un faux fichier vidéo noir ajouterait une dépendance inutile au catalogue.
+
+Le modèle doit donc conserver le noir final comme propriété du clip tant que le rendu final peut l’interpréter.
+
+## 49. Une fin alignée doit réellement être alignée
+
+Quand l’utilisateur demande un carton final automatique, sa création doit se terminer exactement au timecode final de la timeline.
+
+Le snap ne doit pas déplacer silencieusement cette borne.
+
+## 50. Le texte qui disparaît n’est pas un clip supprimé
+
+Pendant `blackTailSeconds`, seul le rendu du texte est masqué.
+
+Le clip final reste actif, son fond reste visible et son historique reste intact.
