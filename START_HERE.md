@@ -168,3 +168,18 @@ Les presets sont des repères configurables et ne remplacent jamais les spécifi
 7. Ajuste ensuite manuellement IN/OUT si nécessaire avant d’ajouter le plan.
 
 Une sensibilité plus forte propose potentiellement davantage de ruptures. PISTE Studio ne modifie jamais la Storyline à partir de cette détection.
+
+
+## Références ciblées V0.22.2
+
+1. Sélectionne un rush et affiche le frame utile dans SOURCE.
+2. Ouvre **SEMANTIC VISION → Référence ciblée**.
+3. Choisis le facet et la valeur, par exemple `prop:fisher`.
+4. Clique **Utiliser le frame affiché** si le timecode est correct.
+5. Garde **Frame entier** si toute l’image est pertinente.
+6. Pour isoler un personnage ou un accessoire, choisis **Zone de l’image** et règle X / Y / largeur / hauteur.
+7. Clique **Créer la référence**.
+8. Vérifie le crop affiché dans la liste.
+9. Lance ensuite **Proposer continuité** sur un autre rush.
+
+Créer une référence ciblée n’ajoute pas son tag au média source. Elle sert uniquement de preuve visuelle explicite pour les comparaisons futures.
