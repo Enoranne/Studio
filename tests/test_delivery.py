@@ -431,6 +431,22 @@ def test_delivery_preset_integrated_immutable_and_validation(tmp_path):
     assert "video_bitrate_mbps" not in prores
     assert "audio_bitrate_kbps" not in prores
 
+    long_named = create_project_delivery_preset(
+        root,
+        {
+            "label": "L" * 100,
+            "family": "online",
+            "width": 1920,
+            "height": 1080,
+            "fps": 24,
+            "video_codec": "libx264",
+            "tesseract_resolution": "1080p",
+            "default_framing": "native",
+        },
+    )
+    duplicated = duplicate_delivery_preset(root, long_named["id"])
+    assert len(duplicated["label"]) <= 100
+
 
 def test_delivery_preset_export_import_round_trip(tmp_path):
     source_root = tmp_path / "PresetSource"
