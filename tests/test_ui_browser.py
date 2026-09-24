@@ -13,7 +13,7 @@ from piste_studio.project import init_project
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.media_intelligence import _write_analysis
-from piste_studio.semantic_vision import store_semantic_profile
+from piste_studio.semantic_vision import store_semantic_profile, store_targeted_semantic_reference
 from piste_studio.audio_intelligence import _write_analysis as _write_audio_loudness
 from piste_studio.timeline import save_timeline
 
@@ -183,6 +183,34 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
     master_report = root / "reports" / "audio" / "teaser_30_master_check.json"
     master_report.parent.mkdir(parents=True, exist_ok=True)
     master_report.write_text('{"evaluation":{"status":"PASS"}}\n', encoding="utf-8")
+    def fake_targeted_reference_create(
+        root,
+        media_id,
+        *,
+        tag,
+        timestamp_seconds,
+        roi=None,
+        **kwargs,
+    ):
+        image = root / "cache" / "vision" / "references" / "browser_targeted.jpg"
+        image.parent.mkdir(parents=True, exist_ok=True)
+        image.write_bytes(b"jpeg")
+        return store_targeted_semantic_reference(
+            root,
+            media_id,
+            tag=tag,
+            timestamp_seconds=timestamp_seconds,
+            roi=roi,
+            embedding=[1.0, 0.0, 0.0],
+            image_path=image,
+        )
+
+    monkeypatch.setattr(
+        app_module,
+        "create_targeted_semantic_reference",
+        fake_targeted_reference_create,
+    )
+
     monkeypatch.setattr(
         app_module,
         "suggest_editorial_windows",
@@ -406,6 +434,26 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
             page.locator(".media-row").nth(1).click()
             expect(page.locator(".semantic-vision-section")).to_be_visible()
             expect(page.locator(".vision-state.ready")).to_be_visible()
+
+            page.get_by_role("button", name="Référence ciblée").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator(".selector-policy")).to_contain_text("RÉFÉRENCE CIBLÉE")
+            page.locator("#targetedReferenceFacet").select_option("prop")
+            page.locator("#targetedReferenceValue").fill("fisher")
+            page.locator("#targetedReferenceMode").select_option("roi")
+            expect(page.locator("#targetedRoiFields")).to_be_visible()
+            page.locator("#targetedRoiX").fill("15")
+            page.locator("#targetedRoiY").fill("20")
+            page.locator("#targetedRoiW").fill("50")
+            page.locator("#targetedRoiH").fill("40")
+            page.get_by_role("button", name="Créer la référence").click()
+            expect(page.locator(".targeted-reference-card")).to_have_count(1)
+            expect(page.locator(".targeted-reference-card")).to_contain_text("prop:fisher")
+            expect(page.locator(".targeted-reference-card")).to_contain_text("zone 15%, 20%")
+            page.locator("#editorialDrawer .pane-close").click()
+            expect(page.locator("#editorialDrawer")).to_be_hidden()
+            expect(page.locator("#inspector")).not_to_contain_text("prop:fisher")
+
             page.get_by_role("button", name="Proposer continuité").click()
             expect(page.locator("#editorialDrawer")).to_be_visible()
             expect(page.locator(".semantic-proposal-card")).to_have_count(3)
