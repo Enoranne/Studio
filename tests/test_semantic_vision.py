@@ -275,6 +275,18 @@ def test_targeted_reference_crud_and_roi_clamping(tmp_path):
     assert ref["roi"]["y"] == 0.95
     assert ref["roi"]["width"] == 0.05
     assert ref["roi"]["height"] == 0.05
+    duplicate = sv.store_targeted_semantic_reference(
+        root,
+        source["id"],
+        tag="look:warm",
+        timestamp_seconds=2.0,
+        roi={"x": 0.98, "y": 0.99, "width": 0.8, "height": 0.7},
+        embedding=[0.99, 0.01, 0.0],
+        provider="fake_clip",
+        model_id="fake/model",
+    )
+    assert duplicate["id"] == ref["id"]
+
     listed = sv.list_targeted_semantic_references(
         root,
         media_id=source["id"],
