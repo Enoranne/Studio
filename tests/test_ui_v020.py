@@ -145,3 +145,16 @@ def test_v023_ux_contains_editable_title_patterns():
     assert "Familles génériques" in ux
     assert "Titre / overlay mis à jour" in ux
     assert "applyViewerTitleStyle" in ux
+
+
+def test_v023_final_card_patterns():
+    html = (UI / "index.html").read_text(encoding="utf-8")
+    ux = (UI / "ux-titles.js").read_text(encoding="utf-8")
+    assert "+ Carton final" in html
+    assert "viewerTitleBackdrop" in html
+    assert "CARTON FINAL" in ux
+    assert "blackTailSeconds" in ux
+    assert "canvasBackgroundColor" in ux
+    assert "Titre · Ajouter un carton final" in ux
+    assert "FIN DE TIMELINE" in ux
+    assert "Carton final ajouté · texte à personnaliser" in ux
