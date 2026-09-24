@@ -2,6 +2,17 @@
 
 PISTE Studio est un environnement local de montage/production piloté par **canon, locks, versions, PATCH, historique de sécurité, décisions éditoriales, intelligence média, transcripts, continuité visuelle, agent éditorial et mixage audio non destructif**. Tesseract reste un moteur externe installé séparément : il n’est ni redistribué ni modifié ici.
 
+## Licence
+
+PISTE Studio est **source-visible mais n’est pas distribué sous une licence open source**.
+
+Le code et les éléments originaux de PISTE Studio sont protégés par le fichier `LICENSE` du dépôt et restent **tous droits réservés**, sauf autorisation écrite contraire.
+
+Les composants, dépendances, références et services tiers restent soumis à **leurs propres licences et conditions**. Voir `THIRD_PARTY_NOTICES.md` et `LICENSE_NOTE.md`.
+
+Le fait que ce dépôt soit public sur GitHub ne constitue pas, à lui seul, une autorisation générale de copier, modifier, redistribuer, sous-licencier ou commercialiser PISTE Studio.
+
+
 ## V0.26 — Editorial Agent & Transcript Intelligence
 
 V0.26 ajoute une couche agentique **au-dessus** de la Storyline, sans remplacer le moteur de montage :

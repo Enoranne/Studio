@@ -1,0 +1,68 @@
+PISTE STUDIO PROPRIETARY LICENSE
+Copyright © 2026 Enoranne. All rights reserved.
+
+1. Scope
+
+This license applies to the original PISTE Studio source code, documentation,
+user-interface assets, project-specific schemas, and other original materials
+in this repository for which the copyright holder owns or controls the
+applicable rights.
+
+Third-party software, libraries, services, source code, assets, and other
+materials are not relicensed by this file. They remain governed by their own
+licenses and terms. See THIRD_PARTY_NOTICES.md and LICENSE_NOTE.md.
+
+2. No general license grant
+
+Except where expressly permitted by applicable law, by the applicable GitHub
+terms for content made available through the GitHub service, by a third-party
+license, or by prior written permission from the copyright holder, no
+permission is granted to:
+
+- copy or reproduce PISTE Studio;
+- modify, adapt, translate, or create derivative works from PISTE Studio;
+- publish, distribute, redistribute, or make PISTE Studio available to third
+  parties;
+- sublicense, sell, rent, lease, commercialize, or otherwise exploit PISTE
+  Studio;
+- incorporate PISTE Studio source code into another product or service.
+
+3. Public repository
+
+The source code may be publicly visible on GitHub. Public visibility does not,
+by itself, grant an open-source license or any additional permission beyond
+rights expressly granted by applicable law, the applicable GitHub terms, a
+third-party license, or written permission from the copyright holder.
+
+Nothing in this license is intended to restrict rights that GitHub expressly
+grants users under its applicable terms for use of the GitHub service.
+
+4. Third-party material
+
+Where PISTE Studio references, interfaces with, depends on, or incorporates
+third-party material, the relevant third-party license or terms control that
+material.
+
+Any copyright, attribution, source-availability, notice, or other obligation
+required by a third-party license must be preserved.
+
+5. Trademarks and branding
+
+No license or permission is granted to use the name PISTE Studio, its logos,
+visual identity, or other project branding as a trademark, service mark, or
+source identifier.
+
+6. Written permission
+
+Separate permissions, commercial licenses, collaboration agreements, or other
+rights may be granted in writing by the copyright holder. Any such written
+agreement prevails over this file to the extent of any conflict.
+
+7. No warranty
+
+To the maximum extent permitted by applicable law, PISTE Studio is provided
+without warranties of any kind. The copyright holder is not liable for damages
+arising from unauthorized use, permitted evaluation, or use under a separate
+written agreement.
+
+All rights not expressly granted are reserved.
