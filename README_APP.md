@@ -345,6 +345,55 @@ Quand la forme native n’est pas confirmée, le manifest contient :
 
 Aucun titre n’est donc silencieusement abandonné.
 
+### Carton final V0.23.2
+
+Le carton final utilise le même clip title v5 que les overlays ordinaires, avec :
+
+- `titleRole: final_card` ;
+- `canvasBackgroundColor` ;
+- `canvasBackgroundOpacity` ;
+- `blackTailSeconds`.
+
+### Création
+
+`addFinalCard()` crée le carton à :
+
+`start = duration_timeline - duration_carton`
+
+sans arrondi au snap, afin de conserver un alignement exact sur la fin.
+
+La collision de la piste TITLES reste vérifiée avant insertion.
+
+### Preview
+
+Le Viewer possède un calque `viewerTitleBackdrop`.
+
+Pour un carton final :
+
+1. le backdrop couvre tout le Viewer ;
+2. le texte utilise le moteur de titre v5 ;
+3. lorsque `playhead - start >= duration - blackTailSeconds`, le texte est masqué ;
+4. le backdrop reste visible jusqu’à la fin du clip.
+
+Aucun clip noir supplémentaire n’est nécessaire.
+
+### Validation
+
+Le backend exige :
+
+`0 <= blackTailSeconds < duration`.
+
+### Authoring
+
+Les champs spécialisés sont sérialisés dans `title_cuts` :
+
+- `title_role` ;
+- `canvas_background_color` ;
+- `canvas_background_opacity` ;
+- `black_tail_seconds`.
+
+Ils restent auditables dans `unmaterialized_titles` si le schéma Tesseract installé ne confirme pas une matérialisation Text compatible.
+
 ## Audio Delivery V0.21
 
 Le **Master Check** contrôle le mix rendu, après sommation des clips audio audibles de la timeline.
