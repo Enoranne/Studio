@@ -12,6 +12,7 @@ from piste_studio.delivery import (
     delivery_report_path,
     delivery_targets,
     estimate_fill_crop,
+    evaluate_delivery_probe,
     preflight_delivery,
     render_delivery_variant,
     resolve_delivery_target,
@@ -269,3 +270,24 @@ def test_real_ffmpeg_social_vertical_fit_and_report(tmp_path):
         "V001",
         render["path"].name,
     ) == render["path"]
+
+
+
+def test_delivery_conformance_warns_on_pixel_format_and_missing_audio():
+    target = resolve_delivery_target("online_1080")
+    result = evaluate_delivery_probe(
+        target,
+        {
+            "video_codec": "h264",
+            "width": 1920,
+            "height": 1080,
+            "pixel_format": "yuv422p",
+            "fps": 24.0,
+            "audio_codec": None,
+            "audio_sample_rate": None,
+            "audio_channels": None,
+        },
+    )
+    assert result["status"] == "WARN"
+    assert any("Pixel format" in x for x in result["reasons"])
+    assert any("Piste audio attendue" in x for x in result["reasons"])
