@@ -56,7 +56,9 @@ from .semantic_vision import (
     list_targeted_semantic_references,
     propose_semantic_tags,
     resolve_semantic_proposal,
+    summarize_targeted_reference_groups,
     targeted_reference_image_path,
+    update_targeted_semantic_reference_metadata,
 )
 from .audio_intelligence import (
     AudioIntelligenceError,
@@ -381,6 +383,28 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except SemanticVisionError as exc:
             raise HTTPException(422, str(exc)) from exc
 
+    @app.get("/api/vision/reference-groups")
+    def semantic_vision_reference_groups(media_id: int | None = None):
+        try:
+            return {
+                "groups": summarize_targeted_reference_groups(
+                    root,
+                    media_id=media_id,
+                ),
+                "quality_weights": {
+                    "primary": 1.5,
+                    "secondary": 1.0,
+                    "low": 0.5,
+                },
+                "policy": {
+                    "group_balanced": True,
+                    "quality_weighted_within_group": True,
+                    "automatic_decision": False,
+                },
+            }
+        except SemanticVisionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
     @app.post("/api/vision/references")
     def semantic_vision_reference_create(payload: dict = Body(...)):
         try:
@@ -390,6 +414,8 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 tag=str(payload["tag"]),
                 timestamp_seconds=float(payload.get("timestamp_seconds", 0.0)),
                 roi=payload.get("roi"),
+                group_name=payload.get("group_name"),
+                quality=str(payload.get("quality") or "secondary"),
                 allow_model_download=bool(
                     payload.get("allow_model_download", False)
                 ),
@@ -409,6 +435,48 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 },
             }
         except (SemanticVisionError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.patch("/api/vision/references/{reference_id}")
+    def semantic_vision_reference_update(
+        reference_id: int,
+        payload: dict = Body(...),
+    ):
+        if "group_name" not in payload and "quality" not in payload:
+            raise HTTPException(
+                422,
+                "group_name ou quality est requis.",
+            )
+        try:
+            row = update_targeted_semantic_reference_metadata(
+                root,
+                reference_id,
+                group_name=(
+                    payload.get("group_name")
+                    if "group_name" in payload
+                    else None
+                ),
+                quality=(
+                    str(payload["quality"])
+                    if "quality" in payload
+                    else None
+                ),
+            )
+            row.pop("embedding", None)
+            row["image_url"] = (
+                f"/api/vision/references/{row['id']}/image"
+                if row.get("image_path")
+                else None
+            )
+            return {
+                "reference": row,
+                "policy": {
+                    "metadata_only": True,
+                    "automatic_media_tag_write": False,
+                    "automatic_storyline_change": False,
+                },
+            }
+        except SemanticVisionError as exc:
             raise HTTPException(422, str(exc)) from exc
 
     @app.get("/api/vision/references/{reference_id}/image")
