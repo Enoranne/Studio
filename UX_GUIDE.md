@@ -373,3 +373,43 @@ Cela ne doit jamais :
 - ouvrir un facet fermé ;
 - modifier un HARD LOCK ;
 - faire disparaître la trace du conflit.
+
+
+## 37. Continuité contextuelle, pas absolue
+
+Un plan peut être cohérent seul et problématique entre deux voisins.
+
+Les signaux de continuité doivent donc indiquer :
+- le voisin concerné ;
+- le facet concerné ;
+- les tags comparés ;
+- la nature exacte du signal.
+
+## 38. Métadonnée absente ≠ élément absent
+
+Si le plan A porte `prop:fisher` et que le plan B n’a aucun tag `prop`, PISTE Studio ne peut pas conclure que le Fisher disparaît.
+
+Il doit afficher une **preuve manquante / à vérifier**.
+
+Une rupture explicite exige des preuves structurées incompatibles des deux côtés.
+
+## 39. Tester avant de remplacer
+
+La comparaison d’un rush candidat doit être non destructive.
+
+Tester un candidat à la position d’un clip :
+- conserve le clip monté ;
+- conserve ses trims ;
+- ne déplace rien ;
+- ne crée pas de checkpoint ;
+- ne modifie pas les tags.
+
+La simulation doit pouvoir être répétée librement avant toute décision éditoriale.
+
+## 40. Le voisinage reste une aide
+
+Même deux tags incompatibles ne prouvent pas qu’une coupe est mauvaise.
+
+Un changement de personnage, décor ou look peut être narrativement volontaire.
+
+Le statut **RUPTURE POTENTIELLE** décrit un changement structuré détecté ; il ne constitue jamais une interdiction de montage.
