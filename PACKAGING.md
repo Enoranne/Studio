@@ -106,3 +106,66 @@ Le packaging ne doit jamais affaiblir les garanties existantes :
 - aucune télémétrie imposée ;
 - Tesseract séparé ;
 - diagnostic Readiness disponible avant production.
+
+
+## État validé au 24 septembre 2026
+
+### V0.25.0 — validée
+
+Le workflow macOS a produit avec succès sur un runner Apple Silicon :
+
+- `PISTE Studio.app` ;
+- `PISTE Studio_0.24.1_aarch64.dmg` ;
+- sidecar PyInstaller `aarch64-apple-darwin` ;
+- artifact GitHub Actions `piste-studio-macos`.
+
+Le premier artifact validé faisait environ 38 Mo compressé.
+
+### Validation bi-architecture
+
+Le workflow `desktop-macos.yml` utilise désormais une matrice :
+
+- `macos-14` → ARM64 / Apple Silicon ;
+- `macos-15-intel` → x86_64 / Intel.
+
+Chaque architecture construit son propre sidecar PyInstaller puis son propre bundle Tauri.
+
+### Smoke test du bundle
+
+Après le build, la CI :
+
+1. localise le sidecar réellement contenu dans `PISTE Studio.app` ;
+2. vérifie qu'il est exécutable ;
+3. crée un mini-projet PISTE Studio ;
+4. démarre le sidecar gelé sur un port localhost libre ;
+5. appelle `/api/health` ;
+6. refuse le build si le backend empaqueté ne répond pas.
+
+Cela teste le backend **dans le bundle**, pas seulement l'environnement Python de CI.
+
+### Signature de test
+
+La configuration de développement utilise désormais :
+
+```json
+"signingIdentity": "-"
+```
+
+Il s'agit d'une signature ad-hoc destinée aux builds de test. Elle ne remplace pas Developer ID ni la notarisation Apple.
+
+### Release signée et notarisée
+
+Le workflow manuel `.github/workflows/release-macos.yml` est préparé pour les deux architectures.
+
+Secrets GitHub attendus :
+
+- `APPLE_CERTIFICATE` ;
+- `APPLE_CERTIFICATE_PASSWORD` ;
+- `KEYCHAIN_PASSWORD` ;
+- `APPLE_ID` ;
+- `APPLE_PASSWORD` ;
+- `APPLE_TEAM_ID`.
+
+Le workflow importe le certificat Developer ID, construit avec Tauri, puis vérifie `codesign`, le ticket de notarisation avec `stapler` et l'évaluation Gatekeeper avec `spctl`.
+
+Aucun secret Apple n'est stocké dans le dépôt.
