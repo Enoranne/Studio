@@ -253,7 +253,7 @@ def test_v029_version_is_aligned_across_python_desktop_ui_and_smoke_test():
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     project_block = pyproject.split("[project]", 1)[1].split("[", 1)[0]
-    match = re.search(r'^version\\s*=\\s*"([^"]+)"', project_block, re.MULTILINE)
+    match = re.search(r'^version\s*=\s*"([^"]+)"', project_block, re.MULTILINE)
     assert match is not None
     assert match.group(1) == expected
 
