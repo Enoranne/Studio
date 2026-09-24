@@ -68,7 +68,17 @@
 
 **V0.26 — FONDATION EDITORIAL AGENT FUSIONNÉE DANS MAIN ✅**
 
-Validation de code : **159 tests passés / 159**, syntaxe JavaScript validée. Le bundle macOS V0.26 a atteint construction, signature et démarrage du sidecar avec `/api/health` en 0.26.0 ; le garde-fou de smoke test resté en 0.25.0 a été corrigé. La chaîne de recette PISTE 0 est désormais instrumentée de bout en bout ; reste à l'exécuter sur les médias locaux réels PISTE 0 et à effectuer le smoke final du workflow macOS courant. Les appels de transcription externes restent explicitement opt-in.
+Validation de code V0.26 : **162 tests passés / 162** après ajout de la recette PISTE 0, syntaxe JavaScript validée. Le bundle macOS V0.26 a atteint construction, signature et démarrage du sidecar avec `/api/health` en 0.26.0 ; le garde-fou de smoke test resté en 0.25.0 a été corrigé. La chaîne de recette PISTE 0 est désormais instrumentée de bout en bout ; reste à l'exécuter sur les médias locaux réels PISTE 0 et à effectuer le smoke final du workflow macOS courant. Les appels de transcription externes restent explicitement opt-in.
+
+## V0.27 — Voice-to-Visual Editorial Bridge
+
+- ✅ **V0.27.1 — VO source indépendante** : transcript audio/VO utilisable même lorsque la parole n’est pas embarquée dans le rush vidéo ;
+- ✅ **V0.27.2 — Phrase / intention → images** : intention explicite optionnelle, mots-clés, métadonnées et tags ;
+- ✅ **V0.27.3 — Text ↔ Semantic Vision** : embeddings texte CLIP locaux optionnels et comparaison avec profils / références ciblées, sans téléchargement silencieux ;
+- ✅ **V0.27.4 — Fenêtres candidates & comparaison** : Editorial Vision, Favorite/Reject, score détaillé, comparaison de plans, aucun gagnant appliqué automatiquement ;
+- ✅ **V0.27.5 — VO→Image Proposed Edit** : beats visuels, pauses VO conservées, EDL virtuelle, VO préservée et validation via le pipeline transactionnel V0.26.
+
+**V0.27 — IMPLÉMENTÉE, VALIDATION CI ET RECETTE RÉELLE PISTE 0 EN COURS ⏳**
 
 ## Avant V1
 
