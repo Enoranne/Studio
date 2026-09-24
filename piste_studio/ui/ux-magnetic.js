@@ -26,13 +26,36 @@ function connectChild(c,parentId=null){
   if(!c||c.track==='video')return;
   const parent=parentId?getClip(parentId):storyParentAt(c.start);
   if(!parent){delete c.parentClipId;delete c.anchorOffset;delete c.connectionMode;return}
-  c.parentClipId=parent.id;c.anchorOffset=+(c.start-parent.start).toFixed(6);c.connectionMode='follow'
+  c.parentClipId=parent.id;
+  c.anchorOffset=+(c.start-parent.start).toFixed(6);
+  c.connectionPointOffset=+Math.min(Math.max(c.start-parent.start,0),parent.duration).toFixed(6);
+  c.connectionMode='follow'
 }
-function detachChild(c){if(!c)return;delete c.parentClipId;delete c.anchorOffset;delete c.connectionMode}
+function detachChild(c){if(!c)return;delete c.parentClipId;delete c.anchorOffset;delete c.connectionPointOffset;delete c.connectionMode}
 function changeConnection(parentId){
   const c=getClip(selectedClip);if(!c||c.track==='video')return;
   if(!parentId)detachChild(c);else connectChild(c,parentId);
   renderTracks();toast(parentId?'Élément connecté à la STORY':'Élément détaché')
+}
+
+function connectionTargetAt(time,list=clips){
+  const story=storyClipsSorted(list);
+  if(!story.length)return null;
+  const first=story[0],last=story[story.length-1],end=last.start+last.duration;
+  if(time<first.start-1e-6||time>end+1e-6)return null;
+  return story.find((c,i)=>time>=c.start-1e-6&&(time<c.start+c.duration-1e-6||i===story.length-1&&time<=c.start+c.duration+1e-6))||null
+}
+function setConnectionPointOnCandidate(candidate,childId,targetTime){
+  const child=candidate.find(c=>c.id===childId);
+  if(!child||child.track==='video')throw new Error('Élément connecté introuvable');
+  const parent=connectionTargetAt(targetTime,candidate);
+  if(!parent)throw new Error('Le point doit rester sur la Storyline');
+  const point=Math.min(Math.max(targetTime-parent.start,0),parent.duration);
+  child.parentClipId=parent.id;
+  child.anchorOffset=+(child.start-parent.start).toFixed(6);
+  child.connectionPointOffset=+point.toFixed(6);
+  child.connectionMode='follow';
+  return child
 }
 
 function cloneClips(list=clips){return list.map(c=>({...c,volumeEnvelope:Array.isArray(c.volumeEnvelope)?c.volumeEnvelope.map(p=>({...p})):c.volumeEnvelope}))}
@@ -54,7 +77,13 @@ function validateCandidate(candidate,original=clips){
     if(tr?.locked&&old&&(Math.abs(old.start-c.start)>1e-6||Math.abs(old.duration-c.duration)>1e-6))return `Piste ${tr.name} verrouillée`;
     if(c.mediaId){const m=getMedia(c.mediaId);if(m&&((c.sourceStart||0)<0||(c.sourceStart||0)+c.duration>m.duration+1e-6))return `${c.label} dépasse sa source vidéo`}
     if(c.audioId){const a=getAudio(c.audioId);if(a&&((c.sourceStart||0)<0||(c.sourceStart||0)+c.duration>a.duration+1e-6))return `${c.label} dépasse sa source audio`}
-    if(c.parentClipId){const p=candidate.find(x=>x.id===c.parentClipId&&x.track==='video');if(!p)return `Parent manquant pour ${c.label}`;if(Math.abs(c.start-(p.start+(+c.anchorOffset||0)))>1e-4)return `Connexion incohérente pour ${c.label}`}
+    if(c.parentClipId){
+      const p=candidate.find(x=>x.id===c.parentClipId&&x.track==='video');
+      if(!p)return `Parent manquant pour ${c.label}`;
+      if(Math.abs(c.start-(p.start+(+c.anchorOffset||0)))>1e-4)return `Connexion incohérente pour ${c.label}`;
+      const point=c.connectionPointOffset==null?Math.min(Math.max(+c.anchorOffset||0,0),p.duration):+c.connectionPointOffset;
+      if(point<0||point>p.duration+1e-6)return `Point de connexion hors du parent pour ${c.label}`;
+    }
     (byTrack[c.track]??=[]).push(c)
   }
   for(const arr of Object.values(byTrack)){arr.sort((a,b)=>a.start-b.start);for(let i=1;i<arr.length;i++){if(arr[i].start<arr[i-1].start+arr[i-1].duration-1e-6&&!(typeof audioCrossfadeAllowed==='function'&&audioCrossfadeAllowed(arr[i-1],arr[i])))return `Collision : ${arr[i-1].label} / ${arr[i].label}`}}
@@ -174,12 +203,155 @@ const _v012RenderInspector=renderInspector;
 renderInspector=function(){
   _v012RenderInspector();const c=getClip(selectedClip);if(!c||c.track==='video')return;
   const root=$('#inspector'),story=storyClipsSorted(),section=document.createElement('div');section.className='inspector-section connection-section';
-  section.innerHTML=`<div class="inspector-section-title">CONNEXION STORY</div><div class="row"><label>Plan parent</label><select id="parentClipSelect"><option value="">Détaché</option>${story.map(p=>`<option value="${p.id}" ${c.parentClipId===p.id?'selected':''}>${p.label} · ${fmt(p.start)}</option>`).join('')}</select></div><div class="hint">${c.parentClipId?`Suit ${getClip(c.parentClipId)?.label||c.parentClipId} avec un offset de ${(+c.anchorOffset||0).toFixed(1)} s.`:'Position absolue : ne suivra aucun plan STORY.'}</div>`;
+  const parent=c.parentClipId?getClip(c.parentClipId):null;
+  const point=parent?(c.connectionPointOffset==null?Math.min(Math.max(+c.anchorOffset||0,0),parent.duration):+c.connectionPointOffset):0;
+  section.innerHTML=`<div class="inspector-section-title">CONNEXION STORY</div>
+    <div class="row"><label>Plan parent</label><select id="parentClipSelect"><option value="">Détaché</option>${story.map(p=>`<option value="${p.id}" ${c.parentClipId===p.id?'selected':''}>${p.label} · ${fmt(p.start)}</option>`).join('')}</select></div>
+    ${parent?`<div class="row" style="margin-top:7px"><label>Point sur parent (s)</label><input id="connectionPointInput" type="number" min="0" max="${parent.duration}" step="0.1" value="${point.toFixed(2)}"></div><div class="ins-actions"><button class="btn" type="button" onclick="applyConnectionPointFromInspector()">Appliquer le point</button></div>`:''}
+    <div class="hint">${c.parentClipId?`Le clip reste à ${fmt(c.start)}. Il suit ${parent?.label||c.parentClipId} avec un offset temporel de ${(+c.anchorOffset||0).toFixed(1)} s ; son point graphique est à +${point.toFixed(1)} s sur le parent.`:'Position absolue : ne suivra aucun plan STORY.'}</div>`;
   root.insertBefore(section,root.lastElementChild);$('#parentClipSelect').onchange=e=>changeConnection(e.target.value)
 }
 
+let connectionPointDrag=null;
+
+function connectionPointAbsoluteTime(c){
+  if(!c?.parentClipId)return null;
+  const p=getClip(c.parentClipId);
+  if(!p)return null;
+  const point=c.connectionPointOffset==null?Math.min(Math.max(+c.anchorOffset||0,0),p.duration):+c.connectionPointOffset;
+  return p.start+point
+}
+function connectionSvgPointForTime(time,laneBox,innerBox){
+  return laneBox.left-innerBox.left+(time/DURATION)*laneBox.width
+}
+function renderConnectionPoints(){
+  const inner=$('#timelineInner'),videoLane=$('#lane-video');
+  if(!inner||!videoLane)return;
+  inner.querySelector('.connection-overlay')?.remove();
+  const connected=clips.filter(c=>c.track!=='video'&&c.parentClipId);
+  if(!connected.length)return;
+  const innerBox=inner.getBoundingClientRect(),laneBox=videoLane.getBoundingClientRect();
+  const height=Math.max(inner.scrollHeight,inner.clientHeight);
+  const width=Math.max(inner.scrollWidth,inner.clientWidth);
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');
+  svg.classList.add('connection-overlay');
+  svg.setAttribute('width',width);svg.setAttribute('height',height);
+  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+  connected.forEach(c=>{
+    const childEl=inner.querySelector(`.clip[data-clip="${CSS.escape(c.id)}"]`);
+    if(!childEl)return;
+    const childBox=childEl.getBoundingClientRect();
+    let parentId=c.parentClipId,pointOffset=c.connectionPointOffset;
+    if(connectionPointDrag?.childId===c.id&&connectionPointDrag.preview){
+      parentId=connectionPointDrag.preview.parentId;
+      pointOffset=connectionPointDrag.preview.pointOffset;
+    }
+    const parent=getClip(parentId);
+    if(!parent)return;
+    if(pointOffset==null)pointOffset=Math.min(Math.max(+c.anchorOffset||0,0),parent.duration);
+    const anchorTime=parent.start+(+pointOffset||0);
+    const x1=childBox.left-innerBox.left+Math.min(14,Math.max(5,childBox.width/2));
+    const y1=childBox.top-innerBox.top+(childBox.top<laneBox.top?childBox.height:0);
+    const x2=connectionSvgPointForTime(anchorTime,laneBox,innerBox);
+    const y2=laneBox.top-innerBox.top+laneBox.height/2;
+    const path=document.createElementNS(ns,'path');
+    const midY=y1+(y2-y1)*.52;
+    path.setAttribute('d',`M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`);
+    path.classList.add('connection-line');
+    if(c.id===selectedClip)path.classList.add('selected');
+    svg.appendChild(path);
+    const dot=document.createElementNS(ns,'circle');
+    dot.setAttribute('cx',x2);dot.setAttribute('cy',y2);dot.setAttribute('r',c.id===selectedClip?'5':'2.5');
+    dot.classList.add('connection-point');
+    dot.dataset.childId=c.id;
+    if(c.id===selectedClip){
+      dot.classList.add('selected');
+      dot.setAttribute('tabindex','0');
+      dot.setAttribute('role','slider');
+      dot.setAttribute('aria-label',`Point de connexion de ${c.label}`);
+      dot.addEventListener('pointerdown',ev=>beginConnectionPointDrag(ev,c.id));
+    }
+    svg.appendChild(dot)
+  });
+  inner.appendChild(svg)
+}
+function connectionTimeFromPointer(ev){
+  const lane=$('#lane-video');if(!lane)return null;
+  const box=lane.getBoundingClientRect();
+  return Math.max(0,Math.min(DURATION,((ev.clientX-box.left)/box.width)*DURATION))
+}
+function beginConnectionPointDrag(ev,childId){
+  if(ev.button!==0)return;
+  const child=getClip(childId),parent=child&&getClip(child.parentClipId);
+  if(!child||!parent)return;
+  ev.preventDefault();ev.stopPropagation();
+  selectedClip=childId;
+  connectionPointDrag={childId,before:cloneClips(),start:connectionPointAbsoluteTime(child),preview:null};
+  document.addEventListener('pointermove',onConnectionPointDrag);
+  document.addEventListener('pointerup',endConnectionPointDrag,{once:true});
+  $('#interactionReadout').textContent='Déplacer le point de connexion…';
+  renderInspector()
+}
+function onConnectionPointDrag(ev){
+  if(!connectionPointDrag)return;
+  const raw=connectionTimeFromPointer(ev);if(raw==null)return;
+  const time=snapTime(raw),parent=connectionTargetAt(time);
+  if(!parent){
+    connectionPointDrag.preview=null;
+    $('#interactionReadout').textContent='Point hors Storyline';
+    renderConnectionPoints();return
+  }
+  connectionPointDrag.preview={
+    time,
+    parentId:parent.id,
+    pointOffset:+Math.min(Math.max(time-parent.start,0),parent.duration).toFixed(6),
+  };
+  $('#interactionReadout').textContent=`CONNEXION · ${parent.label} · ${fmt(time)}`;
+  renderConnectionPoints()
+}
+async function endConnectionPointDrag(){
+  document.removeEventListener('pointermove',onConnectionPointDrag);
+  if(!connectionPointDrag)return;
+  const state=connectionPointDrag;connectionPointDrag=null;
+  $('#interactionReadout').textContent='Storyline magnétique · drag · ripple trim';
+  if(!state.preview){renderTracks();return}
+  const before=state.before,candidate=cloneClips(before);
+  try{setConnectionPointOnCandidate(candidate,state.childId,state.preview.time)}
+  catch(err){toast(err.message||String(err),true);renderTracks();return}
+  const original=before.find(c=>c.id===state.childId),next=candidate.find(c=>c.id===state.childId);
+  if(!original||!next||(
+    original.parentClipId===next.parentClipId
+    && Math.abs((+original.connectionPointOffset||0)-(+next.connectionPointOffset||0))<1e-6
+  )){renderTracks();return}
+  await commitMagneticCandidate(candidate,'Point de connexion déplacé',before)
+}
+async function applyConnectionPointFromInspector(){
+  const c=getClip(selectedClip),parent=c&&getClip(c.parentClipId);
+  if(!c||!parent)return;
+  const value=+$('#connectionPointInput')?.value;
+  if(!Number.isFinite(value)){toast('Point de connexion invalide',true);return}
+  const time=parent.start+Math.max(0,Math.min(parent.duration,value));
+  const before=cloneClips(),candidate=cloneClips();
+  try{setConnectionPointOnCandidate(candidate,c.id,time)}
+  catch(err){toast(err.message||String(err),true);return}
+  await commitMagneticCandidate(candidate,'Point de connexion ajusté',before)
+}
+
 const _v012RenderTracks=renderTracks;
-renderTracks=function(){_v012RenderTracks();$$('.clip').forEach(el=>{const c=getClip(el.dataset.clip);if(!c?.parentClipId)return;el.classList.add('connected');const tag=document.createElement('span');tag.className='connection-badge';tag.textContent='↳ '+(getClip(c.parentClipId)?.label||c.parentClipId);el.appendChild(tag)})}
+renderTracks=function(){
+  _v012RenderTracks();
+  $('.clip').forEach(el=>{
+    const c=getClip(el.dataset.clip);if(!c?.parentClipId)return;
+    el.classList.add('connected');
+    const tag=document.createElement('span');
+    tag.className='connection-badge';
+    const p=getClip(c.parentClipId),point=p?(c.connectionPointOffset==null?Math.min(Math.max(+c.anchorOffset||0,0),p.duration):+c.connectionPointOffset):0;
+    tag.textContent='↳ '+(p?.label||c.parentClipId)+' · +'+point.toFixed(1)+'s';
+    el.appendChild(tag)
+  });
+  requestAnimationFrame(renderConnectionPoints)
+}
 
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){
