@@ -174,3 +174,14 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .viewer-title-backdrop{position:absolute;inset:0;display:none;pointer-events:none}
 .viewer-title-backdrop.show{display:block}
 .final-card-chip{display:inline-flex;align-items:center;padding:2px 5px;border:1px solid rgba(172,145,218,.35);border-radius:4px;color:#c7b5e7;font-size:6px;letter-spacing:.7px;margin-bottom:6px}
+
+
+/* V0.23.3 — graphical connection points */
+.connection-overlay{position:absolute;inset:0;z-index:11;overflow:visible;pointer-events:none}
+.connection-line{fill:none;stroke:#79583e;stroke-width:1;opacity:.48;vector-effect:non-scaling-stroke}
+.connection-line.selected{stroke:#d6a06d;stroke-width:1.35;opacity:.95}
+.connection-point{fill:#8c6748;stroke:#17110d;stroke-width:1.2;pointer-events:none;vector-effect:non-scaling-stroke}
+.connection-point.selected{fill:#f0bd87;stroke:#4b321f;stroke-width:1.5;pointer-events:all;cursor:ew-resize;touch-action:none}
+.connection-point.selected:hover{fill:#ffd3a5}
+.connection-point.selected:focus{outline:none;filter:drop-shadow(0 0 3px rgba(240,189,135,.85))}
+.connection-section input[type=number]{border-color:#564332}
