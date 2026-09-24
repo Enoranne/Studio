@@ -218,3 +218,12 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .delivery-success b{font-size:7px;color:#a9d9bc}
 .delivery-success p,.delivery-success small{font-size:6.5px;color:#839089}
 .delivery-success small{display:block;overflow-wrap:anywhere}
+
+.delivery-conformance{display:flex;justify-content:space-between;align-items:center;margin:7px 0 3px;padding:5px 7px;border-left:2px solid #4f5963;background:#0b0f13}
+.delivery-conformance span{font-size:6px;letter-spacing:.8px;color:#77828c}
+.delivery-conformance b{font-size:6.5px}
+.delivery-conformance.delivery-pass{border-left-color:var(--good)}
+.delivery-conformance.delivery-pass b{color:var(--good)}
+.delivery-conformance.delivery-warn{border-left-color:var(--warn)}
+.delivery-conformance.delivery-warn b{color:var(--warn)}
+.delivery-conformance-reason{display:block;font-size:6.2px;color:#a99877;font-style:normal;margin:2px 0}
