@@ -1119,6 +1119,7 @@ def test_delivery_center_vertical_crop_preflight_and_export(
                 "duration_seconds": 10.0,
                 "size_bytes": path.stat().st_size,
             },
+            "conformance": {"status": "PASS", "reasons": []},
             "ffmpeg_args": ["ffmpeg"],
         }
 
@@ -1192,6 +1193,12 @@ def test_delivery_center_vertical_crop_preflight_and_export(
             expect(page.locator(".delivery-success")).to_be_visible()
             expect(page.locator(".delivery-success")).to_contain_text(
                 "1080×1920"
+            )
+            expect(page.locator(".delivery-conformance")).to_contain_text(
+                "CONFORMITÉ"
+            )
+            expect(page.locator(".delivery-conformance")).to_contain_text(
+                "PASS"
             )
             expect(
                 page.get_by_role("link", name="Télécharger le livrable")
