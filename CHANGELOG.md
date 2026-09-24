@@ -316,3 +316,34 @@
 ## V0.05–V0.09 UI
 
 - Media Library, timeline multi-pistes, drag/trim, viewer multi-source, audio local, waveforms, gain/fades.
+
+
+## V0.23 — Motion & Delivery
+
+### V0.23.1 — Titres et overlays éditables
+
+- Timeline schema v5.
+- Validation serveur d’un modèle de titre portable.
+- Texte jusqu’à 500 caractères.
+- Presets : centre, lower-third, haut, custom.
+- Familles génériques : sans, serif, mono.
+- Taille 12–240 et graisse 100–900.
+- Alignement gauche / centre / droite.
+- Position X/Y normalisée.
+- Largeur de boîte normalisée.
+- Couleur et fond `#RRGGBB`.
+- Opacité texte et fond.
+- Padding et arrondi normalisés.
+- Inspector complet **TITRE / OVERLAY**.
+- Preview live dans PROGRAM Viewer.
+- Redimensionnement proportionnel au Viewer.
+- Suppression de l’ancien éditeur texte minimal en doublon.
+- `+ Titre` crée désormais un overlay v5 à la position du playhead.
+- Sauvegarde/rechargement backend de tous les paramètres.
+- Authoring plan schema v4 avec `title_cuts`.
+- Le style complet est conservé dans `authoring-plan.json`.
+- Le manifest expose `unmaterialized_titles` lorsque le schéma Tesseract installé ne confirme pas une couche Text compatible.
+- PISTE Studio refuse d’inventer la structure d’une couche Text native Tesseract.
+- App/UI version portée à v0.23.
+- Chromium : édition lower-third, serif, taille, alignement, couleur, fond, padding, arrondi et persistance.
+- CI fonctionnelle de référence : **116 tests passés / 116**.
