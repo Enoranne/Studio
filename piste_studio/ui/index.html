@@ -25,6 +25,7 @@
       <button class="icon-btn" id="toggleBrowserBtn" title="Afficher/masquer le Browser">B</button>
       <button class="icon-btn" id="toggleIndexBtn" title="Afficher/masquer l’Index">≡</button>
       <button class="icon-btn" id="toggleInspectorBtn" title="Afficher/masquer l’Inspecteur">I</button>
+      <button class="icon-btn" id="helpModeBtn" title="Aide contextuelle">?</button>
       <button class="btn ghost" id="undoBtn" onclick="undoLastEdit()" title="Annuler la dernière opération (Ctrl/Cmd+Z)">↶ Undo</button>
       <button class="btn ghost" id="saveBackendBtn">Enregistrer</button>
       <button class="btn primary" id="publishBtn" onclick="publishVersion()">Publier</button>
@@ -74,7 +75,7 @@
             </div>
           </div>
           <div class="media-list filmstrip-browser" id="mediaList"></div>
-          <div class="browser-footer"><span>Survole = skim</span><span>F = favori · X = rejet</span></div>
+          <div class="browser-footer context-help help-guided-only"><span>Survole = skim</span><span>F = favori · X = rejet</span></div>
         </aside>
 
         <section class="viewer-panel pane">
@@ -123,7 +124,7 @@
                 <button class="btn tiny" onclick="addAudio('sfx')" data-domain="audio">+ SFX</button>
                 <button class="btn tiny" id="addMarkerBtn" onclick="openMarkerComposer()" data-domain="editorial">+ Marker</button>
               </div>
-              <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span><button class="timeline-focus focus-trigger" data-focus-pane="timeline" type="button" title="Agrandir la Timeline">⛶</button></div>
+              <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span><span class="context-help help-guided-only timeline-help">Les médias source restent inchangés.</span><button class="timeline-focus focus-trigger" data-focus-pane="timeline" type="button" title="Agrandir la Timeline">⛶</button></div>
               <div class="timeline-right"><label>Snap</label><select id="snap"><option value="0.1">0,1</option><option value="0.5" selected>0,5</option><option value="1">1,0</option></select><span class="lock-readout" id="hardLockLabel">LOCKS</span></div>
             </div>
             <div class="ruler" id="ruler"></div>
@@ -142,7 +143,13 @@
       <div class="cards" id="versionsCards"></div>
     </section>
   </main>
-  <footer class="statusbar"><span id="backendFoot">MASTER_PROTECTED = TRUE · mode local</span><span id="shortcutHelp">1 Assemble · 2 Edit · 3 Review · ⌘K Commandes · ~ Focus · F Favorite · X Reject</span></footer>
+  <footer class="statusbar"><span id="backendFoot">MASTER_PROTECTED = TRUE · mode local</span><span id="actionNarration" class="action-narration context-help">Aide contextuelle active · survole ou utilise un outil.</span><span id="shortcutHelp">1 Assemble · 2 Edit · 3 Review · ⌘K Rechercher · ~ Focus · F Favorite · X Reject</span></footer>
+</div>
+<div class="overlay-popover help-mode-menu" id="helpModeMenu" hidden>
+  <div class="popover-title">AIDE CONTEXTUELLE</div>
+  <label><input type="radio" name="helpMode" value="guided"> Guidée <small>micro-explications + actions</small></label>
+  <label><input type="radio" name="helpMode" value="minimal"> Minimale <small>conséquences importantes seulement</small></label>
+  <label><input type="radio" name="helpMode" value="off"> Désactivée <small>interface compacte</small></label>
 </div>
 <div class="overlay-popover" id="overlayMenu" hidden>
   <div class="popover-title">OVERLAYS VIEWER</div>
@@ -181,6 +188,7 @@
 <script src="/ui/ux-shell.js"></script>
 <script src="/ui/ux-polish.js"></script>
 <script src="/ui/ux-context.js"></script>
+<script src="/ui/ux-help.js"></script>
 <script src="/ui/ux-editorial.js"></script>
 <script src="/ui/ux-media-intelligence.js"></script>
 <script src="/ui/ux-editorial-vision.js"></script>
