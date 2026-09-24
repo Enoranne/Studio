@@ -270,6 +270,8 @@ Les tags du plan ou candidat sont également passés au moteur Canon V0.22.4.
 
 Les conflits Canon restent informatifs dans ce drawer et n’entraînent aucune modification.
 
+Pour un candidat simulé, l’évaluation HARD/SOFT LOCK utilise la **position du clip central**. Le candidat n’a donc pas besoin d’être déjà présent ailleurs dans la timeline pour hériter correctement du contexte de verrouillage de la position testée.
+
 ### Interface
 
 Dans l’Inspector d’un clip vidéo :
