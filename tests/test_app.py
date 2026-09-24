@@ -752,3 +752,72 @@ def test_title_overlay_validation_rejects_invalid_style(tmp_path):
     response = client.post("/api/timeline", json=payload)
     assert response.status_code == 422
     assert "fontSize" in response.text
+
+
+
+def test_final_card_persists_full_canvas_background_and_black_tail(tmp_path):
+    root = make_project(tmp_path)
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    payload = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 30,
+        "tracks": [{"id": "titles", "name": "TITLES", "kind": "title"}],
+        "clips": [{
+            "id": "fc1",
+            "track": "titles",
+            "label": "Final",
+            "text": "LA BANDE ORIGINALE DE TA VIE",
+            "start": 26.5,
+            "duration": 3.5,
+            "titleRole": "final_card",
+            "titlePreset": "center",
+            "fontFamily": "serif",
+            "fontSize": 60,
+            "fontWeight": 600,
+            "textAlign": "center",
+            "positionX": 0.5,
+            "positionY": 0.5,
+            "boxWidth": 0.8,
+            "color": "#FFFFFF",
+            "backgroundColor": "#000000",
+            "backgroundOpacity": 0,
+            "opacity": 1,
+            "padding": 0,
+            "cornerRadius": 0,
+            "canvasBackgroundColor": "#050403",
+            "canvasBackgroundOpacity": 1,
+            "blackTailSeconds": 0.75,
+        }],
+    }
+    saved = client.post("/api/timeline", json=payload)
+    assert saved.status_code == 200, saved.text
+    card = client.get("/api/timeline?edit_name=teaser_30").json()["timeline"]["clips"][0]
+    assert card["titleRole"] == "final_card"
+    assert card["canvasBackgroundColor"] == "#050403"
+    assert card["canvasBackgroundOpacity"] == 1.0
+    assert card["blackTailSeconds"] == 0.75
+    assert card["start"] + card["duration"] == 30.0
+
+
+def test_final_card_rejects_black_tail_equal_to_duration(tmp_path):
+    root = make_project(tmp_path)
+    app = create_app(root, Path(__file__).parents[1] / "piste_studio" / "ui" / "index.html")
+    client = TestClient(app)
+    payload = {
+        "edit_name": "teaser_30",
+        "duration_seconds": 30,
+        "tracks": [{"id": "titles", "name": "TITLES", "kind": "title"}],
+        "clips": [{
+            "id": "fc1",
+            "track": "titles",
+            "text": "FIN",
+            "start": 27,
+            "duration": 3,
+            "titleRole": "final_card",
+            "blackTailSeconds": 3,
+        }],
+    }
+    response = client.post("/api/timeline", json=payload)
+    assert response.status_code == 422
+    assert "blackTailSeconds" in response.text
