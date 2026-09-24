@@ -204,3 +204,18 @@ Repère de poids :
 Ces poids ne sont pas des scores de vérité. Ils indiquent uniquement quelle référence doit peser davantage **à l’intérieur d’un groupe**.
 
 Les groupes sont ensuite équilibrés entre eux : multiplier les captures similaires d’un même plan ne doit pas écraser une autre preuve visuelle indépendante.
+
+
+## Conflits Canon V0.22.4
+
+Quand **Proposer continuité** affiche un tag :
+
+- **CANON ALIGNÉ** : le Canon contient une preuve explicite compatible ;
+- **NON VÉRIFIÉ** : aucune règle explicite ne tranche ;
+- **CONFLIT CANON** : règle interdite ou facet fermé ;
+- **HARD LOCK** : le média est utilisé dans une zone verrouillée applicable à la sémantique ;
+- **À REVOIR** : SOFT LOCK.
+
+Ne transforme pas un facet en facet fermé simplement pour réduire les propositions : un facet fermé signifie que sa liste autorisée est réellement exhaustive.
+
+Pour un conflit, lis la source affichée avant d’utiliser **Accepter malgré conflit**. Cette action ne modifie pas le Canon ; elle documente uniquement une décision humaine consciente d’accepter le tag malgré le signal.
