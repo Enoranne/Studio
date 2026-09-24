@@ -15,6 +15,7 @@ from .locks import check_operation
 from .media import scan_media
 from .metadata import fetch_media_with_metadata
 from .project import load_project, verify_master
+from .readiness import build_production_readiness
 from .tesseract_bridge import detect_tesseract, execute_bootstrap, execute_preview, execute_filmstrip, execute_export, TesseractBridgeError
 from .authoring import execute_authoring
 from .timeline import TimelineError, load_timeline, save_timeline, validate_timeline
@@ -167,6 +168,20 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     @app.get("/api/health")
     def health():
         return {"ok": True, "version": "0.23", "project_root": str(root)}
+
+    @app.get("/api/readiness")
+    def production_readiness(
+        edit_name: str | None = None,
+        version: str | None = None,
+    ):
+        try:
+            return build_production_readiness(
+                root,
+                edit_name=edit_name,
+                version=version,
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.get("/api/state")
     def state(edit_name: str = "teaser_30"):
