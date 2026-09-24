@@ -1,34 +1,34 @@
-# PISTE Studio v0.22.1 — Rapport de validation Editorial Vision / Fenêtres IN-OUT
+# PISTE Studio v0.22 — Rapport de validation Editorial Vision
 
-Date : 23 septembre 2026
+Date : 24 septembre 2026
 
-## Périmètre
+## Périmètre validé
 
-Cette validation couvre la première brique de V0.22 :
+Ce rapport couvre deux briques de V0.22 :
 
-**proposer des fenêtres SOURCE IN/OUT à partir de ruptures/changements visuels détectés localement.**
+1. **V0.22.1 — Fenêtres SOURCE IN/OUT issues de ruptures visuelles** ;
+2. **V0.22.2 — Références visuelles ciblées sur un frame ou une zone ROI**.
 
-Les autres objectifs V0.22 restent ouverts :
+Restent ouverts dans V0.22 :
 
-- références visuelles ciblées sur une zone ou un frame ;
-- groupes et qualité de références ;
-- conflits tags sémantiques / Canon ;
+- groupes de références et qualité de référence ;
+- détection de conflit entre tags sémantiques et Canon ;
 - comparaison de continuité plan précédent / plan suivant.
 
-## Résultat
+## Résultat global
 
-- Python/API/UI : **85 tests passés / 85**.
+- Python/API/UI : **91 tests passés / 91** sur le run fonctionnel V0.22.2.
 - JavaScript : tous les modules UI passent `node --check`.
 - Chromium / Playwright : succès.
 - ffmpeg système installé explicitement dans la CI.
-- Test réel de rupture visuelle exécuté, sans mock.
-- Aucune modification automatique de Storyline.
+- Tests réels de détection de ruptures et d’extraction ROI exécutés.
+- Aucun tag ni montage modifié automatiquement par ces fonctions.
+
+# V0.22.1 — Fenêtres IN/OUT
 
 ## Détection de ruptures
 
-Le moteur V0.22.1 utilise ffmpeg avec le signal `scene`.
-
-Le seuil est borné et configurable.
+Le moteur utilise ffmpeg avec le signal `scene`.
 
 Valeurs UI :
 
@@ -36,9 +36,7 @@ Valeurs UI :
 - Normale : 0,32 ;
 - Forte : 0,22.
 
-Plus le seuil est bas, plus l’analyse peut retenir de changements visuels.
-
-Le moteur parse les timestamps réellement sélectionnés par ffmpeg puis les déduplique.
+Les timestamps sélectionnés par ffmpeg sont parsés et dédupliqués.
 
 ## Construction des fenêtres
 
@@ -46,9 +44,7 @@ Le moteur parse les timestamps réellement sélectionnés par ffmpeg puis les d�
 
     début rush → rupture 1 → rupture 2 → ... → fin rush
 
-PISTE Studio construit des fenêtres chronologiques.
-
-Chaque fenêtre contient :
+PISTE Studio construit des segments chronologiques contenant :
 
 - Source IN ;
 - Source OUT ;
@@ -59,113 +55,233 @@ Chaque fenêtre contient :
 - seuil utilisé ;
 - raison textuelle.
 
-Les segments plus courts que la durée minimale configurable sont ignorés.
-
-Si aucun segment ne dépasse cette durée, le moteur propose explicitement le rush complet comme fallback pour validation humaine plutôt que de prétendre qu’aucune source n’est exploitable.
-
-## Politique éditoriale
-
-La réponse API porte explicitement :
-
-- `suggestion_only = true` ;
-- `automatic_storyline_edit = false` ;
-- `human_validation_required = true` ;
-- `local_processing = true`.
-
-La détection ne peut donc pas constituer silencieusement une décision de montage.
-
-## API
-
-Nouvelle route :
-
-`GET /api/media/{media_id}/editorial-windows`
-
-Paramètres :
-
-- `threshold` ;
-- `min_duration` ;
-- `limit`.
-
-La route refuse les médias non vidéo et signale explicitement l’absence de ffmpeg ou du fichier source.
-
-## Interface
-
-Nouvel accès dans **MEDIA INTELLIGENCE** :
-
-**Fenêtres IN/OUT**
-
-Nouvelle commande :
-
-**Vision · Fenêtres IN/OUT**
-
-Le tiroir affiche :
-
-- le rush concerné ;
-- la politique « aucune coupe automatique » ;
-- la sensibilité ;
-- le nombre de ruptures ;
-- le seuil technique ;
-- les fenêtres candidates.
-
-Pour chaque fenêtre :
-
-- **Prévisualiser** ;
-- **Charger IN/OUT**.
-
-Le workflow réutilise le mécanisme SOURCE existant.
-
-## Test Chromium
-
-Le scénario navigateur valide :
-
-1. sélection d’un rush ;
-2. ouverture **Fenêtres IN/OUT** ;
-3. présence de la politique **RUPTURES VISUELLES** ;
-4. trois fenêtres simulées ;
-5. sensibilité Normale ;
-6. clic sur **Charger IN/OUT** ;
-7. valeurs Source IN = 0 et Source OUT = 2 visibles dans l’Inspector ;
-8. aucune erreur JavaScript.
+Les micro-segments sous la durée minimale sont écartés. Si aucun intervalle n’est suffisamment long, le rush entier est présenté explicitement comme fallback pour validation humaine.
 
 ## Test ffmpeg réel
 
-Le test crée une vidéo synthétique de trois plans francs :
+La CI génère :
 
 **rouge 1 s → bleu 1 s → vert 1 s**
 
-Puis il appelle réellement le moteur de détection.
-
-Validé :
+Puis valide :
 
 - rupture proche de 1,00 s ;
 - rupture proche de 2,00 s ;
 - au moins trois fenêtres candidates ;
-- politique sans montage automatique.
+- aucune édition automatique de Storyline.
 
-Ce test démontre que le cœur V0.22.1 ne dépend pas uniquement de fixtures ou de réponses mockées.
+## Chromium
 
-## UX
+Le navigateur valide :
 
-Principes ajoutés :
+1. ouverture **Fenêtres IN/OUT** ;
+2. affichage de la politique de suggestion ;
+3. choix de sensibilité ;
+4. affichage des fenêtres ;
+5. **Charger IN/OUT** ;
+6. mise à jour réelle de Source IN/OUT dans l’Inspector ;
+7. aucune erreur JavaScript.
 
-- une rupture visuelle est un signal, pas une décision de coupe ;
-- les bornes doivent être visibles ;
-- la méthode doit rester auditable ;
-- la sensibilité ne doit pas être présentée comme une mesure de « qualité » ;
-- l’adoption d’une plage reste une action humaine explicite.
+# V0.22.2 — Références ciblées
 
-## Limites
+## Modèle de données
 
-- la détection de scène repère un changement visuel, pas nécessairement un bon point de montage narratif ;
-- un mouvement de caméra, un flash ou un changement lumineux peut produire une rupture ;
-- un plan continu long sans coupure ne fournit pas à lui seul de sous-fenêtres sémantiques ;
-- aucune analyse de visage, personnage, objet ou qualité de jeu n’est impliquée dans cette étape ;
-- la prochaine couche V0.22 devra pouvoir cibler un frame ou une zone précise plutôt qu’un rush entier.
+Nouvelle table SQLite :
+
+`semantic_references`
+
+Chaque référence contient :
+
+- média source ;
+- tag structuré ;
+- facet ;
+- timecode source ;
+- ROI normalisé ;
+- provider ;
+- modèle ;
+- embedding ;
+- image JPEG extraite ;
+- statut.
+
+Les facets supportés restent :
+
+- `character` ;
+- `prop` ;
+- `decor` ;
+- `look`.
+
+## Indépendance par rapport au tag global
+
+Une référence ciblée est une preuve visuelle locale.
+
+Exemple :
+
+`prop:fisher` à 3,40 s sur une zone de 50 % × 40 %.
+
+Cette action n’ajoute **pas** `prop:fisher` aux tags du rush source.
+
+Cette séparation est testée au niveau moteur et Chromium.
+
+## Extraction frame / ROI
+
+Le moteur :
+
+1. borne le timecode dans la durée du média ;
+2. normalise X / Y / largeur / hauteur entre 0 et 1 ;
+3. garantit une zone minimale exploitable ;
+4. extrait le frame avec ffmpeg ;
+5. applique le crop avant l’embedding ;
+6. redimensionne la référence ;
+7. conserve le JPEG dans le cache local.
+
+Le cache reste sous :
+
+`cache/vision/references/`
+
+## Test ffmpeg réel ROI
+
+La CI crée une vraie vidéo `testsrc`, puis extrait une ROI :
+
+- X = 25 % ;
+- Y = 20 % ;
+- largeur = 50 % ;
+- hauteur = 50 %.
+
+Validé :
+
+- fichier JPEG réellement produit ;
+- timecode conservé ;
+- ROI normalisée conservée ;
+- sortie vérifiée avec ffprobe ;
+- largeur de référence conforme au rendu demandé.
+
+## Continuité sémantique
+
+Les propositions peuvent désormais utiliser deux familles de preuves :
+
+1. **legacy** : profil moyen d’un rush entier déjà tagué ;
+2. **targeted** : frame ou ROI explicitement défini comme référence.
+
+Les centroïdes peuvent combiner les deux.
+
+Les preuves enregistrent notamment :
+
+- `reference_media_ids` ;
+- `targeted_reference_ids` ;
+- `targeted_reference_count` ;
+- `legacy_reference_count` ;
+- meilleure référence média ;
+- meilleure référence ciblée éventuelle ;
+- similarité correspondante.
+
+## Cas critique validé
+
+Un rush source sans tag global `prop:fisher` reçoit une référence ROI explicitement nommée `prop:fisher`.
+
+Un autre rush visuellement proche peut recevoir une **proposition** `prop:fisher`.
+
+Validé :
+
+- proposition créée ;
+- preuve ciblée présente ;
+- référence targeted comptée ;
+- aucune dépendance à un tag global du rush source ;
+- validation humaine toujours requise.
+
+## Protection contre l’auto-référence
+
+Une référence extraite d’un rush est exclue lorsque ce même rush est la cible de la proposition.
+
+Cela évite une similarité circulaire qui donnerait artificiellement un score élevé.
+
+## Déduplication
+
+Une référence strictement identique selon :
+
+- média ;
+- tag ;
+- facet ;
+- timecode ;
+- ROI ;
+- provider ;
+- modèle
+
+est mise à jour plutôt que dupliquée.
+
+Cela évite qu’un double clic ou une recréation accidentelle ne pondère artificiellement le centroïde.
+
+## API
+
+Routes ajoutées :
+
+- `GET /api/vision/references` ;
+- `POST /api/vision/references` ;
+- `GET /api/vision/references/{id}/image` ;
+- `DELETE /api/vision/references/{id}`.
+
+L’API destinée à l’UI n’expose pas l’embedding brut.
+
+`/api/state` expose seulement `semantic_reference_count` par média.
+
+## Interface
+
+Accès :
+
+- Inspector **SEMANTIC VISION → Référence ciblée** ;
+- Command Palette **Vision · Référence ciblée**.
+
+Le gestionnaire permet :
+
+- choisir le facet ;
+- saisir la valeur ;
+- reprendre le frame affiché ;
+- saisir le timecode ;
+- choisir frame entier ou zone ;
+- saisir X / Y / largeur / hauteur ;
+- créer la référence ;
+- voir le crop extrait ;
+- supprimer une référence.
+
+Le nombre de références ciblées apparaît dans l’Inspector.
+
+## Chromium V0.22.2
+
+Le scénario réel valide :
+
+1. sélection d’un rush ;
+2. ouverture **Référence ciblée** ;
+3. facet `prop` ;
+4. valeur `fisher` ;
+5. mode **Zone de l’image** ;
+6. ROI 15 / 20 / 50 / 40 % ;
+7. création ;
+8. apparition d’une carte `prop:fisher` ;
+9. affichage de la zone ;
+10. absence de `prop:fisher` dans les tags globaux de l’Inspector.
+
+## Politique de sécurité éditoriale
+
+V0.22.1 et V0.22.2 respectent les mêmes principes :
+
+- traitement local ;
+- suggestion explicable ;
+- aucune décision automatique ;
+- aucune modification automatique de Storyline ;
+- aucune écriture de tag lors de la création d’une référence ;
+- validation humaine obligatoire avant acceptation d’une proposition sémantique.
+
+## Limites connues
+
+- la référence ciblée utilise encore un rectangle ROI renseigné par coordonnées ; un geste direct de sélection dans le Viewer pourra améliorer l’ergonomie ;
+- les références n’ont pas encore de groupe ni de niveau de qualité ;
+- aucune règle Canon n’est encore comparée automatiquement aux tags proposés ;
+- la continuité n’est pas encore évaluée explicitement entre plan précédent et plan suivant ;
+- le modèle CLIP local reste optionnel et son téléchargement nécessite une action explicite.
 
 ## Conclusion
 
-V0.22.1 introduit une première assistance de **dérushage interne au rush**.
+V0.22 transforme progressivement la vision de PISTE Studio d’une analyse « par fichier » vers une analyse **éditorialement située**.
 
-PISTE Studio ne se contente plus de considérer un média vidéo comme un bloc unique : il peut maintenant repérer des transitions visuelles et proposer des plages SOURCE directement exploitables, tout en préservant la philosophie du projet :
+La chaîne validée devient :
 
-**détecter → expliquer → prévisualiser → laisser l’utilisateur décider.**
+**repérer une rupture → choisir une plage SOURCE → choisir un frame → isoler une zone → nommer explicitement la référence → comparer → expliquer la preuve → laisser l’utilisateur décider.**
