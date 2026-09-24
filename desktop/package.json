@@ -1,0 +1,11 @@
+{
+  "name": "piste-studio-desktop",
+  "private": true,
+  "version": "0.24.1",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}
