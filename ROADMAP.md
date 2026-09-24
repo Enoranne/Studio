@@ -101,9 +101,9 @@ Validation V0.28 : **170 tests passés / 170**, syntaxe JavaScript validée sur 
 - ✅ **V0.29.3 — Backend-authoritative gestures** : reorder, ripple trim et points de connexion délégués au kernel en mode connecté ;
 - ✅ **V0.29.4 — Insert / Remove & Lock Safety** : ajout/suppression VIDEO délégués au kernel et protégés par la sémantique `reorder` des HARD/SOFT LOCKS existants.
 
-**V0.29 — TIMELINE CORE RELIABILITY IMPLÉMENTÉE SUR BRANCHE DE VALIDATION ⏳**
+**V0.29 — TIMELINE CORE RELIABILITY FUSIONNÉE DANS MAIN ✅**
 
-Compatibilité : timeline schema v6 inchangé, JSON public toujours en secondes, anciens projets conservés. Le backend devient l'autorité des mutations magnétiques en mode connecté ; le JS garde la preview immédiate et le fallback autonome.
+Validation V0.29 : **187 tests passés / 187**, syntaxe JavaScript et Chromium validés sur la PR #5. Compatibilité : timeline schema v6 inchangé, JSON public toujours en secondes, anciens projets conservés. Le backend devient l'autorité des mutations magnétiques en mode connecté ; le JS garde la preview immédiate et le fallback autonome. Les builds macOS 0.29.0 restent une validation packaging distincte.
 ## Avant V1
 
 - valider **V0.24.1** sur le vrai projet PISTE 0 ;
