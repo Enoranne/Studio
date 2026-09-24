@@ -90,6 +90,7 @@ from .delivery import (
     delivery_file_path,
     delivery_report_path,
     delivery_targets,
+    load_published_timeline,
     preflight_delivery,
     render_delivery_variant,
     resolve_delivery_target,
@@ -960,7 +961,17 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 422,
                 "Aucune timeline de travail disponible pour le préflight.",
             )
-        audio = master_check_status(root, timeline)
+        published_timeline = load_published_timeline(
+            root,
+            edit_name,
+            version,
+        )
+        audio_timeline = (
+            published_timeline
+            if isinstance(published_timeline, dict)
+            else timeline
+        )
+        audio = master_check_status(root, audio_timeline)
         if audio.get("report_name"):
             audio["report_url"] = (
                 f"/api/audio/master/reports/{audio['report_name']}"
@@ -998,7 +1009,17 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 422,
                 "Aucune timeline de travail disponible pour l'export.",
             )
-        audio = master_check_status(root, timeline)
+        published_timeline = load_published_timeline(
+            root,
+            edit_name,
+            version,
+        )
+        audio_timeline = (
+            published_timeline
+            if isinstance(published_timeline, dict)
+            else timeline
+        )
+        audio = master_check_status(root, audio_timeline)
         if audio.get("report_name"):
             audio["report_url"] = (
                 f"/api/audio/master/reports/{audio['report_name']}"
@@ -1077,6 +1098,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             "target": rendered["target"],
             "framing_mode": rendered["framing_mode"],
             "probe": rendered["probe"],
+            "conformance": rendered.get("conformance") or {},
             "report": report,
         }
 
