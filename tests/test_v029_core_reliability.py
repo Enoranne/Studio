@@ -283,3 +283,37 @@ def test_v029_version_is_aligned_across_python_desktop_ui_and_smoke_test():
         ROOT / ".github" / "workflows" / "desktop-macos.yml"
     ).read_text(encoding="utf-8")
     assert f'\"version\":\"{expected}\"' in workflow
+
+
+def test_storyline_operation_api_can_checkpoint_atomically(tmp_path):
+    root = tmp_path / "AtomicKernel"
+    init_project(root, "Atomic kernel")
+    app = create_app(root, UI)
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/storyline/operate",
+        json={
+            "timeline": base_doc(),
+            "operation": "move",
+            "args": {"clip_id": "v2", "target_time": 2.1},
+            "edit_name": "kernel",
+            "checkpoint_reason": "Move Storyline",
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["checkpoint"]["can_undo"] is True
+    assert body["checkpoint"]["last"]["reason"] == "Move Storyline"
+
+    history = client.get("/api/history", params={"edit_name": "kernel"})
+    assert history.status_code == 200
+    assert history.json()["can_undo"] is True
+    assert history.json()["last"]["reason"] == "Move Storyline"
+
+
+def test_magnetic_ui_requests_atomic_checkpoint_with_backend_operation():
+    script = (ROOT / "piste_studio" / "ui" / "ux-magnetic.js").read_text(
+        encoding="utf-8"
+    )
+    assert "checkpoint_reason:message" in script
