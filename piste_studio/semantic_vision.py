@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import hashlib
 import json
 import math
 import os
@@ -281,6 +282,303 @@ def extract_reference_frames(
     if not frames:
         raise SemanticVisionError("Aucune image de vision extraite.")
     return frames[:samples]
+
+
+def normalize_reference_roi(roi: dict | None) -> dict:
+    roi = roi or {}
+    try:
+        x = float(roi.get("x", 0.0))
+        y = float(roi.get("y", 0.0))
+        width = float(roi.get("width", 1.0))
+        height = float(roi.get("height", 1.0))
+    except (TypeError, ValueError) as exc:
+        raise SemanticVisionError("ROI invalide.") from exc
+
+    x = max(0.0, min(1.0, x))
+    y = max(0.0, min(1.0, y))
+    width = max(0.05, min(1.0 - x, width))
+    height = max(0.05, min(1.0 - y, height))
+    if width <= 0 or height <= 0:
+        raise SemanticVisionError("Zone de référence vide.")
+    return {
+        "x": round(x, 6),
+        "y": round(y, 6),
+        "width": round(width, 6),
+        "height": round(height, 6),
+    }
+
+
+def _reference_tag(tag: str) -> tuple[str, str]:
+    clean = str(tag or "").strip().lower()
+    if ":" not in clean:
+        raise SemanticVisionError(
+            "La référence doit utiliser un tag structuré, ex. prop:fisher."
+        )
+    facet, value = clean.split(":", 1)
+    if facet not in FACET_THRESHOLDS or not value.strip():
+        raise SemanticVisionError(
+            "Facet de référence invalide : character, prop, decor ou look."
+        )
+    return facet, f"{facet}:{value.strip()}"
+
+
+def extract_targeted_reference_frame(
+    root: Path,
+    media_id: int,
+    *,
+    timestamp_seconds: float,
+    roi: dict | None = None,
+    width: int = 448,
+    force: bool = False,
+) -> tuple[Path, float, dict]:
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise SemanticVisionError(
+            "ffmpeg est requis pour extraire une référence ciblée."
+        )
+    item = _media_row(root, media_id)
+    source = _media_path(root, item)
+    duration = _duration(root, item, source)
+    timestamp = max(0.0, min(max(0.0, duration - 0.001), float(timestamp_seconds)))
+    clean_roi = normalize_reference_roi(roi)
+    width = max(224, min(int(width), 768))
+
+    key_raw = json.dumps(
+        {
+            "media_id": int(media_id),
+            "timestamp": round(timestamp, 6),
+            "roi": clean_roi,
+            "width": width,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    key = hashlib.sha256(key_raw).hexdigest()[:12]
+    out_dir = root / "cache" / "vision" / "references"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"media_{int(media_id):06d}_{int(round(timestamp * 1000)):09d}_{key}.jpg"
+    if out.exists() and not force:
+        return out, timestamp, clean_roi
+
+    crop = (
+        f"crop=iw*{clean_roi['width']:.6f}:ih*{clean_roi['height']:.6f}:"
+        f"iw*{clean_roi['x']:.6f}:ih*{clean_roi['y']:.6f},"
+        f"scale={width}:-2:flags=lanczos"
+    )
+    proc = subprocess.run(
+        [
+            ffmpeg,
+            "-y",
+            "-v", "error",
+            "-ss", f"{timestamp:.6f}",
+            "-i", str(source),
+            "-frames:v", "1",
+            "-vf", crop,
+            "-q:v", "2",
+            str(out),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if proc.returncode != 0:
+        raise SemanticVisionError(
+            proc.stderr.decode("utf-8", "replace").strip()
+            or "Extraction de la référence ciblée impossible."
+        )
+    if not out.exists():
+        raise SemanticVisionError("Image de référence ciblée absente.")
+    return out, timestamp, clean_roi
+
+
+def store_targeted_semantic_reference(
+    root: Path,
+    media_id: int,
+    *,
+    tag: str,
+    timestamp_seconds: float,
+    roi: dict | None,
+    embedding: list[float],
+    image_path: Path | str | None = None,
+    provider: str = VISION_PROVIDER,
+    model_id: str = DEFAULT_MODEL_ID,
+    status: str = "READY",
+) -> dict:
+    _media_row(root, media_id)
+    facet, clean_tag = _reference_tag(tag)
+    clean_roi = normalize_reference_roi(roi)
+    clean_embedding = _normalize([float(x) for x in embedding])
+    relative_image = None
+    if image_path is not None:
+        image = Path(image_path)
+        if image.is_absolute():
+            try:
+                relative_image = image.resolve().relative_to(root.resolve()).as_posix()
+            except ValueError as exc:
+                raise SemanticVisionError("Image de référence hors projet.") from exc
+        else:
+            relative_image = image.as_posix()
+
+    conn = connect(root / "media.sqlite")
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO semantic_references(
+              media_id, tag, facet, timestamp_seconds, roi_json,
+              provider, model_id, embedding_json, image_path, status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                int(media_id),
+                clean_tag,
+                facet,
+                round(float(timestamp_seconds), 6),
+                json.dumps(clean_roi, ensure_ascii=False),
+                provider,
+                model_id,
+                json.dumps(clean_embedding),
+                relative_image,
+                status,
+            ),
+        )
+        reference_id = int(cursor.lastrowid)
+        conn.commit()
+    finally:
+        conn.close()
+    return get_targeted_semantic_reference(root, reference_id) or {}
+
+
+def create_targeted_semantic_reference(
+    root: Path,
+    media_id: int,
+    *,
+    tag: str,
+    timestamp_seconds: float,
+    roi: dict | None = None,
+    provider: VisionProvider | None = None,
+    allow_model_download: bool = False,
+) -> dict:
+    provider = provider or LocalClipProvider()
+    frame, timestamp, clean_roi = extract_targeted_reference_frame(
+        root,
+        media_id,
+        timestamp_seconds=timestamp_seconds,
+        roi=roi,
+    )
+    embedding = provider.embed_images(
+        [frame],
+        allow_model_download=allow_model_download,
+    )
+    return store_targeted_semantic_reference(
+        root,
+        media_id,
+        tag=tag,
+        timestamp_seconds=timestamp,
+        roi=clean_roi,
+        embedding=embedding,
+        image_path=frame,
+        provider=provider.provider,
+        model_id=provider.model_id,
+    )
+
+
+def _reference_row_to_dict(row) -> dict:
+    item = dict(row)
+    try:
+        item["roi"] = json.loads(item.pop("roi_json"))
+    except Exception:
+        item["roi"] = normalize_reference_roi(None)
+    try:
+        item["embedding"] = json.loads(item.pop("embedding_json"))
+    except Exception:
+        item["embedding"] = []
+    return item
+
+
+def get_targeted_semantic_reference(
+    root: Path,
+    reference_id: int,
+) -> dict | None:
+    conn = connect(root / "media.sqlite")
+    try:
+        row = conn.execute(
+            "SELECT * FROM semantic_references WHERE id=?",
+            (int(reference_id),),
+        ).fetchone()
+    finally:
+        conn.close()
+    return _reference_row_to_dict(row) if row is not None else None
+
+
+def list_targeted_semantic_references(
+    root: Path,
+    *,
+    media_id: int | None = None,
+    tag: str | None = None,
+    provider: str | None = None,
+    model_id: str | None = None,
+) -> list[dict]:
+    clauses = ["status='READY'"]
+    params: list[object] = []
+    if media_id is not None:
+        clauses.append("media_id=?")
+        params.append(int(media_id))
+    if tag is not None:
+        clauses.append("tag=?")
+        params.append(str(tag).strip().lower())
+    if provider is not None:
+        clauses.append("provider=?")
+        params.append(provider)
+    if model_id is not None:
+        clauses.append("model_id=?")
+        params.append(model_id)
+    conn = connect(root / "media.sqlite")
+    try:
+        rows = conn.execute(
+            "SELECT * FROM semantic_references WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY id",
+            tuple(params),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [_reference_row_to_dict(row) for row in rows]
+
+
+def targeted_reference_image_path(root: Path, reference_id: int) -> Path:
+    reference = get_targeted_semantic_reference(root, reference_id)
+    if not reference:
+        raise SemanticVisionError(
+            f"Référence ciblée introuvable : id={reference_id}"
+        )
+    rel = reference.get("image_path")
+    if not rel:
+        raise SemanticVisionError("Image de référence ciblée indisponible.")
+    base = root.resolve()
+    path = (base / str(rel)).resolve()
+    try:
+        path.relative_to(base)
+    except ValueError as exc:
+        raise SemanticVisionError("Image de référence hors projet.") from exc
+    if not path.exists() or not path.is_file():
+        raise SemanticVisionError("Image de référence ciblée absente.")
+    return path
+
+
+def delete_targeted_semantic_reference(root: Path, reference_id: int) -> bool:
+    reference = get_targeted_semantic_reference(root, reference_id)
+    if not reference:
+        return False
+    conn = connect(root / "media.sqlite")
+    try:
+        conn.execute(
+            "DELETE FROM semantic_references WHERE id=?",
+            (int(reference_id),),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return True
 
 
 def _normalize(vector: list[float]) -> list[float]:
