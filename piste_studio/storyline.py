@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from .timebase import seconds_to_ticks, ticks_to_seconds
+
 
 class StorylineError(ValueError):
     pass
@@ -14,10 +16,18 @@ def _clips(doc: dict) -> list[dict]:
     return clips
 
 
+def _ticks(value: object) -> int:
+    return seconds_to_ticks(value or 0)
+
+
+def _seconds(ticks: int) -> float:
+    return ticks_to_seconds(ticks)
+
+
 def _story(clips: list[dict]) -> list[dict]:
     return sorted(
         (c for c in clips if c.get("track") == "video"),
-        key=lambda c: (float(c.get("start", 0)), str(c.get("id", ""))),
+        key=lambda c: (_ticks(c.get("start", 0)), str(c.get("id", ""))),
     )
 
 
@@ -39,22 +49,20 @@ def attach_clip(
         raise StorylineError("Un plan STORY ne peut pas être enfant.")
     if parent.get("track") != "video":
         raise StorylineError("Le parent doit appartenir à la STORYLINE.")
+    parent_start = _ticks(parent.get("start", 0))
+    parent_duration = _ticks(parent.get("duration", 0))
     offset = (
-        float(anchor_offset)
+        _ticks(anchor_offset)
         if anchor_offset is not None
-        else float(child.get("start", 0)) - float(parent.get("start", 0))
+        else _ticks(child.get("start", 0)) - parent_start
     )
     child["parentClipId"] = parent_id
-    child["anchorOffset"] = round(offset, 6)
-    child["connectionPointOffset"] = round(
-        min(
-            max(offset, 0.0),
-            float(parent.get("duration", 0)),
-        ),
-        6,
+    child["anchorOffset"] = _seconds(offset)
+    child["connectionPointOffset"] = _seconds(
+        min(max(offset, 0), parent_duration)
     )
     child["connectionMode"] = "follow"
-    child["start"] = round(float(parent.get("start", 0)) + offset, 6)
+    child["start"] = _seconds(parent_start + offset)
     return doc
 
 
@@ -93,12 +101,12 @@ def move_connection_point(
     if not story:
         raise StorylineError("Aucun plan STORY disponible.")
 
-    target_time = float(target_time)
-    story_start = float(story[0].get("start", 0))
-    story_end = float(story[-1].get("start", 0)) + float(
+    target_time = _ticks(target_time)
+    story_start = _ticks(story[0].get("start", 0))
+    story_end = _ticks(story[-1].get("start", 0)) + _ticks(
         story[-1].get("duration", 0)
     )
-    if target_time < story_start - 1e-6 or target_time > story_end + 1e-6:
+    if target_time < story_start or target_time > story_end:
         raise StorylineError(
             "Le point de connexion doit rester sur la STORYLINE."
         )
@@ -107,28 +115,27 @@ def move_connection_point(
         (
             clip
             for clip in story
-            if target_time >= float(clip.get("start", 0)) - 1e-6
+            if target_time >= _ticks(clip.get("start", 0))
             and target_time
-            < float(clip.get("start", 0))
-            + float(clip.get("duration", 0))
-            - 1e-6
+            < _ticks(clip.get("start", 0))
+            + _ticks(clip.get("duration", 0))
         ),
         None,
     )
     if parent is None:
         parent = story[-1]
 
-    parent_start = float(parent.get("start", 0))
-    parent_duration = float(parent.get("duration", 0))
+    parent_start = _ticks(parent.get("start", 0))
+    parent_duration = _ticks(parent.get("duration", 0))
     point_offset = min(
-        max(target_time - parent_start, 0.0),
+        max(target_time - parent_start, 0),
         parent_duration,
     )
 
-    child_start = float(child.get("start", 0))
+    child_start = _ticks(child.get("start", 0))
     child["parentClipId"] = str(parent.get("id"))
-    child["anchorOffset"] = round(child_start - parent_start, 6)
-    child["connectionPointOffset"] = round(point_offset, 6)
+    child["anchorOffset"] = _seconds(child_start - parent_start)
+    child["connectionPointOffset"] = _seconds(point_offset)
     child["connectionMode"] = "follow"
     return doc
 
@@ -144,7 +151,7 @@ def magnetic_reflow(
     story = _story(clips)
     by_id = {str(c.get("id")): c for c in clips}
     old_parent_starts = {
-        str(c.get("id")): float(c.get("start", 0)) for c in story
+        str(c.get("id")): _ticks(c.get("start", 0)) for c in story
     }
 
     if order is not None:
@@ -155,15 +162,15 @@ def magnetic_reflow(
             )
         story = [by_id[cid] for cid in order]
 
-    cursor = float(story_start)
+    cursor = _ticks(story_start)
     for clip in story:
-        clip["start"] = round(cursor, 6)
-        cursor += float(clip.get("duration", 0))
-    if cursor > float(doc.get("duration_seconds", 0)) + 1e-6:
+        clip["start"] = _seconds(cursor)
+        cursor += _ticks(clip.get("duration", 0))
+    if cursor > _ticks(doc.get("duration_seconds", 0)):
         raise StorylineError("La STORYLINE dépasse la durée du montage.")
 
     new_parent_starts = {
-        str(c.get("id")): float(c.get("start", 0)) for c in story
+        str(c.get("id")): _ticks(c.get("start", 0)) for c in story
     }
     for child in clips:
         parent_id = child.get("parentClipId")
@@ -175,38 +182,32 @@ def magnetic_reflow(
                 f"Parent de connexion introuvable: {parent_id}"
             )
         if child.get("anchorOffset") is None:
-            child["anchorOffset"] = round(
-                float(child.get("start", 0))
-                - old_parent_starts[parent_id],
-                6,
+            child["anchorOffset"] = _seconds(
+                _ticks(child.get("start", 0))
+                - old_parent_starts[parent_id]
             )
         child["connectionMode"] = "follow"
         parent = by_id[parent_id]
+        parent_duration = _ticks(parent.get("duration", 0))
         if child.get("connectionPointOffset") is None:
-            child["connectionPointOffset"] = round(
-                min(
-                    max(float(child["anchorOffset"]), 0.0),
-                    float(parent.get("duration", 0)),
-                ),
-                6,
+            point_offset = min(
+                max(_ticks(child["anchorOffset"]), 0),
+                parent_duration,
             )
         else:
-            child["connectionPointOffset"] = round(
-                min(
-                    max(float(child["connectionPointOffset"]), 0.0),
-                    float(parent.get("duration", 0)),
-                ),
-                6,
+            point_offset = min(
+                max(_ticks(child["connectionPointOffset"]), 0),
+                parent_duration,
             )
-        child["start"] = round(
+        child["connectionPointOffset"] = _seconds(point_offset)
+        child["start"] = _seconds(
             new_parent_starts[parent_id]
-            + float(child["anchorOffset"]),
-            6,
+            + _ticks(child["anchorOffset"])
         )
 
     doc["storyline"] = {
         "mode": "magnetic",
-        "start": round(float(story_start), 6),
+        "start": _seconds(_ticks(story_start)),
     }
     return doc
 
@@ -225,12 +226,13 @@ def move_story_clip(
         raise StorylineError("Plan STORY introuvable.")
 
     others = [c for c in story if str(c.get("id")) != clip_id]
+    target_ticks = _ticks(target_time)
     index = sum(
         1
         for c in others
-        if float(target_time)
-        >= float(c.get("start", 0))
-        + float(c.get("duration", 0)) / 2
+        if 2 * target_ticks
+        >= 2 * _ticks(c.get("start", 0))
+        + _ticks(c.get("duration", 0))
     )
     order = [str(c.get("id")) for c in others]
     order.insert(index, clip_id)
@@ -264,22 +266,22 @@ def trim_story_clip(
     if target is None:
         raise StorylineError("Plan STORY introuvable.")
 
-    duration = float(target.get("duration", 0))
-    source_start = float(target.get("sourceStart", 0) or 0)
-    delta = float(delta)
+    duration = _ticks(target.get("duration", 0))
+    source_start = _ticks(target.get("sourceStart", 0) or 0)
+    delta = _ticks(delta)
     if edge == "left":
         new_duration = duration - delta
         new_source_start = source_start + delta
         if new_source_start < 0:
             raise StorylineError("Le trim IN dépasse le début de la source.")
-        target["sourceStart"] = round(new_source_start, 6)
-        target["duration"] = round(new_duration, 6)
+        target["sourceStart"] = _seconds(new_source_start)
+        target["duration"] = _seconds(new_duration)
     elif edge == "right":
-        target["duration"] = round(duration + delta, 6)
+        target["duration"] = _seconds(duration + delta)
     else:
         raise StorylineError("edge doit être left ou right.")
 
-    if float(target["duration"]) < min_duration:
+    if _ticks(target["duration"]) < _ticks(min_duration):
         raise StorylineError("Durée STORY trop courte.")
 
     return magnetic_reflow(doc, story_start=story_start)
