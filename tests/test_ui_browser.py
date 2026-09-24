@@ -590,3 +590,95 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
     finally:
         server.should_exit = True
         thread.join(timeout=5)
+
+
+
+def test_timeline_neighbor_continuity_drawer_and_candidate_simulation(tmp_path):
+    root = tmp_path / "ContinuityBrowser"
+    init_project(root, "Continuity Browser")
+    for name in ("prev.mp4", "target.mp4", "next.mp4", "candidate.mp4"):
+        (root / "rushes" / name).write_bytes(name.encode("utf-8"))
+    scan_media(root)
+    rows = {
+        Path(row["relative_path"]).name: row
+        for row in fetch_media_with_metadata(root)
+        if row["kind"] == "video"
+    }
+    for name in ("prev.mp4", "target.mp4", "next.mp4"):
+        set_media_metadata(
+            root,
+            rows[name]["id"],
+            title=name.replace(".mp4", "").title(),
+            duration_seconds=8,
+            tags=["character:malo", "prop:fisher", "decor:salon", "look:warm"],
+        )
+    set_media_metadata(
+        root,
+        rows["candidate.mp4"]["id"],
+        title="Candidate Ronan",
+        duration_seconds=8,
+        tags=["character:ronan", "prop:radio", "decor:cuisine", "look:cold"],
+    )
+    save_timeline(
+        root,
+        {
+            "edit_name": "teaser_30",
+            "duration_seconds": 20,
+            "storyline": {"mode": "free", "start": 0},
+            "tracks": [{"id": "video", "name": "VIDEO", "kind": "video"}],
+            "clips": [
+                {"id": "v1", "track": "video", "label": "Prev", "start": 0, "duration": 4, "sourceStart": 0, "mediaDbId": rows["prev.mp4"]["id"]},
+                {"id": "v2", "track": "video", "label": "Target", "start": 4, "duration": 4, "sourceStart": 0, "mediaDbId": rows["target.mp4"]["id"]},
+                {"id": "v3", "track": "video", "label": "Next", "start": 8, "duration": 4, "sourceStart": 0, "mediaDbId": rows["next.mp4"]["id"]},
+            ],
+        },
+    )
+
+    app = create_app(root)
+    port = _free_port()
+    server = uvicorn.Server(
+        uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
+    )
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    for _ in range(100):
+        if server.started:
+            break
+        time.sleep(0.05)
+    assert server.started
+
+    errors = []
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.on("pageerror", lambda exc: errors.append(str(exc)))
+            page.goto(f"http://127.0.0.1:{port}/", wait_until="networkidle")
+            page.wait_for_timeout(150)
+
+            page.evaluate("selectedClip='v2'; renderInspector();")
+            expect(page.locator(".timeline-continuity-section")).to_be_visible()
+            page.get_by_role("button", name="Analyser voisins").click()
+            expect(page.locator("#editorialDrawer")).to_be_visible()
+            expect(page.locator(".selector-policy")).to_contain_text("CONTINUITÉ")
+            expect(page.locator(".continuity-neighbor")).to_have_count(3)
+            expect(page.locator("#editorialDrawer")).to_contain_text("PRÉCÉDENT")
+            expect(page.locator("#editorialDrawer")).to_contain_text("SUIVANT")
+            expect(page.locator("#editorialDrawer")).to_contain_text("BRIDGE_CONTINUITY")
+
+            page.locator("#continuityCandidateMedia").select_option(
+                str(rows["candidate.mp4"]["id"])
+            )
+            page.get_by_role("button", name="Tester ce candidat").click()
+            expect(page.locator(".selector-policy")).to_contain_text("RUPTURE POTENTIELLE")
+            expect(page.locator("#editorialDrawer")).to_contain_text("Candidate Ronan")
+            expect(page.locator("#editorialDrawer")).to_contain_text("FACET_RUPTURE")
+            expect(page.locator("#editorialDrawer")).to_contain_text("BRIDGE_GAP")
+
+            timeline = (root / "edits" / "teaser_30" / "working" / "timeline.json").read_text(encoding="utf-8")
+            assert '"mediaDbId": ' + str(rows["target.mp4"]["id"]) in timeline
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
