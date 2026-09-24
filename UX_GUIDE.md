@@ -331,3 +331,45 @@ La quantité ne doit pas se substituer à la diversité des preuves.
 Un groupe est créé ou choisi par l’utilisateur.
 
 Le système peut proposer la réutilisation d’un nom existant, mais ne doit pas fusionner automatiquement deux groupes sur la seule base d’une similarité visuelle.
+
+
+## 33. Absence de Canon ≠ contradiction
+
+Le système doit distinguer trois situations :
+
+1. preuve canonique explicite compatible ;
+2. contradiction canonique explicite ;
+3. information absente ou insuffisante.
+
+La troisième situation ne doit jamais être affichée comme une erreur.
+
+## 34. Un conflit se lit avant de se contourner
+
+Quand un conflit Canon ou HARD LOCK exige un override :
+
+- afficher le tag concerné ;
+- afficher chaque raison ;
+- afficher la source de la règle ;
+- préciser qu’aucune modification n’a encore eu lieu ;
+- utiliser un libellé explicite **Accepter malgré conflit**.
+
+Un bouton générique **Accepter** ne doit pas contourner silencieusement une contradiction.
+
+## 35. HARD LOCK contextuel
+
+Un lock temporel n’est pertinent pour un tag sémantique que si :
+
+- le média est effectivement utilisé dans la plage verrouillée ;
+- et le lock couvre les opérations sémantiques.
+
+Un lock de trim/reorder ne doit pas devenir artificiellement un conflit de métadonnées.
+
+## 36. L’override ne réécrit pas le Canon
+
+Accepter une exception signifie accepter le tag malgré le signal pour ce média.
+
+Cela ne doit jamais :
+- retirer une règle du Canon ;
+- ouvrir un facet fermé ;
+- modifier un HARD LOCK ;
+- faire disparaître la trace du conflit.
