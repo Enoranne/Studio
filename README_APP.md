@@ -97,6 +97,61 @@ Créer `prop:fisher` sur une zone :
 - ne modifie pas la Storyline ;
 - n’accepte aucune proposition automatiquement.
 
+## Editorial Vision V0.22.3
+
+Les références ciblées peuvent être organisées en groupes projet.
+
+### Qualité
+
+Chaque référence possède un niveau :
+
+- `primary` → **Primaire**, poids 1,5 ;
+- `secondary` → **Secondaire**, poids 1,0 ;
+- `low` → **Faible**, poids 0,5.
+
+### Groupes
+
+`group_name` est optionnel.
+
+Des références issues de rushes différents peuvent partager le même groupe si elles représentent la même preuve canonique, par exemple **Fisher principal**.
+
+Le calcul suit deux étapes :
+
+1. centroïde pondéré des références à l’intérieur de chaque groupe ;
+2. centroïde des groupes, avec un poids égal par groupe.
+
+Ce mécanisme évite qu’un groupe volumineux domine simplement parce qu’il contient davantage d’images.
+
+Les références ciblées sans groupe et les références legacy de rush entier restent des preuves indépendantes.
+
+### Migration
+
+Lors de l’ouverture d’une base V0.22.2 existante, PISTE Studio ajoute automatiquement :
+
+- `group_name` ;
+- `quality`.
+
+Les anciennes références reçoivent par défaut la qualité `secondary`.
+
+### API
+
+- `GET /api/vision/reference-groups` : résumé des groupes ;
+- `PATCH /api/vision/references/{id}` : modifier groupe et/ou qualité.
+
+Modifier ces métadonnées ne recalcule pas le crop, n’écrit aucun tag global et ne modifie aucune timeline.
+
+### Interface
+
+Le gestionnaire **Référence ciblée** affiche désormais :
+
+- groupes existants du projet ;
+- poids total du groupe ;
+- groupe de chaque référence ;
+- qualité et poids ;
+- contrôles pour modifier groupe/qualité.
+
+Les propositions de continuité affichent aussi le nombre de groupes et la distribution **P/S/F**.
+
 ## Audio Delivery V0.21
 
 Le **Master Check** contrôle le mix rendu, après sommation des clips audio audibles de la timeline.
