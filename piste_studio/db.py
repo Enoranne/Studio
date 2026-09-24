@@ -60,6 +60,84 @@ CREATE TABLE IF NOT EXISTS audio_loudness_analysis (
     FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS audio_track_analysis (
+    media_id INTEGER NOT NULL,
+    track_index INTEGER NOT NULL,
+    stream_index INTEGER NOT NULL,
+    analyzer_version TEXT NOT NULL,
+    status TEXT NOT NULL,
+    codec TEXT,
+    channels INTEGER,
+    channel_layout TEXT,
+    sample_rate INTEGER,
+    language TEXT,
+    title TEXT,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    mean_dbfs REAL,
+    peak_dbfs REAL,
+    silent INTEGER NOT NULL DEFAULT 0,
+    detected_silence_seconds REAL NOT NULL DEFAULT 0,
+    selected_for_transcription INTEGER NOT NULL DEFAULT 0,
+    analyzed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(media_id, track_index),
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_audio_track_selected
+ON audio_track_analysis(media_id, selected_for_transcription);
+
+CREATE TABLE IF NOT EXISTS transcripts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    media_id INTEGER NOT NULL,
+    audio_track_index INTEGER NOT NULL,
+    provider TEXT NOT NULL,
+    model_id TEXT NOT NULL,
+    source_sha256 TEXT NOT NULL,
+    status TEXT NOT NULL,
+    language_code TEXT,
+    language_probability REAL,
+    text_content TEXT NOT NULL DEFAULT '',
+    words_json TEXT NOT NULL DEFAULT '[]',
+    phrases_json TEXT NOT NULL DEFAULT '[]',
+    raw_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(media_id, audio_track_index, provider, model_id, source_sha256),
+    FOREIGN KEY(media_id) REFERENCES media(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_transcripts_media
+ON transcripts(media_id, audio_track_index, status);
+
+CREATE TABLE IF NOT EXISTS editorial_agent_proposals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    edit_name TEXT NOT NULL,
+    proposal_kind TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    brief TEXT,
+    base_timeline_hash TEXT,
+    proposal_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_editorial_agent_proposals_edit
+ON editorial_agent_proposals(edit_name, status, created_at);
+
+CREATE TABLE IF NOT EXISTS master_critic_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    edit_name TEXT NOT NULL,
+    version_label TEXT,
+    source_path TEXT NOT NULL,
+    status TEXT NOT NULL,
+    report_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_master_critic_edit
+ON master_critic_reports(edit_name, created_at);
+
 CREATE TABLE IF NOT EXISTS semantic_profiles (
     media_id INTEGER NOT NULL,
     provider TEXT NOT NULL,
