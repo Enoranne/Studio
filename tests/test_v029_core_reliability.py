@@ -231,3 +231,14 @@ def test_storyline_remove_respects_existing_reorder_hard_lock(tmp_path):
     )
     with pytest.raises(StorylineError, match="HARD LOCK"):
         validate_locked_change(root, before, after)
+
+
+def test_magnetic_ui_delegates_insert_remove_and_serializes_media_for_kernel():
+    script = (ROOT / "piste_studio" / "ui" / "ux-magnetic.js").read_text(
+        encoding="utf-8"
+    )
+    assert "function backendClipPayload" in script
+    assert "{clip:backendClipPayload(newClip),target_time:start}" in script
+    assert "{clip:backendClipPayload(c)}" in script
+    assert "'remove'," in script
+    assert "{clip_id:c.id}" in script
