@@ -8,6 +8,7 @@ import pytest
 
 import piste_studio.semantic_vision as sv
 from piste_studio.db import connect
+from piste_studio.config import read_yaml, write_yaml
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
 from piste_studio.project import init_project
@@ -565,3 +566,62 @@ def test_semantic_reference_schema_migrates_v0222_database(tmp_path):
         conn.close()
     assert "group_name" in columns
     assert "quality" in columns
+
+
+def test_conflicting_proposal_requires_explicit_acknowledgement(tmp_path):
+    root, rows = make_project(tmp_path)
+    ref = rows["ref_malo.mp4"]
+    target = rows["target.mp4"]
+
+    sv.store_semantic_profile(
+        root,
+        ref["id"],
+        embedding=[1.0, 0.0, 0.0],
+    )
+    sv.store_semantic_profile(
+        root,
+        target["id"],
+        embedding=[0.99, 0.01, 0.0],
+    )
+    canon = read_yaml(root / "canon.yaml")
+    canon["semantic"] = {
+        "allowed_tags": [],
+        "forbidden_tags": ["prop:fisher"],
+        "closed_facets": [],
+    }
+    write_yaml(root / "canon.yaml", canon)
+
+    result = sv.propose_semantic_tags(root, target["id"])
+    proposal = next(
+        x for x in result["proposals"]
+        if x["tag"] == "prop:fisher" and x["status"] == "PENDING"
+    )
+    assert proposal["canon_assessment"]["status"] == "CONFLICT"
+    assert proposal["canon_assessment"]["requires_explicit_acknowledgement"] is True
+
+    first = sv.resolve_semantic_proposal(
+        root,
+        proposal["id"],
+        accept=True,
+    )
+    assert first["status"] == "PENDING"
+    assert first["resolution_status"] == "REQUIRES_ACKNOWLEDGEMENT"
+    target_after_first = next(
+        x for x in fetch_media_with_metadata(root)
+        if int(x["id"]) == int(target["id"])
+    )
+    assert "prop:fisher" not in target_after_first["tags"]
+
+    accepted = sv.resolve_semantic_proposal(
+        root,
+        proposal["id"],
+        accept=True,
+        acknowledge_canon_conflict=True,
+    )
+    assert accepted["status"] == "ACCEPTED"
+    assert accepted["canon_assessment"]["status"] == "CONFLICT"
+    target_after = next(
+        x for x in fetch_media_with_metadata(root)
+        if int(x["id"]) == int(target["id"])
+    )
+    assert "prop:fisher" in target_after["tags"]
