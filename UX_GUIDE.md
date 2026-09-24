@@ -268,3 +268,35 @@ Un seuil technique brut ne doit pas être le seul contrôle exposé.
 L’interface propose des niveaux Faible / Normale / Forte, tout en affichant le seuil ffmpeg correspondant pour l’auditabilité.
 
 Augmenter la sensibilité doit être décrit comme une augmentation possible du nombre de ruptures détectées, pas comme une augmentation de la « qualité » de l’analyse.
+
+
+## 27. Une référence n’est pas un tag global
+
+Une zone choisie comme `prop:fisher` signifie :
+
+« cette image ou cette zone est une référence validée du Fisher ».
+
+Elle ne signifie pas :
+
+« tout le rush représente le Fisher ».
+
+L’interface et le modèle de données doivent donc distinguer référence ciblée et tag global du média.
+
+## 28. Cibler avant de comparer
+
+Quand l’identité visuelle porte sur un détail localisé — visage, accessoire, élément de décor — comparer un crop ciblé est préférable à moyenner tout le rush.
+
+La référence doit conserver :
+- son timecode ;
+- sa zone ROI ;
+- son média d’origine ;
+- son tag explicite ;
+- sa méthode/modèle d’embedding.
+
+Une proposition doit rester auditable jusqu’à cette preuve précise.
+
+## 29. Pas d’auto-référence
+
+Une référence extraite d’un média ne doit jamais être utilisée pour proposer le même tag à ce média lui-même.
+
+Sans cette règle, la similarité serait circulaire et donnerait une fausse impression de confiance.
