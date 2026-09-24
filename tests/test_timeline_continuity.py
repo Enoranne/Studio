@@ -140,7 +140,7 @@ def test_missing_candidate_tags_are_missing_evidence_not_claimed_visual_absence(
         clip_id="v-target",
         candidate_media_id=rows["blank.mp4"]["id"],
     )
-    assert result["status"] == "RUPTURE"
+    assert result["status"] == "REVIEW"
     assert result["policy"]["absence_of_tag_is_not_visual_proof_of_absence"] is True
     assert any(
         x["kind"] == "TARGET_EVIDENCE_MISSING"
@@ -148,6 +148,8 @@ def test_missing_candidate_tags_are_missing_evidence_not_claimed_visual_absence(
     )
     gaps = [x for x in result["findings"] if x["kind"] == "BRIDGE_EVIDENCE_GAP"]
     assert len(gaps) == 4
+    assert result["summary"]["warning_count"] == 0
+    assert result["summary"]["review_count"] >= 4
     assert all("preuve" in x["message"] for x in gaps)
 
 
