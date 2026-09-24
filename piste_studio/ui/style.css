@@ -156,3 +156,11 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .duck-preview span{padding:4px 6px;border-radius:4px;background:#171d23;font:6px ui-monospace,monospace;color:#aeb8c0}
 .crossfade-clip{box-shadow:inset 0 0 0 1px rgba(197,148,105,.24)}
 .crossfade-badge{position:absolute;z-index:14;right:3px;top:3px;padding:2px 4px;border-radius:3px;background:#513d2c;color:#ebc69e;font:5.3px ui-monospace,monospace;pointer-events:none}
+
+
+.continuity-triptych{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.continuity-neighbor{min-height:112px}
+.continuity-neighbor.empty{opacity:.6}
+.continuity-finding{margin:6px 0}
+.continuity-info-list{margin-top:8px}
+@media(max-width:900px){.continuity-triptych{grid-template-columns:1fr}}
