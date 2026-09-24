@@ -51,7 +51,7 @@ def base_payload(audio_id):
 def test_audio_schema_v4_preserves_mix_state(tmp_path):
     root, audio_id = make_root(tmp_path)
     clean = validate_timeline(root, base_payload(audio_id))
-    assert clean["schema_version"] == 5
+    assert clean["schema_version"] == 6
     assert clean["tracks"][1]["solo"] is True
     clip = clean["clips"][0]
     assert clip["gainDb"] == -6
