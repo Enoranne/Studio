@@ -413,3 +413,39 @@ Même deux tags incompatibles ne prouvent pas qu’une coupe est mauvaise.
 Un changement de personnage, décor ou look peut être narrativement volontaire.
 
 Le statut **RUPTURE POTENTIELLE** décrit un changement structuré détecté ; il ne constitue jamais une interdiction de montage.
+
+
+## 41. Un titre est un objet de montage
+
+Un titre doit rester un clip éditable de timeline, avec sa propre durée et son propre style.
+
+Le texte affiché dans le Viewer ne doit jamais devenir une propriété implicite ou cachée du plan vidéo sous-jacent.
+
+## 42. Position normalisée
+
+Les coordonnées de titre doivent être indépendantes de la taille momentanée du Viewer.
+
+PISTE Studio stocke X, Y et largeur en valeurs normalisées afin que le même overlay puisse être adapté à différents canvases sans dépendre d’une résolution d’écran locale.
+
+## 43. Typographie portable avant typographie décorative
+
+Une police locale introuvable sur la machine de delivery est une dépendance cachée.
+
+V0.23.1 privilégie donc Sans / Serif / Mono, avec des stacks système explicites.
+
+L’ajout futur de fontes spécifiques devra passer par une ressource de projet explicite, vérifiable et transportable.
+
+## 44. Ne jamais perdre silencieusement un overlay
+
+Si le moteur cible ne sait pas matérialiser un titre, le système doit :
+
+- conserver la définition du titre ;
+- lister clairement l’élément non matérialisé ;
+- produire un warning ;
+- ne jamais prétendre que l’export est visuellement complet.
+
+## 45. Preview ≠ preuve de delivery
+
+Le Viewer PROGRAM doit être fidèle au modèle PISTE, mais un aperçu navigateur réussi ne prouve pas qu’un moteur externe sait produire exactement le même résultat.
+
+La chaîne de delivery doit donc vérifier séparément la matérialisation finale.
