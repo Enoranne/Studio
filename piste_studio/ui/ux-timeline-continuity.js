@@ -6,6 +6,7 @@ function continuityStatusLabel(status){
     RUPTURE:'RUPTURE POTENTIELLE',
     INSUFFICIENT:'PREUVES INSUFFISANTES',
     NO_SIGNAL:'AUCUN SIGNAL',
+    REVIEW:'À VÉRIFIER',
   })[status]||status||'AUCUN SIGNAL';
 }
 
@@ -44,7 +45,7 @@ function continuityClipCard(label,clip){
 }
 
 function continuityFindingMarkup(finding){
-  const cls=finding.severity==='WARNING'?'warn':'hint';
+  const cls=['WARNING','REVIEW'].includes(finding.severity)?'warn':'hint';
   return `<div class="${cls} continuity-finding">
     <b>${finding.kind} · ${finding.facet||''}</b>
     <div>${finding.message}</div>
@@ -117,7 +118,7 @@ function renderTimelineContinuity(result,c){
     ${warnings.length?warnings.map(continuityFindingMarkup).join(''):'<div class="okbox">Aucune rupture explicite détectée à partir des tags structurés disponibles.</div>'}
     ${infos.length?'<div class="continuity-info-list">'+infos.map(continuityFindingMarkup).join('')+'</div>':''}
     ${canonConflicts.length?`<div class="inspector-section-title" style="margin-top:14px">CANON</div>${canonConflicts.map(a=>canonAssessmentMarkup(a)).join('')}`:''}
-    <div class="vision-evidence">Voisins analysés : ${result.summary?.neighbor_count||0} · alertes : ${result.summary?.warning_count||0} · continuités explicites : ${result.summary?.continuity_count||0}</div>
+    <div class="vision-evidence">Voisins analysés : ${result.summary?.neighbor_count||0} · alertes : ${result.summary?.warning_count||0} · à vérifier : ${result.summary?.review_count||0} · continuités explicites : ${result.summary?.continuity_count||0}</div>
   `;
 }
 
