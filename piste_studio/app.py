@@ -117,6 +117,13 @@ from .master_critic import (
     critique_render,
     list_master_critic_reports,
 )
+from .voice_visual_bridge import (
+    VOICE_VISUAL_VERSION,
+    VoiceVisualError,
+    compare_visual_candidates,
+    propose_voice_visual_edit,
+    voice_visual_candidates,
+)
 from .audio_delivery import (
     AudioDeliveryError,
     AUDIO_DELIVERY_VERSION,
@@ -832,6 +839,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         return {
             "version": EDITORIAL_AGENT_VERSION,
             "master_critic_version": MASTER_CRITIC_VERSION,
+            "voice_visual_version": VOICE_VISUAL_VERSION,
             "policy": {
                 "suggestions_only_until_apply": True,
                 "human_validation_required": True,
@@ -944,6 +952,118 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         try:
             return reject_proposal(root, proposal_id)
         except EditorialAgentError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/voice-visual/candidates")
+    def editorial_agent_voice_visual_candidates(
+        payload: dict = Body(...),
+    ):
+        try:
+            intents = {
+                int(key): str(value)
+                for key, value in (payload.get("explicit_intents") or {}).items()
+            }
+            return voice_visual_candidates(
+                root,
+                voice_media_id=int(payload["voice_media_id"]),
+                phrase_indexes=(
+                    [int(x) for x in payload.get("phrase_indexes") or []]
+                    or None
+                ),
+                explicit_intents=intents or None,
+                visual_media_ids=(
+                    [int(x) for x in payload.get("visual_media_ids") or []]
+                    or None
+                ),
+                per_phrase=int(payload.get("per_phrase", 6)),
+                max_visual_media=int(
+                    payload.get("max_visual_media", 24)
+                ),
+                allow_model_download=bool(
+                    payload.get("allow_model_download", False)
+                ),
+            )
+        except (VoiceVisualError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/voice-visual/compare")
+    def editorial_agent_voice_visual_compare(
+        payload: dict = Body(...),
+    ):
+        try:
+            phrase_index = int(payload["phrase_index"])
+            intents = {
+                int(key): str(value)
+                for key, value in (payload.get("explicit_intents") or {}).items()
+            }
+            mapping = voice_visual_candidates(
+                root,
+                voice_media_id=int(payload["voice_media_id"]),
+                phrase_indexes=[phrase_index],
+                explicit_intents=intents or None,
+                visual_media_ids=(
+                    [int(x) for x in payload.get("visual_media_ids") or []]
+                    or None
+                ),
+                per_phrase=int(payload.get("per_phrase", 6)),
+                max_visual_media=int(
+                    payload.get("max_visual_media", 24)
+                ),
+                allow_model_download=bool(
+                    payload.get("allow_model_download", False)
+                ),
+            )
+            out = compare_visual_candidates(
+                mapping,
+                phrase_index=phrase_index,
+                limit=int(payload.get("limit", 6)),
+            )
+            out["semantic_text"] = mapping.get("semantic_text")
+            return out
+        except (VoiceVisualError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/editorial-agent/voice-visual/propose")
+    def editorial_agent_voice_visual_propose(
+        payload: dict = Body(...),
+    ):
+        try:
+            intents = {
+                int(key): str(value)
+                for key, value in (payload.get("explicit_intents") or {}).items()
+            }
+            return propose_voice_visual_edit(
+                root,
+                edit_name=str(payload.get("edit_name") or "teaser_30"),
+                voice_media_id=int(payload["voice_media_id"]),
+                phrase_indexes=(
+                    [int(x) for x in payload.get("phrase_indexes") or []]
+                    or None
+                ),
+                explicit_intents=intents or None,
+                visual_media_ids=(
+                    [int(x) for x in payload.get("visual_media_ids") or []]
+                    or None
+                ),
+                brief=str(payload.get("brief") or ""),
+                per_phrase=int(payload.get("per_phrase", 8)),
+                max_visual_media=int(
+                    payload.get("max_visual_media", 24)
+                ),
+                max_shot_seconds=float(
+                    payload.get("max_shot_seconds", 4.5)
+                ),
+                allow_model_download=bool(
+                    payload.get("allow_model_download", False)
+                ),
+            )
+        except (
+            VoiceVisualError,
+            EditorialAgentError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as exc:
             raise HTTPException(422, str(exc)) from exc
 
     @app.post("/api/editorial-agent/master-critic")
