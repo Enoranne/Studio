@@ -64,10 +64,11 @@
 - ✅ **V0.26.8 — Proposed Edit** : EDL virtuelle persistée avec timeline candidate, Storyline inchangée tant que la proposition reste PENDING ;
 - ✅ **V0.26.9 — Apply Proposal** : confirmation humaine, contrôle anti-stale par hash, validation timeline, locks, checkpoint Undo puis transaction Storyline ;
 - ✅ **V0.26.10 — Rendered Master Critic** : ffprobe, durée, présence audio/vidéo, plages noires, LUFS/true peak et rapport persistant ; diagnostic uniquement, revue humaine toujours requise.
+- ✅ **V0.26.11 — Editorial Production Run / recette PISTE 0** : rapport non destructif de progression rushes → pistes audio → transcript → candidats → AI Timeline View → stratégie → EDL virtuelle → validation humaine → Storyline → Tesseract → Master Critic ; CLI, API et affichage dans l'Editorial Agent ; aucun appel réseau ni Apply automatique.
 
 **V0.26 — FONDATION EDITORIAL AGENT FUSIONNÉE DANS MAIN ✅**
 
-Validation de code : **159 tests passés / 159**, syntaxe JavaScript validée. Le bundle macOS V0.26 a atteint construction, signature et démarrage du sidecar avec `/api/health` en 0.26.0 ; le garde-fou de smoke test resté en 0.25.0 a été corrigé. Restent comme validations de production la première utilisation sur médias réels PISTE 0 et le smoke final du workflow macOS courant. Les appels de transcription externes restent explicitement opt-in.
+Validation de code : **159 tests passés / 159**, syntaxe JavaScript validée. Le bundle macOS V0.26 a atteint construction, signature et démarrage du sidecar avec `/api/health` en 0.26.0 ; le garde-fou de smoke test resté en 0.25.0 a été corrigé. La chaîne de recette PISTE 0 est désormais instrumentée de bout en bout ; reste à l'exécuter sur les médias locaux réels PISTE 0 et à effectuer le smoke final du workflow macOS courant. Les appels de transcription externes restent explicitement opt-in.
 
 ## Avant V1
 
