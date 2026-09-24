@@ -14,6 +14,7 @@ from .media import scan_media
 from .metadata import fetch_media_with_metadata, set_media_metadata
 from .patches import create_validated_patch
 from .project import ProjectError, init_project, load_project, verify_master
+from .readiness import build_production_readiness
 from .tesseract_bridge import (
     TesseractBridgeError, detect_tesseract, execute_bootstrap, execute_export,
     execute_filmstrip, execute_patch_actions, execute_preview, save_execution_plan,
@@ -82,6 +83,16 @@ def cmd_patch(a):
     print(f"PATCH CREATED — {rec.edit_name}/{rec.version_label}"); return 0
 
 
+def cmd_readiness(a):
+    report = build_production_readiness(
+        root_of(a.root),
+        edit_name=a.name,
+        version=a.version,
+    )
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0 if report["pipeline_status"] != "BLOCKED" else 5
+
+
 def cmd_tess_config(a):
     print(save_tesseract_config(root_of(a.root), cli_path=a.cli, expected_version=a.expected_version, telemetry=a.telemetry)); return 0
 
@@ -139,6 +150,7 @@ def build_parser() -> argparse.ArgumentParser:
     q = sp.add_parser("brief-teaser"); q.add_argument("--root", required=True); q.add_argument("--name", default="teaser_30"); q.add_argument("--duration", type=float, required=True); q.add_argument("--mood", nargs="*"); q.add_argument("--max-spoiler", type=int, default=0); q.add_argument("--aspect-ratio"); q.set_defaults(func=cmd_brief)
     q = sp.add_parser("versions"); q.add_argument("--root", required=True); q.add_argument("--name"); q.set_defaults(func=cmd_versions)
     q = sp.add_parser("patch-create"); q.add_argument("--root", required=True); q.add_argument("--name", required=True); q.add_argument("--base", required=True); q.add_argument("--operation", required=True); q.add_argument("--start", type=float); q.add_argument("--end", type=float); q.add_argument("--target", default="timeline", choices=["timeline","master"]); q.add_argument("--property"); q.add_argument("--old"); q.add_argument("--new"); q.add_argument("--explicit-soft-unlock", action="store_true"); q.set_defaults(func=cmd_patch)
+    q = sp.add_parser("readiness"); q.add_argument("--root", required=True); q.add_argument("--name"); q.add_argument("--version"); q.set_defaults(func=cmd_readiness)
 
     t = sp.add_parser("tesseract").add_subparsers(dest="tesseract_command", required=True)
     q=t.add_parser("configure"); q.add_argument("--root", required=True); q.add_argument("--cli"); q.add_argument("--expected-version", default="0.2.0"); q.add_argument("--telemetry", action="store_true"); q.set_defaults(func=cmd_tess_config)
