@@ -14,6 +14,92 @@ class TimelineError(ValueError):
 
 
 AUDIO_ROLES = {"dialogue", "vo", "music", "ambience", "sfx"}
+TITLE_FONT_FAMILIES = {"sans", "serif", "mono"}
+TITLE_ALIGNS = {"left", "center", "right"}
+TITLE_PRESETS = {"center", "lower_third", "top", "custom"}
+
+
+def _clean_hex_color(value: object, fallback: str, field: str) -> str:
+    clean = str(value or fallback).strip()
+    if len(clean) != 7 or not clean.startswith("#"):
+        raise TimelineError(f"{field} doit utiliser #RRGGBB.")
+    try:
+        int(clean[1:], 16)
+    except ValueError as exc:
+        raise TimelineError(f"{field} doit utiliser #RRGGBB.") from exc
+    return clean.upper()
+
+
+def _clean_title_clip(raw: dict, cid: str) -> dict:
+    text = str(raw.get("text") or raw.get("label") or "").strip()
+    if not text:
+        raise TimelineError(f"Texte de titre vide pour {cid}.")
+    if len(text) > 500:
+        raise TimelineError(f"Texte de titre trop long pour {cid} (500 caractères max).")
+
+    preset = str(raw.get("titlePreset") or "center").strip().lower()
+    if preset not in TITLE_PRESETS:
+        raise TimelineError(f"titlePreset invalide pour {cid}.")
+    family = str(raw.get("fontFamily") or "sans").strip().lower()
+    if family not in TITLE_FONT_FAMILIES:
+        raise TimelineError(f"fontFamily invalide pour {cid}.")
+    align = str(raw.get("textAlign") or "center").strip().lower()
+    if align not in TITLE_ALIGNS:
+        raise TimelineError(f"textAlign invalide pour {cid}.")
+
+    defaults = {
+        "center": (0.5, 0.5),
+        "lower_third": (0.5, 0.82),
+        "top": (0.5, 0.16),
+        "custom": (0.5, 0.5),
+    }
+    default_x, default_y = defaults[preset]
+    x = float(raw.get("positionX", default_x))
+    y = float(raw.get("positionY", default_y))
+    width = float(raw.get("boxWidth", 0.8))
+    size = float(raw.get("fontSize", 64))
+    weight = int(raw.get("fontWeight", 700))
+    opacity = float(raw.get("opacity", 1.0))
+    background_opacity = float(raw.get("backgroundOpacity", 0.0))
+    padding = float(raw.get("padding", 0.02))
+    corner_radius = float(raw.get("cornerRadius", 0.0))
+
+    if not (0 <= x <= 1 and 0 <= y <= 1):
+        raise TimelineError(f"positionX/positionY hors plage 0..1 pour {cid}.")
+    if not 0.1 <= width <= 1:
+        raise TimelineError(f"boxWidth hors plage 0.1..1 pour {cid}.")
+    if not 12 <= size <= 240:
+        raise TimelineError(f"fontSize hors plage 12..240 pour {cid}.")
+    if not 100 <= weight <= 900 or weight % 100:
+        raise TimelineError(f"fontWeight doit être 100..900 par pas de 100 pour {cid}.")
+    if not 0 <= opacity <= 1:
+        raise TimelineError(f"opacity hors plage 0..1 pour {cid}.")
+    if not 0 <= background_opacity <= 1:
+        raise TimelineError(f"backgroundOpacity hors plage 0..1 pour {cid}.")
+    if not 0 <= padding <= 0.2:
+        raise TimelineError(f"padding hors plage 0..0.2 pour {cid}.")
+    if not 0 <= corner_radius <= 0.2:
+        raise TimelineError(f"cornerRadius hors plage 0..0.2 pour {cid}.")
+
+    return {
+        "text": text,
+        "titlePreset": preset,
+        "fontFamily": family,
+        "fontSize": round(size, 2),
+        "fontWeight": weight,
+        "textAlign": align,
+        "positionX": round(x, 4),
+        "positionY": round(y, 4),
+        "boxWidth": round(width, 4),
+        "color": _clean_hex_color(raw.get("color"), "#FFFFFF", "color"),
+        "backgroundColor": _clean_hex_color(
+            raw.get("backgroundColor"), "#000000", "backgroundColor"
+        ),
+        "backgroundOpacity": round(background_opacity, 4),
+        "opacity": round(opacity, 4),
+        "padding": round(padding, 4),
+        "cornerRadius": round(corner_radius, 4),
+    }
 
 
 def _linear_to_db(value: float) -> float:
@@ -321,6 +407,10 @@ def validate_timeline(root: Path, payload: dict) -> dict:
             clean["fadeIn"] = round(fade_in, 6)
             clean["fadeOut"] = round(fade_out, 6)
             clean["volumeEnvelope"] = volume_envelope
+        if str(track).lower() == "titles" or str(
+            next((t["kind"] for t in clean_tracks if t["id"] == track), "")
+        ).lower() in {"title", "titles"}:
+            clean.update(_clean_title_clip(c, cid))
         clean_clips.append(clean)
 
     _validate_connections(clean_clips)
@@ -345,7 +435,7 @@ def validate_timeline(root: Path, payload: dict) -> dict:
                 )
 
     return {
-        "schema_version": 4,
+        "schema_version": 5,
         "edit_name": slugify(str(payload.get("edit_name") or "teaser_30")),
         "duration_seconds": duration,
         "storyline": storyline,
