@@ -246,6 +246,8 @@ def test_real_ffmpeg_social_vertical_fit_and_report(tmp_path):
     assert render["probe"]["video_codec"] == "h264"
     assert render["probe"]["audio_codec"] == "aac"
     assert render["probe"]["audio_sample_rate"] == 48000
+    assert render["conformance"]["status"] == "PASS"
+    assert render["conformance"]["reasons"] == []
 
     preflight = {
         "version": "test",
