@@ -4,20 +4,19 @@ Date : 24 septembre 2026
 
 ## Périmètre validé
 
-Ce rapport couvre quatre briques de V0.22 :
+Ce rapport couvre les cinq briques de V0.22 :
 
 1. **V0.22.1 — Fenêtres SOURCE IN/OUT issues de ruptures visuelles** ;
 2. **V0.22.2 — Références visuelles ciblées sur un frame ou une zone ROI** ;
 3. **V0.22.3 — Groupes de références et qualité de preuve** ;
-4. **V0.22.4 — Détection de conflits Canon / HARD-SOFT LOCKS**.
+4. **V0.22.4 — Détection de conflits Canon / HARD-SOFT LOCKS** ;
+5. **V0.22.5 — Continuité contextuelle plan précédent / plan suivant**.
 
-Reste ouvert dans V0.22 :
-
-- comparaison de continuité plan précédent / plan suivant.
+**V0.22 — Editorial Vision Refinement est complète.**
 
 ## Résultat global
 
-- Python/API/UI : **103 tests passés / 103** avec la couverture V0.22.4.
+- Python/API/UI : **111 tests attendus au HEAD V0.22.5**, avec validation CI finale enregistrée après le dernier correctif de test.
 - JavaScript : tous les modules UI passent `node --check`.
 - Chromium / Playwright : succès.
 - ffmpeg système installé explicitement dans la CI.
@@ -532,9 +531,184 @@ L’écran de confirmation précise qu’aucune modification n’a encore eu lie
 
 La vue **Canon & Locks** affiche aussi les règles sémantiques explicites.
 
+# V0.22.5 — Continuité de voisinage
+
+## Objectif
+
+La continuité n’est plus évaluée uniquement à l’échelle du rush.
+
+PISTE Studio peut désormais analyser un clip vidéo dans son voisinage réel :
+
+**plan précédent → plan central → plan suivant**
+
+et simuler un autre rush à la place du plan central sans modifier le montage.
+
+## Source de vérité temporelle
+
+L’analyse charge la timeline de travail de l’edit actif et trie uniquement les clips de la piste STORY vidéo.
+
+Les pistes audio, titres et enfants connectés sont exclues du voisinage visuel.
+
+Pour chaque analyse, le résultat conserve :
+
+- id du clip central ;
+- média original ;
+- média candidat éventuel ;
+- précédent ;
+- suivant ;
+- position et durée ;
+- tags structurés disponibles.
+
+## Facets comparés
+
+La comparaison porte sur :
+
+- `character` ;
+- `prop` ;
+- `decor` ;
+- `look`.
+
+Les tags non structurés ne sont pas interprétés comme preuves de continuité.
+
+## Signaux explicites
+
+`FACET_CONTINUITY` :
+
+deux plans portent au moins un tag commun pour le même facet.
+
+`FACET_RUPTURE` :
+
+les deux plans portent des tags explicites pour le même facet, mais aucun n’est commun.
+
+Ce signal est une **rupture potentielle**, pas un jugement sur la qualité de la coupe.
+
+`BRIDGE_CONTINUITY` :
+
+le précédent et le suivant partagent une preuve et le plan central la conserve.
+
+## Preuve manquante
+
+V0.22.5 distingue volontairement manque de donnée et contradiction.
+
+`TARGET_EVIDENCE_MISSING` :
+
+un voisin documente un facet mais la cible ne possède aucun tag structuré correspondant.
+
+`BRIDGE_EVIDENCE_GAP` :
+
+précédent et suivant partagent une preuve, mais la cible ne la documente pas.
+
+Ces signaux utilisent la sévérité **REVIEW** et le statut UI **À VÉRIFIER**.
+
+Ils ne sont jamais transformés en rupture certaine.
+
+Principe validé :
+
+**absence de tag ≠ absence visuelle.**
+
+## Statuts synthétiques
+
+- **CONTINUOUS** : continuité explicite et aucune contradiction ;
+- **RUPTURE** : au moins une incompatibilité explicite entre tags documentés ;
+- **REVIEW** : preuve structurée manquante à vérifier ;
+- **INSUFFICIENT** : cible sans matière structurée suffisante ;
+- **NO_SIGNAL** : aucune conclusion contextuelle exploitable.
+
+## Simulation de candidat
+
+L’API accepte facultativement `candidate_media_id`.
+
+Dans ce mode :
+
+- les voisins restent ceux du clip monté ;
+- le média candidat est évalué à la position du clip central ;
+- le fichier `timeline.json` n’est jamais écrit ;
+- aucun Source IN/OUT n’est modifié ;
+- aucun tag n’est modifié ;
+- aucun checkpoint n’est créé ;
+- aucun remplacement n’est exécuté.
+
+Le même candidat peut donc être testé librement avant toute décision humaine.
+
+## Canon
+
+Chaque tag structuré du plan/candidat est aussi évalué par le moteur V0.22.4.
+
+Les éventuels conflits Canon/HARD LOCK sont retournés comme contexte supplémentaire.
+
+L’analyse de voisinage ne les résout pas et ne modifie aucune règle.
+
+## API
+
+Route :
+
+`GET /api/vision/timeline-continuity`
+
+Paramètres :
+
+- `edit_name` ;
+- `clip_id` ;
+- `candidate_media_id` optionnel.
+
+## Interface
+
+Lorsqu’un clip vidéo est sélectionné dans la timeline, l’Inspector affiche :
+
+**CONTINUITÉ DE VOISINAGE → Analyser voisins**
+
+Le drawer présente trois cartes :
+
+**PRÉCÉDENT | PLAN/CANDIDAT | SUIVANT**
+
+avec :
+
+- tags structurés ;
+- signaux de continuité ;
+- ruptures potentielles ;
+- preuves manquantes ;
+- contexte Canon ;
+- compteurs de signaux.
+
+Un menu permet de choisir **Tester un autre rush à cette position**.
+
+Command Palette :
+
+**Vision · Continuité voisins**
+
+## Tests V0.22.5
+
+Couverture moteur :
+
+- continuité complète sur quatre facets ;
+- pont précédent/suivant conservé ;
+- candidat explicitement incompatible ;
+- simulation sans mutation de timeline ;
+- preuve manquante classée REVIEW plutôt que rupture ;
+- premier clip avec un seul voisin ;
+- exposition des conflits Canon du candidat.
+
+Couverture API :
+
+- simulation avec `candidate_media_id` ;
+- précédent/suivant corrects ;
+- timeline identique avant/après.
+
+Couverture Chromium :
+
+1. sélection du clip central ;
+2. présence de la section de voisinage ;
+3. analyse du plan monté ;
+4. affichage du triptyque ;
+5. statut **CONTINUITÉ** ;
+6. sélection d’un autre rush ;
+7. **Tester ce candidat** ;
+8. statut **RUPTURE POTENTIELLE** sur contradictions explicites ;
+9. affichage des `FACET_RUPTURE` et signaux de pont ;
+10. vérification que le média du clip central reste inchangé.
+
 ## Politique de sécurité éditoriale
 
-V0.22.1 à V0.22.4 respectent les mêmes principes :
+V0.22.1 à V0.22.5 respectent les mêmes principes :
 
 - traitement local ;
 - suggestion explicable ;
@@ -546,7 +720,6 @@ V0.22.1 à V0.22.4 respectent les mêmes principes :
 ## Limites connues
 
 - la référence ciblée utilise encore un rectangle ROI renseigné par coordonnées ; un geste direct de sélection dans le Viewer pourra améliorer l’ergonomie ;
-- la continuité n’est pas encore évaluée explicitement entre plan précédent et plan suivant ;
 - le modèle CLIP local reste optionnel et son téléchargement nécessite une action explicite.
 
 ## Conclusion
@@ -555,4 +728,4 @@ V0.22 transforme progressivement la vision de PISTE Studio d’une analyse « pa
 
 La chaîne validée devient :
 
-**repérer une rupture → choisir une plage SOURCE → choisir un frame → isoler une zone → nommer la référence → l’associer à un groupe → qualifier sa force → comparer des groupes équilibrés → confronter la proposition au Canon et aux locks → expliquer la preuve et les contradictions → laisser l’utilisateur décider.**
+**repérer une rupture → choisir une plage SOURCE → choisir un frame → isoler une zone → nommer la référence → l’associer à un groupe → qualifier sa force → comparer des groupes équilibrés → confronter la proposition au Canon et aux locks → replacer le plan entre ses voisins réels → tester éventuellement un candidat sans mutation → expliquer continuités, contradictions et preuves manquantes → laisser l’utilisateur décider.**
