@@ -15,6 +15,10 @@ from .metadata import fetch_media_with_metadata, set_media_metadata
 from .patches import create_validated_patch
 from .project import ProjectError, init_project, load_project, verify_master
 from .production_run import build_production_run_report, save_production_run_report
+from .editorial_production_run import (
+    build_editorial_production_run_report,
+    save_editorial_production_run_report,
+)
 from .readiness import build_production_readiness
 from .tesseract_bridge import (
     TesseractBridgeError, detect_tesseract, execute_bootstrap, execute_export,
@@ -111,6 +115,25 @@ def cmd_readiness(a):
     return 0 if report["pipeline_status"] != "BLOCKED" else 5
 
 
+def cmd_editorial_production_run(a):
+    report = build_editorial_production_run_report(
+        root_of(a.root),
+        edit_name=a.name,
+        media_ids=a.media_id,
+        version=a.version,
+    )
+    if a.save:
+        path = save_editorial_production_run_report(
+            root_of(a.root),
+            edit_name=a.name,
+            media_ids=a.media_id,
+            version=a.version,
+        )
+        report["saved_report"] = str(path)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0 if report["status"] != "BLOCKED" else 7
+
+
 def cmd_tess_config(a):
     print(save_tesseract_config(root_of(a.root), cli_path=a.cli, expected_version=a.expected_version, telemetry=a.telemetry)); return 0
 
@@ -170,6 +193,8 @@ def build_parser() -> argparse.ArgumentParser:
     q = sp.add_parser("patch-create"); q.add_argument("--root", required=True); q.add_argument("--name", required=True); q.add_argument("--base", required=True); q.add_argument("--operation", required=True); q.add_argument("--start", type=float); q.add_argument("--end", type=float); q.add_argument("--target", default="timeline", choices=["timeline","master"]); q.add_argument("--property"); q.add_argument("--old"); q.add_argument("--new"); q.add_argument("--explicit-soft-unlock", action="store_true"); q.set_defaults(func=cmd_patch)
     q = sp.add_parser("readiness"); q.add_argument("--root", required=True); q.add_argument("--name"); q.add_argument("--version"); q.set_defaults(func=cmd_readiness)
     q = sp.add_parser("production-run"); q.add_argument("--root", required=True); q.add_argument("--name", default="teaser_30"); q.add_argument("--version"); q.add_argument("--save", action="store_true"); q.set_defaults(func=cmd_production_run)
+
+    q = sp.add_parser("editorial-production-run"); q.add_argument("--root", required=True); q.add_argument("--name", default="teaser_30"); q.add_argument("--version"); q.add_argument("--media-id", type=int, nargs="*"); q.add_argument("--save", action="store_true"); q.set_defaults(func=cmd_editorial_production_run)
 
     t = sp.add_parser("tesseract").add_subparsers(dest="tesseract_command", required=True)
     q=t.add_parser("configure"); q.add_argument("--root", required=True); q.add_argument("--cli"); q.add_argument("--expected-version", default="0.2.0"); q.add_argument("--telemetry", action="store_true"); q.set_defaults(func=cmd_tess_config)

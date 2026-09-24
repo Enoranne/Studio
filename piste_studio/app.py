@@ -17,6 +17,10 @@ from .metadata import fetch_media_with_metadata
 from .project import load_project, verify_master
 from .readiness import build_production_readiness
 from .production_run import build_production_run_report, save_production_run_report
+from .editorial_production_run import (
+    build_editorial_production_run_report,
+    save_editorial_production_run_report,
+)
 from .tesseract_bridge import detect_tesseract, execute_bootstrap, execute_preview, execute_filmstrip, execute_export, TesseractBridgeError
 from .authoring import execute_authoring
 from .timeline import TimelineError, load_timeline, save_timeline, validate_timeline
@@ -231,6 +235,50 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             "report": build_production_run_report(
                 root,
                 edit_name=edit_name,
+                version=str(version) if version else None,
+            ),
+        }
+
+    @app.get("/api/editorial-production-run")
+    def editorial_production_run(
+        edit_name: str = "teaser_30",
+        version: str | None = None,
+        media_ids: str | None = None,
+    ):
+        parsed_ids = (
+            [int(x.strip()) for x in media_ids.split(",") if x.strip()]
+            if media_ids
+            else None
+        )
+        return build_editorial_production_run_report(
+            root,
+            edit_name=edit_name,
+            media_ids=parsed_ids,
+            version=version,
+        )
+
+    @app.post("/api/editorial-production-run")
+    def editorial_production_run_save(
+        payload: dict = Body(default_factory=dict),
+    ):
+        edit_name = str(payload.get("edit_name") or "teaser_30")
+        version = payload.get("version")
+        media_ids = [
+            int(x) for x in (payload.get("media_ids") or [])
+        ] or None
+        path = save_editorial_production_run_report(
+            root,
+            edit_name=edit_name,
+            media_ids=media_ids,
+            version=str(version) if version else None,
+        )
+        return {
+            "ok": True,
+            "path": path.relative_to(root).as_posix(),
+            "report": build_editorial_production_run_report(
+                root,
+                edit_name=edit_name,
+                media_ids=media_ids,
                 version=str(version) if version else None,
             ),
         }
