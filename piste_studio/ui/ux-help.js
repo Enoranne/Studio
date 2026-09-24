@@ -56,6 +56,23 @@
     return clean;
   }
 
+  function classifyAction(label) {
+    const value = String(label || "").toLowerCase();
+    if (/analy|transcri|compare|vérifi|critic|readiness/.test(value)) return ["analysis", "ANALYSE"];
+    if (/propos|edl|fenêtres candidates|alternatives/.test(value)) return ["proposal", "PROPOSITION"];
+    if (/appli|publier|enregistrer|ajouter|normaliser/.test(value)) return ["apply", "APPLICATION"];
+    if (/export|tesseract|preview|rendu|delivery/.test(value)) return ["render", "RENDU"];
+    return ["ready", "PRÊT"];
+  }
+
+  function setActionState(label) {
+    const badge = document.getElementById("actionStateBadge");
+    if (!badge) return;
+    const [state, text] = classifyAction(label);
+    badge.dataset.state = state;
+    badge.textContent = text;
+  }
+
   function narrate(message, force = false) {
     const host = document.getElementById("actionNarration");
     if (!host) return;
@@ -109,6 +126,8 @@
   document.addEventListener("click", event => {
     const button = event.target.closest("button");
     if (!button) return;
+    const label = [button.textContent || "", button.title || ""].join(" ");
+    setActionState(label);
     const copy = copyForButton(button);
     if (copy) narrate(copy);
   }, true);
@@ -123,6 +142,17 @@
     if (menu && !menu.hidden) positionMenu();
   });
 
-  window.PisteHelp = { setMode, mode: currentMode, narrate };
+  document.getElementById("openHelpCenterBtn")?.addEventListener("click", () => {
+    const menu = document.getElementById("helpModeMenu");
+    if (menu) menu.hidden = true;
+    window.PisteSearch?.open("", "help");
+  });
+  document.getElementById("openResourcesBtn")?.addEventListener("click", () => {
+    const menu = document.getElementById("helpModeMenu");
+    if (menu) menu.hidden = true;
+    window.PisteSearch?.open("", "resource");
+  });
+
+  window.PisteHelp = { setMode, mode: currentMode, narrate, setActionState };
   setMode(currentMode());
 })();
