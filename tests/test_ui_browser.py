@@ -818,6 +818,42 @@ def test_editable_title_overlay_preview_and_persistence(tmp_path):
             assert title["backgroundOpacity"] == 0.5
             assert title["padding"] == 0.03
             assert title["cornerRadius"] == 0.02
+
+            page.get_by_role("button", name="+ Carton final").click()
+            expect(page.locator(".title-style-section")).to_be_visible()
+            expect(page.locator(".title-style-section")).to_contain_text("CARTON FINAL")
+            expect(page.locator("#viewerTitleBackdrop")).to_have_class(re.compile("show"))
+            expect(page.locator("#viewerTitle")).to_have_text("Carton final")
+
+            page.locator("#titleText").fill("FIN")
+            page.locator("#titleCanvasBackgroundColor").fill("#030201")
+            page.locator("#titleCanvasBackgroundOpacity").fill("100")
+            page.locator("#titleBlackTailSeconds").fill("0.8")
+            page.locator("#inspector").get_by_role(
+                "button", name="Appliquer PATCH"
+            ).click()
+
+            final_card = page.evaluate(
+                "() => { const c=getClip(selectedClip); return {id:c.id,start:c.start,duration:c.duration,tail:c.blackTailSeconds}; }"
+            )
+            assert abs(final_card["start"] + final_card["duration"] - 12.0) < 1e-6
+            page.evaluate(
+                "(t) => setPlayhead(t)",
+                final_card["start"] + final_card["duration"] - 0.4,
+            )
+            expect(page.locator("#viewerTitleBackdrop")).to_have_class(re.compile("show"))
+            expect(page.locator("#viewerTitle")).not_to_have_class(re.compile("show"))
+
+            page.locator("#saveBackendBtn").click()
+            page.wait_for_timeout(100)
+            saved = __import__("json").loads(timeline.read_text(encoding="utf-8"))
+            card = next(x for x in saved["clips"] if x["id"] == final_card["id"])
+            assert card["titleRole"] == "final_card"
+            assert card["text"] == "FIN"
+            assert card["canvasBackgroundColor"] == "#030201"
+            assert card["canvasBackgroundOpacity"] == 1.0
+            assert card["blackTailSeconds"] == 0.8
+            assert abs(card["start"] + card["duration"] - 12.0) < 1e-6
             assert errors == []
             browser.close()
     finally:
