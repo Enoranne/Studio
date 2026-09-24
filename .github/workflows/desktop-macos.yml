@@ -1,0 +1,54 @@
+name: desktop-macos
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "desktop/**"
+      - "scripts/build_desktop_backend.sh"
+      - "scripts/build_desktop_macos.sh"
+      - "scripts/desktop_backend_entry.py"
+      - "piste_studio/**"
+      - "pyproject.toml"
+      - ".github/workflows/desktop-macos.yml"
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Python packaging dependencies
+        run: python3 -m pip install -e '.[packaging]'
+
+      - name: Build PISTE Studio backend sidecar
+        run: bash scripts/build_desktop_backend.sh
+
+      - name: Install Tauri CLI
+        working-directory: desktop
+        run: npm install
+
+      - name: Build macOS app and DMG
+        working-directory: desktop
+        run: npx tauri build --bundles app,dmg
+
+      - name: Show produced bundles
+        run: find desktop/src-tauri/target/release/bundle -maxdepth 4 -type f -print
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: piste-studio-macos
+          path: |
+            desktop/src-tauri/target/release/bundle/macos/*.app
+            desktop/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
