@@ -218,6 +218,7 @@ addTitle=function(){
   if(err){toast(err,true);return}
   clips.push(c);
   selectedClip=c.id;
+  if(typeof connectChild==='function')connectChild(c);
   setViewerMode('program',{silent:true});
   renderTracks();
   setPlayhead(c.start);
@@ -256,6 +257,7 @@ addFinalCard=function(){
   }
   clips.push(c);
   selectedClip=c.id;
+  if(typeof connectChild==='function')connectChild(c);
   setViewerMode('program',{silent:true});
   renderTracks();
   setPlayhead(c.start);
