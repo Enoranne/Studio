@@ -80,7 +80,7 @@ async function openProductionReadiness(){
     const activeRecord=(backendState?.versions||[]).find(
       item=>item.edit_name===activeEditName&&item.version_label===activeVersion
     );
-    if(activeRecord&&activeVersion)params.set('version',activeVersion);
+    if(activeRecord?.kind==='timeline'&&activeVersion)params.set('version',activeVersion);
     const suffix=params.toString()?`?${params.toString()}`:'';
     const report=await api('/api/readiness'+suffix);
     renderProductionReadiness(report);
