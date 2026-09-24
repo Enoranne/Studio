@@ -8,27 +8,39 @@ Ce rapport couvre :
 
 1. **V0.23.1 — Titres et overlays éditables** ;
 2. **V0.23.2 — Carton final spécialisé** ;
-3. **V0.23.3 — Point de connexion graphique déplaçable**.
+3. **V0.23.3 — Point de connexion graphique déplaçable** ;
+4. **V0.23.4 — Exports festival / social**.
 
-Les autres briques V0.23 restent à venir :
+La dernière brique V0.23 restant à réaliser est :
 
-- exports festival / social ;
-- presets de delivery.
+- **V0.23.5 — presets de delivery**.
 
-## Résultat V0.23.1
+## Validation globale
 
-- Timeline : modèle de titre introduit en **schema v5** ; schema courant **v6** avec point de connexion graphique.
-- Authoring plan : **schema v4** avec `title_cuts`.
-- App/UI : **v0.23**.
-- Python/API/UI/Chromium : **127 tests passés / 127** sur le run fonctionnel V0.23.3.
-- JavaScript : `node --check` réussi.
-- Chromium / Playwright : réussi.
-- Aucune dépendance à une police propriétaire ou à un fichier de fonte local.
-- Aucun champ Tesseract Text inventé.
+Run fonctionnel de référence V0.23.4 :
 
-# Modèle de titre
+- Python/API/UI/Chromium : **135 tests passés / 135** ;
+- JavaScript : `node --check` réussi ;
+- Chromium / Playwright : réussi ;
+- ffmpeg réel : réussi ;
+- ffprobe réel : réussi ;
+- timeline courante : **schema v6** ;
+- authoring plan : **schema v4** avec `title_cuts` ;
+- App/API : **v0.23**.
 
-Un clip de piste `titles` possède les champs visuels suivants :
+L’unique warning CI connu reste une dépréciation Starlette/TestClient/httpx déjà présente avant V0.23.4 ; aucune régression PISTE n’est associée à ce warning.
+
+---
+
+# V0.23.1 — Titres et overlays éditables
+
+## Objectif
+
+Transformer la piste TITLES en système d’overlay non destructif, persisté et transportable.
+
+## Timeline schema v5
+
+Un clip `titles` peut contenir :
 
 - `text` ;
 - `titlePreset` ;
@@ -46,324 +58,130 @@ Un clip de piste `titles` possède les champs visuels suivants :
 - `padding` ;
 - `cornerRadius`.
 
-## Presets
+Les coordonnées sont normalisées.
 
-Quatre valeurs :
+## Presets visuels
+
+Valeurs disponibles :
 
 - `center` ;
 - `lower_third` ;
 - `top` ;
 - `custom`.
 
-Les presets définissent une position canonique mais restent convertis en coordonnées normalisées lors de l’application.
+## Typographie
 
-## Portabilité typographique
-
-Les familles autorisées sont :
+Familles génériques :
 
 - `sans` ;
 - `serif` ;
 - `mono`.
 
-Le Viewer utilise des stacks système correspondant à ces familles.
+PISTE n’introduit aucune dépendance silencieuse à une fonte locale propriétaire ou absente de la machine de delivery.
 
-Cette stratégie évite qu’un titre dépende implicitement d’une police présente sur une machine mais absente lors du delivery.
+## Validation backend
 
-# Validation backend
+Le validateur refuse notamment :
 
-Le serveur refuse :
+- texte vide ;
+- texte supérieur à 500 caractères ;
+- position hors 0..1 ;
+- largeur de boîte hors plage ;
+- taille de caractère hors 12..240 ;
+- graisse hors 100..900 par pas de 100 ;
+- couleur hors `#RRGGBB` ;
+- opacité hors 0..1.
 
-- titre vide ;
-- texte de plus de 500 caractères ;
-- preset inconnu ;
-- famille inconnue ;
-- alignement inconnu ;
-- X/Y hors 0..1 ;
-- largeur hors 0.1..1 ;
-- taille hors 12..240 ;
-- graisse hors 100..900 ou non multiple de 100 ;
-- couleur invalide ;
-- opacité hors 0..1 ;
-- padding / arrondi hors limites.
+## Viewer
 
-Les couleurs sont normalisées en majuscules `#RRGGBB`.
+Le Viewer PROGRAM matérialise le titre en direct avec :
 
-# Interface
-
-Le clip title sélectionné affiche une section unique :
-
-**TITRE / OVERLAY**
-
-L’ancien éditeur texte minimal a été supprimé afin d’éviter deux sources de vérité.
-
-Réglages disponibles :
-
-- texte multiligne ;
-- preset ;
-- famille ;
-- taille ;
-- graisse ;
+- position ;
 - alignement ;
+- taille ;
 - largeur ;
-- X / Y ;
-- couleur ;
-- opacité ;
 - fond ;
-- opacité du fond ;
+- opacité ;
 - marge ;
 - arrondi.
 
-# Preview PROGRAM
+## Authoring
 
-Les modifications sont prévisualisées en direct.
+L’authoring plan V0.23 conserve les titres dans `title_cuts`.
 
-Le rendu adapte :
+PISTE ne fabrique pas une structure Tesseract Text supposée.
 
-- taille de texte à la hauteur du Viewer ;
-- padding / rayon à la largeur du Viewer ;
-- position et largeur aux coordonnées normalisées.
+Si le runtime Tesseract installé ne confirme pas une couche Text compatible :
 
-Le Viewer conserve donc les proportions du canvas même lorsque sa taille change.
+- `title_layers` reste vide ;
+- le titre est conservé dans `unmaterialized_titles` ;
+- un warning explicite est ajouté.
 
-Un resize de fenêtre recalcule le titre.
+Aucun titre n’est perdu silencieusement.
 
-# Création
+---
 
-Le bouton **+ Titre** crée désormais un titre v5 :
-
-- à la position du playhead ;
-- durée 2 s ;
-- preset centre ;
-- Sans ;
-- 64 px de référence ;
-- 700 ;
-- blanc ;
-- fond transparent.
-
-La logique existante de collision de piste reste appliquée.
-
-# Persistance
-
-Le test API enregistre un lower-third avec :
-
-- texte multiligne ;
-- Serif ;
-- taille 72 ;
-- graisse 600 ;
-- alignement gauche ;
-- coordonnées personnalisées ;
-- couleur ;
-- fond ;
-- opacité ;
-- padding ;
-- rayon.
-
-La timeline relue restitue les valeurs normalisées.
-
-# Chromium
-
-Le scénario navigateur valide :
-
-1. sélection du clip `t1` ;
-2. ouverture de **TITRE / OVERLAY** ;
-3. titre visible dans PROGRAM ;
-4. texte `PISTE 0 / BONUS TRACK` ;
-5. preset **Lower third** ;
-6. Serif ;
-7. taille 90 ;
-8. alignement gauche ;
-9. couleur personnalisée ;
-10. fond à 50 % ;
-11. padding et arrondi ;
-12. **Appliquer PATCH** ;
-13. position Viewer à 82 % ;
-14. sauvegarde backend ;
-15. relecture du fichier timeline ;
-16. présence de toutes les propriétés v5 ;
-17. aucune erreur JavaScript.
-
-# Authoring Tesseract
-
-V0.23.1 ne perd plus les titres pendant la préparation Tesseract.
-
-Chaque titre devient une entrée `title_cuts` du plan d’authoring.
-
-Le manifest contient :
-
-- `title_layers` ;
-- `unmaterialized_titles`.
-
-## Politique de compatibilité
-
-PISTE Studio inspecte le schéma document fourni par le Tesseract installé.
-
-Si aucun type Text compatible n’est confirmé :
-
-- aucune couche native n’est inventée ;
-- le titre reste dans `unmaterialized_titles` ;
-- un warning explicite est produit.
-
-Même si un token `Text` apparaît dans le schéma, V0.23.1 ne suppose pas encore la forme exacte de ses champs de style.
-
-Cette prudence évite de produire un fichier Tesseract techniquement invalide.
-
-La matérialisation finale des overlays sera traitée avec la chaîne de delivery V0.23 dès que la forme de sortie est maîtrisée.
-
-# V0.23.2 — Carton final
-
-## Objectif
-
-Le carton final réutilise le modèle de titre v5 tout en ajoutant un comportement de fin explicite.
-
-Il doit pouvoir :
-
-- recouvrir intégralement l’image ;
-- afficher un texte/crédit final ;
-- conserver un fond plein ;
-- réserver une queue finale sans texte ;
-- terminer exactement au dernier timecode du montage lors de sa création automatique.
+# V0.23.2 — Carton final spécialisé
 
 ## Modèle
 
-Champs supplémentaires :
+Le carton final réutilise le modèle de titre avec :
 
-- `titleRole = final_card` ;
+- `titleRole: final_card` ;
 - `canvasBackgroundColor` ;
 - `canvasBackgroundOpacity` ;
 - `blackTailSeconds`.
 
-Le fond canvas est indépendant du fond de la boîte texte.
+## Placement
 
-## Validation serveur
+`addFinalCard()` place le carton pour que :
 
-Le backend vérifie :
+`start + duration = duration_timeline`
 
-- rôle de titre connu ;
-- couleur canvas au format `#RRGGBB` ;
-- opacité canvas dans 0..1 ;
-- `blackTailSeconds >= 0` ;
-- `blackTailSeconds < duration`.
+Le placement final exact ne dépend pas du snap.
 
-Le test API valide la persistance d’un carton se terminant exactement à 30,0 s et le rejet d’un noir final égal à la durée du carton.
+## Viewer
 
-## Création UI
+Pour un carton final :
 
-Le bouton :
+1. le fond couvre le Viewer ;
+2. le texte reste éditable ;
+3. la queue noire masque le texte à la fin ;
+4. le fond reste présent jusqu’au timecode final.
 
-**+ Carton final**
-
-crée par défaut :
-
-- durée : 3,5 s ;
-- position : fin exacte de timeline moins 3,5 s ;
-- fond canvas : noir 100 % ;
-- texte : `Carton final` à remplacer ;
-- famille : Sans ;
-- taille : 56 ;
-- graisse : 600 ;
-- queue fond seul : 0,75 s.
-
-Le positionnement final n’utilise pas le snap afin de ne pas décaler silencieusement la borne finale.
-
-Les collisions existantes de la piste TITLES restent bloquantes.
-
-## Viewer PROGRAM
-
-Un calque plein écran `viewerTitleBackdrop` est affiché derrière le texte mais devant l’image du programme.
-
-Pendant la partie texte :
-
-- backdrop visible ;
-- texte visible.
-
-Pendant les dernières `blackTailSeconds` :
-
-- backdrop visible ;
-- texte masqué.
-
-Le clip lui-même reste présent et actif.
-
-## Inspector
-
-Un carton sélectionné affiche :
-
-**CARTON FINAL · FIN DE TIMELINE**
-
-avec les contrôles :
-
-- style title v5 complet ;
-- fond canvas ;
-- opacité du fond canvas ;
-- durée du noir / fond seul final.
-
-## Command Palette
-
-Commande :
-
-**Titre · Ajouter un carton final**
-
-## Authoring
-
-Le plan conserve :
-
-- `title_role` ;
-- `canvas_background_color` ;
-- `canvas_background_opacity` ;
-- `black_tail_seconds`.
-
-Ces valeurs sont donc disponibles pour la future chaîne de rendu delivery même si Tesseract ne confirme pas encore une couche Text native compatible.
-
-## Chromium
-
-Le scénario navigateur valide :
-
-1. création par **+ Carton final** ;
-2. Inspector spécialisé visible ;
-3. backdrop plein écran actif ;
-4. texte initial visible ;
-5. modification du texte en `FIN` ;
-6. fond canvas personnalisé ;
-7. opacité canvas 100 % ;
-8. noir final à 0,8 s ;
-9. application du PATCH ;
-10. vérification que `start + duration = duration_timeline` ;
-11. déplacement du playhead dans la queue finale ;
-12. backdrop toujours visible ;
-13. texte masqué ;
-14. sauvegarde backend ;
-15. relecture des propriétés spécialisées ;
-16. aucune erreur JavaScript.
+Aucun faux clip noir n’est ajouté à la timeline.
 
 ## Validation
 
-Run fonctionnel de référence :
+Le backend impose :
 
-**119 tests passés / 119**
+`0 <= blackTailSeconds < duration`
 
-# V0.23.3 — Point de connexion graphique
+## Authoring
+
+Les propriétés du carton final sont préservées dans `title_cuts` et restent auditables même si la couche Text n’est pas encore matérialisable par Tesseract.
+
+---
+
+# V0.23.3 — Point de connexion graphique déplaçable
 
 ## Objectif
 
-Les éléments connectés de la timeline doivent rendre leur dépendance à la Storyline visible et modifiable sans imposer un déplacement du clip enfant.
-
-V0.23.3 sépare donc la position temporelle de l’enfant de la position graphique de son attache.
+Rendre la dépendance d’un titre, d’une VO, d’une musique ou d’un SFX à la Storyline visible et manipulable, sans déplacer automatiquement l’élément connecté.
 
 ## Timeline schema v6
 
-Nouvelle propriété :
+La connexion distingue désormais deux informations.
 
-`connectionPointOffset`
-
-Pour une connexion :
-
-- `parentClipId` identifie le plan STORY parent ;
-- `anchorOffset` conserve la relation temporelle enfant/parent ;
-- `connectionPointOffset` indique où la ligne graphique touche le parent ;
-- `connectionMode = follow`.
+### `anchorOffset`
 
 Relation temporelle :
 
 `child.start = parent.start + anchorOffset`
+
+Cet offset sert au suivi magnétique lorsque le parent se déplace.
+
+### `connectionPointOffset`
 
 Point graphique :
 
@@ -371,37 +189,23 @@ Point graphique :
 
 Le backend impose :
 
-`0 <= connectionPointOffset <= parent.duration`.
+`0 <= connectionPointOffset <= parent.duration`
 
-## Compatibilité des anciennes timelines
+Déplacer ce point ne déplace pas le clip enfant.
 
-Un clip connecté provenant d’un schema antérieur peut ne pas disposer de `connectionPointOffset`.
+## Migration
 
-Le validateur dérive alors le point depuis :
+Une ancienne connexion sans `connectionPointOffset` reste valide.
 
-`clamp(anchorOffset, 0, parent.duration)`.
+PISTE dérive :
 
-La connexion peut donc être migrée sans déplacement du clip.
+`clamp(anchorOffset, 0, parent.duration)`
 
-## Déplacement dans le même parent
+puis persiste le point dans le schema v6 à la prochaine validation.
 
-Exemple :
+## Changement de parent
 
-- parent Plan A : 0–5 s ;
-- titre : start 2 s ;
-- `anchorOffset = 2` ;
-- point initial : +2 s.
-
-Si l’utilisateur déplace uniquement le point vers +3,5 s :
-
-- le titre reste à 2 s ;
-- le parent reste Plan A ;
-- `anchorOffset` reste 2 ;
-- `connectionPointOffset` devient 3,5.
-
-## Changement de parent par drag
-
-Exemple validé :
+Exemple réellement testé :
 
 Avant :
 
@@ -412,7 +216,7 @@ Avant :
 - `anchorOffset = 2` ;
 - point : +2 s.
 
-Le point est glissé à 6 s.
+Le point est déplacé à 6 s.
 
 Après :
 
@@ -421,507 +225,392 @@ Après :
 - `anchorOffset = -3` ;
 - `connectionPointOffset = 1`.
 
-La position absolue du titre n’a donc pas changé.
+Le média connecté n’a pas changé de timecode.
 
-Si Plan B est déplacé ultérieurement par la Storyline magnétique, le titre le suivra selon son nouvel `anchorOffset`.
+## UI
 
-## Interface graphique
+`ux-magnetic.js` dessine un SVG au-dessus de la timeline :
 
-Les connexions sont dessinées par un SVG superposé à la timeline.
+- ligne discrète pour chaque connexion ;
+- ligne renforcée pour la sélection ;
+- poignée active uniquement sur l’élément sélectionné.
 
-Pour chaque élément connecté :
-
-- une ligne relie le clip au plan STORY ;
-- un point marque l’attache sur le parent.
-
-Pour la sélection courante :
-
-- ligne renforcée ;
-- point plus grand ;
-- Pointer Events actifs ;
-- curseur horizontal.
-
-Les autres points restent informatifs et non manipulables.
-
-L’ancien petit trait vertical de connexion a été supprimé pour éviter une double représentation.
-
-## Inspector
-
-La section **CONNEXION STORY** conserve le choix du parent et ajoute :
+L’Inspector **CONNEXION STORY** propose également :
 
 **Point sur parent (s)**
 
-avec :
-
-**Appliquer le point**
-
-Cette voie offre un réglage précis sans drag.
-
-Le texte d’aide distingue explicitement :
-
-- timecode du clip ;
-- offset temporel de suivi ;
-- point graphique sur le parent.
+pour un réglage numérique précis.
 
 ## Reflow magnétique
 
-Les opérations de reorder et ripple conservent `connectionPointOffset`.
+Reorder et ripple conservent le point graphique.
 
-Si la durée du parent devient plus courte, le point est borné dans la nouvelle durée du parent.
+Si le parent est raccourci, le point est borné à la nouvelle durée du parent.
 
-Le timing du clip enfant continue d’être dérivé exclusivement de `anchorOffset`.
+Le timing de l’enfant continue d’être déterminé uniquement par `anchorOffset`.
 
-## Locks
+## Locks et Undo
 
-Un déplacement du point est une mutation éditoriale, même si le clip ne bouge pas.
+Le changement passe par :
 
-`validate_locked_change` compare donc les anciennes et nouvelles positions absolues de connexion.
+1. candidat local ;
+2. validation ;
+3. validation backend ;
+4. HARD/SOFT LOCKS ;
+5. checkpoint ;
+6. mutation ;
+7. Undo possible.
 
-Le déplacement est contrôlé avec :
+Le déplacement du point est contrôlé comme :
 
 - `connection_point` ;
-- `graphics` pour un titre ;
-- `audio_change` pour un clip audio.
+- `graphics` pour les titres ;
+- `audio_change` pour l’audio.
 
-Les HARD LOCKS peuvent bloquer l’opération.
+## Incident CI corrigé
 
-Les changements via le sélecteur de parent utilisent la même chaîne.
-
-## Checkpoints et Undo
-
-Un drag validé utilise `commitMagneticCandidate`.
-
-La séquence est :
-
-1. construire un candidat ;
-2. valider localement ;
-3. valider côté backend ;
-4. vérifier les locks ;
-5. créer un checkpoint ;
-6. appliquer la mutation.
-
-`Ctrl/Cmd+Z` restaure ensuite le parent et le point de connexion précédents.
-
-## Tests moteur
-
-Validé :
-
-- déplacement du point dans le même parent sans déplacement de l’enfant ;
-- changement de parent sans déplacement de l’enfant ;
-- migration d’une ancienne connexion ;
-- rejet d’un point hors parent ;
-- blocage d’un déplacement par HARD LOCK graphique.
-
-## Test API
-
-`/api/storyline/validate` accepte un changement :
-
-- parent v1 → v2 ;
-- enfant inchangé à 5 s ;
-- `anchorOffset 2 → -3` ;
-- `connectionPointOffset 2 → 1`.
-
-## Chromium
-
-Le scénario navigateur valide :
-
-1. sélection d’un titre connecté ;
-2. ligne de connexion visible ;
-3. une seule poignée active ;
-4. Inspector à +2,00 s ;
-5. badge **Plan A · +2,0 s** ;
-6. drag graphique du point de 2 s vers 6 s ;
-7. passage au parent Plan B ;
-8. titre toujours à 2 s ;
-9. `anchorOffset = -3` ;
-10. point = +1 s ;
-11. badge et Inspector actualisés ;
-12. sauvegarde backend en schema v6 ;
-13. persistance des nouvelles valeurs ;
-14. Undo ;
-15. retour à Plan A / +2 s ;
-16. aucune erreur JavaScript.
-
-## Incident de validation détecté par la CI
-
-La première intégration graphique a introduit une erreur UI :
+Une première intégration avait utilisé :
 
 `$('.clip').forEach(...)`
 
-alors que le helper de collection est :
+alors que `$()` retourne un seul élément.
 
-`$('.clip')`.
+Le helper de collection correct est :
 
-Cette faute provoquait une erreur JavaScript globale et plusieurs échecs Chromium en cascade.
+`$$('.clip').forEach(...)`
 
-Le premier correctif textuel a lui-même révélé une subtilité de `String.replace` : `$` dans une chaîne de remplacement est interprété comme un seul `# PISTE Studio v0.23 — Rapport de validation Motion & Delivery
+Un premier remplacement textuel avait lui-même été trompé par la sémantique de `String.replace` autour de `$$`.
 
-Date : 24 septembre 2026
+Le correctif final a été appliqué avec une fonction de remplacement et validé dans Chromium.
 
-## Périmètre actuel
+---
 
-Ce rapport couvre :
-
-1. **V0.23.1 — Titres et overlays éditables** ;
-2. **V0.23.2 — Carton final spécialisé** ;
-3. **V0.23.3 — Point de connexion graphique déplaçable**.
-
-Les autres briques V0.23 restent à venir :
-
-- exports festival / social ;
-- presets de delivery.
-
-## Résultat V0.23.1
-
-- Timeline : modèle de titre introduit en **schema v5** ; schema courant **v6** avec point de connexion graphique.
-- Authoring plan : **schema v4** avec `title_cuts`.
-- App/UI : **v0.23**.
-- Python/API/UI/Chromium : **127 tests passés / 127** sur le run fonctionnel V0.23.3.
-- JavaScript : `node --check` réussi.
-- Chromium / Playwright : réussi.
-- Aucune dépendance à une police propriétaire ou à un fichier de fonte local.
-- Aucun champ Tesseract Text inventé.
-
-# Modèle de titre
-
-Un clip de piste `titles` possède les champs visuels suivants :
-
-- `text` ;
-- `titlePreset` ;
-- `fontFamily` ;
-- `fontSize` ;
-- `fontWeight` ;
-- `textAlign` ;
-- `positionX` ;
-- `positionY` ;
-- `boxWidth` ;
-- `color` ;
-- `backgroundColor` ;
-- `backgroundOpacity` ;
-- `opacity` ;
-- `padding` ;
-- `cornerRadius`.
-
-## Presets
-
-Quatre valeurs :
-
-- `center` ;
-- `lower_third` ;
-- `top` ;
-- `custom`.
-
-Les presets définissent une position canonique mais restent convertis en coordonnées normalisées lors de l’application.
-
-## Portabilité typographique
-
-Les familles autorisées sont :
-
-- `sans` ;
-- `serif` ;
-- `mono`.
-
-Le Viewer utilise des stacks système correspondant à ces familles.
-
-Cette stratégie évite qu’un titre dépende implicitement d’une police présente sur une machine mais absente lors du delivery.
-
-# Validation backend
-
-Le serveur refuse :
-
-- titre vide ;
-- texte de plus de 500 caractères ;
-- preset inconnu ;
-- famille inconnue ;
-- alignement inconnu ;
-- X/Y hors 0..1 ;
-- largeur hors 0.1..1 ;
-- taille hors 12..240 ;
-- graisse hors 100..900 ou non multiple de 100 ;
-- couleur invalide ;
-- opacité hors 0..1 ;
-- padding / arrondi hors limites.
-
-Les couleurs sont normalisées en majuscules `#RRGGBB`.
-
-# Interface
-
-Le clip title sélectionné affiche une section unique :
-
-**TITRE / OVERLAY**
-
-L’ancien éditeur texte minimal a été supprimé afin d’éviter deux sources de vérité.
-
-Réglages disponibles :
-
-- texte multiligne ;
-- preset ;
-- famille ;
-- taille ;
-- graisse ;
-- alignement ;
-- largeur ;
-- X / Y ;
-- couleur ;
-- opacité ;
-- fond ;
-- opacité du fond ;
-- marge ;
-- arrondi.
-
-# Preview PROGRAM
-
-Les modifications sont prévisualisées en direct.
-
-Le rendu adapte :
-
-- taille de texte à la hauteur du Viewer ;
-- padding / rayon à la largeur du Viewer ;
-- position et largeur aux coordonnées normalisées.
-
-Le Viewer conserve donc les proportions du canvas même lorsque sa taille change.
-
-Un resize de fenêtre recalcule le titre.
-
-# Création
-
-Le bouton **+ Titre** crée désormais un titre v5 :
-
-- à la position du playhead ;
-- durée 2 s ;
-- preset centre ;
-- Sans ;
-- 64 px de référence ;
-- 700 ;
-- blanc ;
-- fond transparent.
-
-La logique existante de collision de piste reste appliquée.
-
-# Persistance
-
-Le test API enregistre un lower-third avec :
-
-- texte multiligne ;
-- Serif ;
-- taille 72 ;
-- graisse 600 ;
-- alignement gauche ;
-- coordonnées personnalisées ;
-- couleur ;
-- fond ;
-- opacité ;
-- padding ;
-- rayon.
-
-La timeline relue restitue les valeurs normalisées.
-
-# Chromium
-
-Le scénario navigateur valide :
-
-1. sélection du clip `t1` ;
-2. ouverture de **TITRE / OVERLAY** ;
-3. titre visible dans PROGRAM ;
-4. texte `PISTE 0 / BONUS TRACK` ;
-5. preset **Lower third** ;
-6. Serif ;
-7. taille 90 ;
-8. alignement gauche ;
-9. couleur personnalisée ;
-10. fond à 50 % ;
-11. padding et arrondi ;
-12. **Appliquer PATCH** ;
-13. position Viewer à 82 % ;
-14. sauvegarde backend ;
-15. relecture du fichier timeline ;
-16. présence de toutes les propriétés v5 ;
-17. aucune erreur JavaScript.
-
-# Authoring Tesseract
-
-V0.23.1 ne perd plus les titres pendant la préparation Tesseract.
-
-Chaque titre devient une entrée `title_cuts` du plan d’authoring.
-
-Le manifest contient :
-
-- `title_layers` ;
-- `unmaterialized_titles`.
-
-## Politique de compatibilité
-
-PISTE Studio inspecte le schéma document fourni par le Tesseract installé.
-
-Si aucun type Text compatible n’est confirmé :
-
-- aucune couche native n’est inventée ;
-- le titre reste dans `unmaterialized_titles` ;
-- un warning explicite est produit.
-
-Même si un token `Text` apparaît dans le schéma, V0.23.1 ne suppose pas encore la forme exacte de ses champs de style.
-
-Cette prudence évite de produire un fichier Tesseract techniquement invalide.
-
-La matérialisation finale des overlays sera traitée avec la chaîne de delivery V0.23 dès que la forme de sortie est maîtrisée.
-
-# V0.23.2 — Carton final
+# V0.23.4 — Exports festival / social
 
 ## Objectif
 
-Le carton final réutilise le modèle de titre v5 tout en ajoutant un comportement de fin explicite.
+Passer d’un bouton Export générique à une chaîne de delivery explicite, contrôlable et auditable.
 
-Il doit pouvoir :
+Le montage, le rendu moteur et le fichier livré deviennent trois étapes distinctes.
 
-- recouvrir intégralement l’image ;
-- afficher un texte/crédit final ;
-- conserver un fond plein ;
-- réserver une queue finale sans texte ;
-- terminer exactement au dernier timecode du montage lors de sa création automatique.
+## Delivery Center
 
-## Modèle
+Le bouton **Export** ouvre désormais un drawer **Delivery Center**.
 
-Champs supplémentaires :
+Cibles intégrées :
 
-- `titleRole = final_card` ;
-- `canvasBackgroundColor` ;
-- `canvasBackgroundOpacity` ;
-- `blackTailSeconds`.
+1. **Festival · ProRes 422 HQ · 1080p** ;
+2. **Festival · H.264 haute qualité · 1080p** ;
+3. **Online · H.264 · 1080p** ;
+4. **Social · Vertical · 9:16** ;
+5. **Social · Carré · 1:1**.
 
-Le fond canvas est indépendant du fond de la boîte texte.
+Ces cibles sont des repères techniques intégrés.
 
-## Validation serveur
+Elles ne sont jamais présentées comme des normes universelles.
 
-Le backend vérifie :
+Une fiche de delivery fournie par un festival, diffuseur ou plateforme reste prioritaire.
 
-- rôle de titre connu ;
-- couleur canvas au format `#RRGGBB` ;
-- opacité canvas dans 0..1 ;
-- `blackTailSeconds >= 0` ;
-- `blackTailSeconds < duration`.
+## Architecture de rendu
 
-Le test API valide la persistance d’un carton se terminant exactement à 30,0 s et le rejet d’un noir final égal à la durée du carton.
+La chaîne est volontairement en deux étages.
 
-## Création UI
+### Étape 1 — rendu moteur
 
-Le bouton :
+Tesseract produit un rendu source de la version publiée.
 
-**+ Carton final**
+Le format source dépend de la cible :
 
-crée par défaut :
+- ProRes pour la cible Festival ProRes ;
+- MP4 pour les cibles H.264.
 
-- durée : 3,5 s ;
-- position : fin exacte de timeline moins 3,5 s ;
-- fond canvas : noir 100 % ;
-- texte : `Carton final` à remplacer ;
-- famille : Sans ;
-- taille : 56 ;
-- graisse : 600 ;
-- queue fond seul : 0,75 s.
+### Étape 2 — delivery ffmpeg
 
-Le positionnement final n’utilise pas le snap afin de ne pas décaler silencieusement la borne finale.
+PISTE Studio transcode ce rendu vers le livrable final.
 
-Les collisions existantes de la piste TITLES restent bloquantes.
+Cela permet de contrôler sans hypothèse sur le CLI Tesseract :
 
-## Viewer PROGRAM
+- conteneur ;
+- codec ;
+- dimensions ;
+- pixel format ;
+- audio ;
+- framing ;
+- Fast Start ;
+- rapport final.
 
-Un calque plein écran `viewerTitleBackdrop` est affiché derrière le texte mais devant l’image du programme.
+## Préflight
 
-Pendant la partie texte :
+Le préflight contient quatre blocs.
 
-- backdrop visible ;
-- texte visible.
+### 1. Version publiée
 
-Pendant les dernières `blackTailSeconds` :
+PISTE calcule une empreinte SHA-256 de l’état éditorial pertinent :
 
-- backdrop visible ;
-- texte masqué.
+- durée ;
+- Storyline ;
+- pistes ;
+- clips.
 
-Le clip lui-même reste présent et actif.
+`updated_at` est volontairement ignoré.
 
-## Inspector
+Statuts :
 
-Un carton sélectionné affiche :
+- `PASS` : le montage de travail correspond au snapshot publié ;
+- `STALE` : la timeline de travail a changé depuis la publication ;
+- `MISSING` : snapshot de version absent.
 
-**CARTON FINAL · FIN DE TIMELINE**
+## 2. Audio master
 
-avec les contrôles :
+Le statut V0.21 est repris :
 
-- style title v5 complet ;
-- fond canvas ;
-- opacité du fond canvas ;
-- durée du noir / fond seul final.
+- PASS ;
+- WARN ;
+- STALE ;
+- MISSING.
 
-## Command Palette
+Un warning audio ne disparaît jamais de l’interface.
 
-Commande :
+## 3. Titres / overlays
 
-**Titre · Ajouter un carton final**
+Si la timeline ne contient aucun titre :
 
-## Authoring
+`PASS`.
 
-Le plan conserve :
+Si l’authoring manifest est absent :
 
-- `title_role` ;
-- `canvas_background_color` ;
-- `canvas_background_opacity` ;
-- `black_tail_seconds`.
+`MISSING`.
 
-Ces valeurs sont donc disponibles pour la future chaîne de rendu delivery même si Tesseract ne confirme pas encore une couche Text native compatible.
+Si `unmaterialized_titles` n’est pas vide :
 
-## Chromium
+`WARN`.
+
+Le message précise que le rendu Tesseract peut ne pas contenir les titres concernés.
+
+## 4. Cadrage
+
+Pour les sorties social :
+
+- `FIT` ;
+- `FILL`.
+
+### FIT
+
+FIT conserve toute l’image.
+
+Chaîne :
+
+- scale avec respect de l’aspect ;
+- padding du canvas ;
+- square pixels.
+
+Aucun contenu source n’est retiré.
+
+### FILL
+
+FILL remplit le canvas en recadrant au centre.
+
+Il exige :
+
+`allow_crop = true`
+
+Sans consentement :
+
+`BLOCKED`
+
+Le serveur refuse le transcodage.
+
+## Estimation de crop
+
+Quand le canvas de version est connu, PISTE calcule la fraction du cadre qui sortira de l’image.
+
+Exemple validé :
+
+source 16:9 → cible 9:16.
+
+Le crop centré enlève environ :
+
+**68,4 % de la largeur totale du cadre source.**
+
+Cette valeur est géométrique.
+
+PISTE ne prétend pas savoir si le sujet important se trouve dans la zone retirée.
+
+Aucun auto-reframe IA n’est exécuté.
+
+## H.264
+
+Les cibles MP4 utilisent :
+
+- `libx264` ;
+- High Profile ;
+- `yuv420p` ;
+- débit cible propre au livrable ;
+- GOP court ;
+- AAC ;
+- 48 kHz ;
+- stéréo ;
+- `+faststart`.
+
+Cible Online 1080p de référence :
+
+- 1920×1080 ;
+- 24 fps dans le projet PISTE courant ;
+- 8 Mb/s vidéo ;
+- AAC 384 kb/s.
+
+## Festival H.264
+
+Repère :
+
+- 1920×1080 ;
+- 24 fps ;
+- H.264 20 Mb/s ;
+- AAC 320 kb/s ;
+- 48 kHz stéréo.
+
+Il s’agit d’un fichier de visionnage/inscription, pas d’un substitut universel à une fiche technique de festival.
+
+## Festival ProRes
+
+Cible :
+
+- conteneur MOV ;
+- ProRes 422 HQ via `prores_ks` profile 3 ;
+- `yuv422p10le` ;
+- PCM 24-bit ;
+- 48 kHz ;
+- stéréo.
+
+Cette cible n’est **pas un DCP**.
+
+## Inspection ffprobe
+
+Après encodage, PISTE relève :
+
+- codec vidéo ;
+- largeur ;
+- hauteur ;
+- pixel format ;
+- fps ;
+- color space si présent ;
+- transfer si présent ;
+- primaries si présentes ;
+- codec audio ;
+- sample rate ;
+- canaux ;
+- durée ;
+- taille du fichier.
+
+## Stockage
+
+Livrables :
+
+`exports/<edit>/<version>/`
+
+Rapports :
+
+`reports/delivery/`
+
+Le rapport JSON contient :
+
+- version du moteur delivery ;
+- date ;
+- edit ;
+- version publiée ;
+- cible ;
+- framing ;
+- rendu source ;
+- sortie finale ;
+- ffprobe ;
+- préflight ;
+- politique de sécurité.
+
+## API
+
+Routes validées :
+
+- `GET /api/delivery/targets` ;
+- `POST /api/delivery/{version}/preflight` ;
+- `POST /api/delivery/{version}/export` ;
+- `GET /api/delivery/reports/{report_name}` ;
+- `GET /api/delivery/files/{edit_name}/{version}/{filename}`.
+
+## Test ffmpeg réel
+
+La CI génère un MP4 synthétique 320×180 avec audio.
+
+PISTE produit ensuite un vrai livrable :
+
+- 1080×1920 ;
+- H.264 ;
+- AAC ;
+- 48 kHz.
+
+ffprobe vérifie le fichier réellement encodé.
+
+Ce test n’est pas un mock.
+
+## Test API
+
+Le scénario valide :
+
+1. publication V001 ;
+2. liste des cibles ;
+3. FILL vertical sans consentement → BLOCKED ;
+4. FIT → exportable ;
+5. rendu Tesseract simulé ;
+6. delivery simulé ;
+7. création du rapport réel ;
+8. téléchargement du fichier ;
+9. téléchargement du JSON.
+
+## Test Chromium
 
 Le scénario navigateur valide :
 
-1. création par **+ Carton final** ;
-2. Inspector spécialisé visible ;
-3. backdrop plein écran actif ;
-4. texte initial visible ;
-5. modification du texte en `FIN` ;
-6. fond canvas personnalisé ;
-7. opacité canvas 100 % ;
-8. noir final à 0,8 s ;
-9. application du PATCH ;
-10. vérification que `start + duration = duration_timeline` ;
-11. déplacement du playhead dans la queue finale ;
-12. backdrop toujours visible ;
-13. texte masqué ;
-14. sauvegarde backend ;
-15. relecture des propriétés spécialisées ;
-16. aucune erreur JavaScript.
+1. bouton **Export** ;
+2. ouverture du **Delivery Center** ;
+3. sélection **Social · Vertical · 9:16** ;
+4. FIT par défaut ;
+5. préflight visible ;
+6. export activé ;
+7. passage en FILL ;
+8. consentement crop visible ;
+9. export bloqué tant que la case n’est pas cochée ;
+10. consentement explicite ;
+11. estimation **68,4 %** visible ;
+12. bouton **Exporter avec avertissements** ;
+13. export ;
+14. résultat 1080×1920 ;
+15. lien **Télécharger le livrable** ;
+16. lien **Rapport JSON** ;
+17. aucune erreur JavaScript.
 
-## Validation
-
-Run fonctionnel de référence :
-
-**119 tests passés / 119**
-
-.
-
-Le correctif final utilise une fonction de remplacement et le fichier contient effectivement :
-
-`$('.clip').forEach(...)`.
-
-La CI finale confirme la disparition de la régression.
-
-## Validation
+## Validation V0.23.4
 
 Run fonctionnel de référence :
 
-**127 tests passés / 127**
+**135 tests passés / 135**
+
+---
 
 # Limites connues
 
 - pas encore de drag direct du titre dans le Viewer ;
-- pas encore d’animation entrée/sortie ;
+- pas encore d’animation entrée/sortie des titres ;
 - pas encore de font picker avec ressources embarquées ;
-- pas encore de rendu final festival/social des titres ;
-- prise en charge Text native Tesseract dépendante du schéma réel installé.
+- matérialisation Text native Tesseract toujours dépendante du schéma réel installé ;
+- V0.23.4 ne produit pas de DCP ;
+- pas d’auto-reframe sémantique pour le social ;
+- le FILL actuel est un crop centré explicite ;
+- les cibles sont fixes : les profils personnalisables arrivent en V0.23.5 ;
+- le frame rate de delivery reste fixé par la cible de référence ; la politique FPS personnalisable appartient également à V0.23.5.
 
 # Conclusion
 
-V0.23.1–V0.23.3 transforment les overlays et connexions en objets de montage non destructifs, portables, avec une fin pleine image et des dépendances Storyline désormais lisibles et manipulables.
+V0.23.1 à V0.23.4 forment désormais une chaîne cohérente :
 
-La chaîne validée est :
+**créer le titre / carton final → régler le style → définir la connexion Storyline → sauvegarder en timeline v6 → publier Vxxx → authorer Tesseract → ouvrir Delivery Center → vérifier version/audio/titres/cadrage → choisir FIT ou autoriser explicitement FILL → rendre → inspecter ffprobe → télécharger le livrable et son rapport JSON.**
 
-**créer le titre ou carton final → régler son style et son fond → définir son ancrage Storyline → prévisualiser en PROGRAM → vérifier la queue finale → appliquer → sauvegarder en timeline v6 → publier → préserver intégralement dans l’authoring plan → signaler explicitement ce qui reste à matérialiser au delivery.**
+La prochaine étape est **V0.23.5 — presets de delivery** : rendre ces cibles configurables, mémorisables et réutilisables par projet/utilisateur sans perdre les garde-fous introduits en V0.23.4.
