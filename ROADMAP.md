@@ -80,6 +80,18 @@ Validation de code V0.26 : **162 tests passés / 162** après ajout de la recett
 
 **V0.27 — VOICE-TO-VISUAL EDITORIAL BRIDGE FUSIONNÉE DANS MAIN ✅**
 
+## V0.28 — UX Navigation & Context System
+
+- ✅ **V0.28.1 — Context Design Tokens** : accents discrets Video / Audio / Transcript / Editorial / Delivery / Projet, avec libellés explicites ;
+- ✅ **V0.28.2 — Contextual Help** : Guidée / Minimale / Désactivée et micro-textes de conséquence ;
+- ✅ **V0.28.3 — Universal Search** : Actions / Aller à / Aide / Ressources, recherche visible + Cmd/Ctrl+K ;
+- ✅ **V0.28.4 — Context Quick Actions** : raccourcis utiles selon la sélection sans masquer les outils avancés ;
+- ✅ **V0.28.5 — Help Center** : FAQ, glossaire, workflow, raccourcis et principes de sécurité intégrés ;
+- ✅ **V0.28.6 — Action Semantics** : repères Analyse / Proposition / Application / Rendu ;
+- ✅ **V0.28.7 — UX Preferences** : Confort/Compact, couleurs et actions contextuelles configurables localement.
+
+**V0.28 — IMPLÉMENTÉE SUR BRANCHE DE VALIDATION ⏳**
+
 ## Avant V1
 
 - valider **V0.24.1** sur le vrai projet PISTE 0 ;
