@@ -682,3 +682,144 @@ def test_timeline_neighbor_continuity_drawer_and_candidate_simulation(tmp_path):
     finally:
         server.should_exit = True
         thread.join(timeout=5)
+
+
+
+def test_editable_title_overlay_preview_and_persistence(tmp_path):
+    root = tmp_path / "TitleBrowser"
+    init_project(root, "Title Browser")
+    (root / "rushes" / "shot.mp4").write_bytes(b"fake-video")
+    scan_media(root)
+    video = next(
+        x for x in fetch_media_with_metadata(root)
+        if x["kind"] == "video"
+    )
+    set_media_metadata(
+        root,
+        video["id"],
+        title="Shot",
+        duration_seconds=8,
+        tags=[],
+    )
+    save_timeline(
+        root,
+        {
+            "edit_name": "teaser_30",
+            "duration_seconds": 12,
+            "storyline": {"mode": "free", "start": 0},
+            "tracks": [
+                {"id": "video", "name": "VIDEO", "kind": "video"},
+                {"id": "titles", "name": "TITLES", "kind": "title"},
+            ],
+            "clips": [
+                {
+                    "id": "v1",
+                    "track": "video",
+                    "label": "Shot",
+                    "start": 0,
+                    "duration": 8,
+                    "sourceStart": 0,
+                    "mediaDbId": video["id"],
+                },
+                {
+                    "id": "t1",
+                    "track": "titles",
+                    "label": "PISTE 0",
+                    "text": "PISTE 0",
+                    "start": 2,
+                    "duration": 3,
+                    "titlePreset": "center",
+                    "fontFamily": "sans",
+                    "fontSize": 64,
+                    "fontWeight": 700,
+                    "textAlign": "center",
+                    "positionX": 0.5,
+                    "positionY": 0.5,
+                    "boxWidth": 0.8,
+                    "color": "#FFFFFF",
+                    "backgroundColor": "#000000",
+                    "backgroundOpacity": 0,
+                    "opacity": 1,
+                    "padding": 0.02,
+                    "cornerRadius": 0,
+                },
+            ],
+        },
+    )
+
+    app = create_app(root)
+    port = _free_port()
+    server = uvicorn.Server(
+        uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error")
+    )
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    for _ in range(100):
+        if server.started:
+            break
+        time.sleep(0.05)
+    assert server.started
+
+    errors = []
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.on("pageerror", lambda exc: errors.append(str(exc)))
+            page.goto(f"http://127.0.0.1:{port}/", wait_until="networkidle")
+            page.wait_for_timeout(150)
+
+            page.locator('[data-clip="t1"]').click()
+            expect(page.locator(".title-style-section")).to_be_visible()
+            expect(page.locator("#viewerTitle")).to_have_class(re.compile("show"))
+            expect(page.locator("#viewerTitle")).to_have_text("PISTE 0")
+
+            page.locator("#titleText").fill("PISTE 0\nBONUS TRACK")
+            page.locator("#titlePreset").select_option("lower_third")
+            page.locator("#titleFontFamily").select_option("serif")
+            page.locator("#titleFontSize").fill("90")
+            page.locator("#titleTextAlign").select_option("left")
+            page.locator("#titleColor").fill("#ffcc88")
+            page.locator("#titleBackgroundOpacity").fill("50")
+            page.locator("#titlePadding").fill("3")
+            page.locator("#titleCornerRadius").fill("2")
+            page.locator("#inspector").get_by_role(
+                "button", name="Appliquer PATCH"
+            ).click()
+
+            expect(page.locator("#viewerTitle")).to_have_text(
+                "PISTE 0\nBONUS TRACK"
+            )
+            style = page.locator("#viewerTitle").get_attribute("style") or ""
+            assert "top: 82%" in style
+            assert "Georgia" in style
+            assert "text-align: left" in style
+            assert "rgb(255, 204, 136)" in style or "#ffcc88" in style.lower()
+
+            page.locator("#saveBackendBtn").click()
+            page.wait_for_timeout(100)
+            timeline = (
+                root
+                / "edits"
+                / "teaser_30"
+                / "working"
+                / "timeline.json"
+            )
+            saved = __import__("json").loads(timeline.read_text(encoding="utf-8"))
+            title = next(x for x in saved["clips"] if x["id"] == "t1")
+            assert saved["schema_version"] == 5
+            assert title["text"] == "PISTE 0\nBONUS TRACK"
+            assert title["titlePreset"] == "lower_third"
+            assert title["fontFamily"] == "serif"
+            assert title["fontSize"] == 90.0
+            assert title["textAlign"] == "left"
+            assert title["positionY"] == 0.82
+            assert title["color"] == "#FFCC88"
+            assert title["backgroundOpacity"] == 0.5
+            assert title["padding"] == 0.03
+            assert title["cornerRadius"] == 0.02
+            assert errors == []
+            browser.close()
+    finally:
+        server.should_exit = True
+        thread.join(timeout=5)
