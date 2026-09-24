@@ -185,3 +185,5 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .connection-point.selected:hover{fill:#ffd3a5}
 .connection-point.selected:focus{outline:none;filter:drop-shadow(0 0 3px rgba(240,189,135,.85))}
 .connection-section input[type=number]{border-color:#564332}
+
+.clip.connected:before{display:none}
