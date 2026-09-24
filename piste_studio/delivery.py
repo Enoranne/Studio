@@ -696,6 +696,17 @@ def evaluate_delivery_probe(target: dict, probe: dict) -> dict:
                 f"au lieu de {expected}."
             )
 
+    expected_pixel_format = str(target.get("pixel_format") or "")
+    actual_pixel_format = str(probe.get("pixel_format") or "")
+    if (
+        expected_pixel_format
+        and actual_pixel_format != expected_pixel_format
+    ):
+        reasons.append(
+            f"Pixel format {actual_pixel_format or 'indisponible'} "
+            f"au lieu de {expected_pixel_format}."
+        )
+
     expected_fps = float(target["fps"])
     actual_fps = probe.get("fps")
     if actual_fps is None or abs(float(actual_fps) - expected_fps) > 0.05:
@@ -706,7 +717,9 @@ def evaluate_delivery_probe(target: dict, probe: dict) -> dict:
 
     expected_audio = str(target.get("audio_codec") or "")
     actual_audio = str(probe.get("audio_codec") or "")
-    if actual_audio and expected_audio and actual_audio != expected_audio:
+    if expected_audio and not actual_audio:
+        reasons.append("Piste audio attendue mais absente du livrable.")
+    elif actual_audio and expected_audio and actual_audio != expected_audio:
         reasons.append(
             f"Codec audio {actual_audio} au lieu de {expected_audio}."
         )
