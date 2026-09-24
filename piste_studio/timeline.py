@@ -242,6 +242,7 @@ def _validate_connections(clean_clips: list[dict]) -> None:
         parent_id = child.get("parentClipId")
         if not parent_id:
             child.pop("anchorOffset", None)
+            child.pop("connectionPointOffset", None)
             child.pop("connectionMode", None)
             continue
         parent = by_id.get(str(parent_id))
@@ -272,8 +273,24 @@ def _validate_connections(clean_clips: list[dict]) -> None:
                 f"Connexion incohérente pour {child['id']}: "
                 f"start={child['start']} mais parent+offset={expected:.6f}"
             )
+        point_offset = child.get("connectionPointOffset")
+        if point_offset is None:
+            point_offset = min(
+                max(offset, 0.0),
+                float(parent["duration"]),
+            )
+        point_offset = float(point_offset)
+        if point_offset < -1e-6 or point_offset > float(parent["duration"]) + 1e-6:
+            raise TimelineError(
+                f"connectionPointOffset hors plan parent pour {child['id']}."
+            )
+
         child["parentClipId"] = parent["id"]
         child["anchorOffset"] = round(offset, 6)
+        child["connectionPointOffset"] = round(
+            min(max(point_offset, 0.0), float(parent["duration"])),
+            6,
+        )
         child["connectionMode"] = "follow"
 
 
@@ -460,7 +477,7 @@ def validate_timeline(root: Path, payload: dict) -> dict:
                 )
 
     return {
-        "schema_version": 5,
+        "schema_version": 6,
         "edit_name": slugify(str(payload.get("edit_name") or "teaser_30")),
         "duration_seconds": duration,
         "storyline": storyline,
