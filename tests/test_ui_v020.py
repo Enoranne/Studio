@@ -16,7 +16,7 @@ def test_v022_ui_structure_and_assets(tmp_path):
     client = TestClient(app)
     html = client.get("/").text
 
-    assert "PISTE Studio — Local App v0.22" in html
+    assert "PISTE Studio — Local App v0.23" in html
     assert 'id="audioMeters"' in html
     assert 'id="editorialDrawer"' in html
     assert "Storyline magnétique" in html
@@ -36,6 +36,7 @@ def test_v022_ui_structure_and_assets(tmp_path):
         "ux-semantic-vision.js",
         "ux-targeted-references.js",
         "ux-timeline-continuity.js",
+        "ux-titles.js",
         "ux-audio-mix.js",
         "ux-audio-intelligence.js",
         "ux-audio-delivery.js",
@@ -132,3 +133,15 @@ def test_v022_ux_contains_timeline_neighbor_continuity_patterns():
     assert "À VÉRIFIER" in ux
     assert "Aucun remplacement n’est appliqué automatiquement" in ux
     assert "Vision · Continuité voisins" in ux
+
+
+def test_v023_ux_contains_editable_title_patterns():
+    ux = (UI / "ux-titles.js").read_text(encoding="utf-8")
+    assert "TITRE / OVERLAY" in ux
+    assert "Lower third" in ux
+    assert "titleFontSize" in ux
+    assert "titlePositionX" in ux
+    assert "titleBackgroundOpacity" in ux
+    assert "Familles génériques" in ux
+    assert "Titre / overlay mis à jour" in ux
+    assert "applyViewerTitleStyle" in ux
