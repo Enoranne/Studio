@@ -203,6 +203,8 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
             roi=roi,
             embedding=[1.0, 0.0, 0.0],
             image_path=image,
+            group_name=kwargs.get("group_name"),
+            quality=kwargs.get("quality", "secondary"),
         )
 
     monkeypatch.setattr(
@@ -440,6 +442,8 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
             expect(page.locator(".selector-policy")).to_contain_text("RÉFÉRENCE CIBLÉE")
             page.locator("#targetedReferenceFacet").select_option("prop")
             page.locator("#targetedReferenceValue").fill("fisher")
+            page.locator("#targetedReferenceGroup").fill("Fisher principal")
+            page.locator("#targetedReferenceQuality").select_option("primary")
             page.locator("#targetedReferenceMode").select_option("roi")
             expect(page.locator("#targetedRoiFields")).to_be_visible()
             page.locator("#targetedRoiX").fill("15")
@@ -450,6 +454,14 @@ def test_real_browser_navigation_and_workspaces(tmp_path, monkeypatch):
             expect(page.locator(".targeted-reference-card")).to_have_count(1)
             expect(page.locator(".targeted-reference-card")).to_contain_text("prop:fisher")
             expect(page.locator(".targeted-reference-card")).to_contain_text("zone 15%, 20%")
+            expect(page.locator(".targeted-reference-card")).to_contain_text("Groupe · Fisher principal")
+            expect(page.locator(".targeted-reference-card")).to_contain_text("Primaire")
+            expect(page.locator(".semantic-resolved")).to_contain_text("Fisher principal")
+            page.locator(".targeted-reference-card input").fill("Fisher secondaire")
+            page.locator(".targeted-reference-card select").select_option("low")
+            page.get_by_role("button", name="Enregistrer groupe/qualité").click()
+            expect(page.locator(".targeted-reference-card")).to_contain_text("Groupe · Fisher secondaire")
+            expect(page.locator(".targeted-reference-card")).to_contain_text("Faible")
             page.locator("#editorialDrawer .pane-close").click()
             expect(page.locator("#editorialDrawer")).to_be_hidden()
             expect(page.locator("#inspector")).not_to_contain_text("prop:fisher")
