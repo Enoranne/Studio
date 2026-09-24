@@ -213,14 +213,23 @@ def _read_json(path: Path) -> dict | None:
     return value if isinstance(value, dict) else None
 
 
+def load_published_timeline(
+    root: Path,
+    edit_name: str,
+    version: str,
+) -> dict | None:
+    return _read_json(
+        _version_dir(root, edit_name, version) / "timeline.json"
+    )
+
+
 def _published_timeline_status(
     root: Path,
     timeline: dict,
     edit_name: str,
     version: str,
 ) -> dict:
-    path = _version_dir(root, edit_name, version) / "timeline.json"
-    published = _read_json(path)
+    published = load_published_timeline(root, edit_name, version)
     if published is None:
         return {
             "status": "MISSING",
@@ -248,8 +257,10 @@ def _title_status(
     edit_name: str,
     version: str,
 ) -> dict:
+    published = load_published_timeline(root, edit_name, version)
+    source_timeline = published if isinstance(published, dict) else timeline
     titles = [
-        clip for clip in timeline.get("clips", [])
+        clip for clip in source_timeline.get("clips", [])
         if str(clip.get("track") or "") == "titles"
     ]
     if not titles:
@@ -661,6 +672,71 @@ def inspect_delivery(path: Path) -> dict:
     }
 
 
+def evaluate_delivery_probe(target: dict, probe: dict) -> dict:
+    reasons: list[str] = []
+
+    expected_video = (
+        "prores"
+        if target.get("video_codec") == "prores_ks"
+        else "h264"
+    )
+    actual_video = str(probe.get("video_codec") or "")
+    if actual_video != expected_video:
+        reasons.append(
+            f"Codec vidéo {actual_video or 'indisponible'} au lieu de "
+            f"{expected_video}."
+        )
+
+    for field in ("width", "height"):
+        expected = int(target[field])
+        actual = probe.get(field)
+        if actual is None or int(actual) != expected:
+            reasons.append(
+                f"{field}={actual if actual is not None else '—'} "
+                f"au lieu de {expected}."
+            )
+
+    expected_fps = float(target["fps"])
+    actual_fps = probe.get("fps")
+    if actual_fps is None or abs(float(actual_fps) - expected_fps) > 0.05:
+        reasons.append(
+            f"fps={actual_fps if actual_fps is not None else '—'} "
+            f"au lieu de {expected_fps:g}."
+        )
+
+    expected_audio = str(target.get("audio_codec") or "")
+    actual_audio = str(probe.get("audio_codec") or "")
+    if actual_audio and expected_audio and actual_audio != expected_audio:
+        reasons.append(
+            f"Codec audio {actual_audio} au lieu de {expected_audio}."
+        )
+
+    expected_rate = int(target.get("audio_sample_rate") or 0)
+    actual_rate = probe.get("audio_sample_rate")
+    if actual_audio and expected_rate and (
+        actual_rate is None or int(actual_rate) != expected_rate
+    ):
+        reasons.append(
+            f"Sample rate {actual_rate if actual_rate is not None else '—'} "
+            f"Hz au lieu de {expected_rate} Hz."
+        )
+
+    expected_channels = int(target.get("audio_channels") or 0)
+    actual_channels = probe.get("audio_channels")
+    if actual_audio and expected_channels and (
+        actual_channels is None or int(actual_channels) != expected_channels
+    ):
+        reasons.append(
+            f"Audio {actual_channels if actual_channels is not None else '—'} "
+            f"canaux au lieu de {expected_channels}."
+        )
+
+    return {
+        "status": "PASS" if not reasons else "WARN",
+        "reasons": reasons,
+    }
+
+
 def delivery_output_path(
     root: Path,
     *,
@@ -725,12 +801,14 @@ def render_delivery_variant(
         )
     if not output.exists() or not output.is_file():
         raise DeliveryError("Le livrable attendu n'a pas été produit.")
+    probe = inspect_delivery(output)
     return {
         "path": output,
         "relative_path": output.relative_to(root.resolve()).as_posix(),
         "target": target,
         "framing_mode": framing,
-        "probe": inspect_delivery(output),
+        "probe": probe,
+        "conformance": evaluate_delivery_probe(target, probe),
         "ffmpeg_args": args,
     }
 
@@ -769,6 +847,7 @@ def write_delivery_report(
         "source_relative_path": source_relative_path,
         "output_relative_path": render["relative_path"],
         "probe": render["probe"],
+        "conformance": render.get("conformance") or {},
         "preflight": preflight,
         "policy": {
             "source_media_immutable": True,
