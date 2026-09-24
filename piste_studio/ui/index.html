@@ -39,14 +39,15 @@
       <button class="nav-tab" data-view="versions">Versions</button>
     </div>
     <div class="sub-actions">
-      <button class="btn tiny" id="scanBtn">Scanner</button>
-      <button class="btn tiny" id="analyzeMediaBtn">Analyser</button>
-      <button class="btn tiny" id="bindBtn">Rushes</button>
-      <button class="btn tiny" id="bindAudioBtn">Audio</button>
-      <button class="btn tiny" onclick="previewTesseract()">Preview</button>
-      <button class="btn tiny" id="readinessBtn" onclick="openProductionReadiness()">Readiness</button>
-      <button class="btn tiny accent" id="editorialAgentBtn" onclick="openEditorialAgent()">Agent</button>
-      <button class="btn tiny" onclick="openDeliveryCenter()">Export</button>
+      <span class="context-chip" id="contextDomainChip" aria-live="polite">VIDEO</span>
+      <button class="btn tiny" id="scanBtn" data-domain="video">Scanner</button>
+      <button class="btn tiny" id="analyzeMediaBtn" data-domain="video">Analyser</button>
+      <button class="btn tiny" id="bindBtn" data-domain="video">Rushes</button>
+      <button class="btn tiny" id="bindAudioBtn" data-domain="audio">Audio</button>
+      <button class="btn tiny" onclick="previewTesseract()" data-domain="delivery">Preview</button>
+      <button class="btn tiny" id="readinessBtn" onclick="openProductionReadiness()" data-domain="delivery">Readiness</button>
+      <button class="btn tiny accent" id="editorialAgentBtn" onclick="openEditorialAgent()" data-domain="editorial">Agent</button>
+      <button class="btn tiny" onclick="openDeliveryCenter()" data-domain="delivery">Export</button>
       <input id="multiFileInput" type="file" accept="video/*" multiple hidden>
       <input id="singleFileInput" type="file" accept="video/*" hidden>
       <input id="multiAudioInput" type="file" accept="audio/*" multiple hidden>
@@ -115,12 +116,12 @@
           <div class="timeline-main">
             <div class="timeline-toolbar">
               <div class="timeline-left">
-                <button class="btn tiny" onclick="addTitle()">+ Titre</button>
-                <button class="btn tiny" onclick="addFinalCard()">+ Carton final</button>
-                <button class="btn tiny" onclick="addAudio('vo')">+ VO</button>
-                <button class="btn tiny" onclick="addAudio('music')">+ Music</button>
-                <button class="btn tiny" onclick="addAudio('sfx')">+ SFX</button>
-                <button class="btn tiny" id="addMarkerBtn" onclick="openMarkerComposer()">+ Marker</button>
+                <button class="btn tiny" onclick="addTitle()" data-domain="editorial">+ Titre</button>
+                <button class="btn tiny" onclick="addFinalCard()" data-domain="editorial">+ Carton final</button>
+                <button class="btn tiny" onclick="addAudio('vo')" data-domain="audio">+ VO</button>
+                <button class="btn tiny" onclick="addAudio('music')" data-domain="audio">+ Music</button>
+                <button class="btn tiny" onclick="addAudio('sfx')" data-domain="audio">+ SFX</button>
+                <button class="btn tiny" id="addMarkerBtn" onclick="openMarkerComposer()" data-domain="editorial">+ Marker</button>
               </div>
               <div class="timeline-center"><span class="interaction-readout" id="interactionReadout">Storyline magnétique · drag · ripple trim</span><button class="timeline-focus focus-trigger" data-focus-pane="timeline" type="button" title="Agrandir la Timeline">⛶</button></div>
               <div class="timeline-right"><label>Snap</label><select id="snap"><option value="0.1">0,1</option><option value="0.5" selected>0,5</option><option value="1">1,0</option></select><span class="lock-readout" id="hardLockLabel">LOCKS</span></div>
@@ -179,6 +180,7 @@
 <script src="/ui/ux-magnetic.js"></script>
 <script src="/ui/ux-shell.js"></script>
 <script src="/ui/ux-polish.js"></script>
+<script src="/ui/ux-context.js"></script>
 <script src="/ui/ux-editorial.js"></script>
 <script src="/ui/ux-media-intelligence.js"></script>
 <script src="/ui/ux-editorial-vision.js"></script>
