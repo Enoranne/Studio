@@ -1158,7 +1158,7 @@ def test_delivery_center_vertical_crop_preflight_and_export(
                 "Delivery Center"
             )
             expect(page.locator(".selector-policy")).to_contain_text(
-                "Festival / social"
+                "Presets & export"
             )
 
             page.locator("#deliveryTarget").select_option(
@@ -1206,6 +1206,40 @@ def test_delivery_center_vertical_crop_preflight_and_export(
             expect(
                 page.get_by_role("link", name="Rapport JSON")
             ).to_be_visible()
+
+            page.get_by_role("button", name="Dupliquer").click()
+            expect(page.locator(".delivery-preset-editor")).to_be_visible()
+            custom_id = page.locator("#deliveryTarget").input_value()
+            assert custom_id.startswith("custom_")
+            page.locator("#deliveryPresetLabel").fill("Preset navigateur 9x16")
+            page.locator("#deliveryPresetFps").select_option("30")
+            page.locator("#deliveryPresetVideoBitrate").fill("14")
+            page.get_by_role("button", name="Enregistrer le preset").click()
+            expect(page.locator(".delivery-target-summary")).to_contain_text(
+                "Preset navigateur 9x16"
+            )
+            expect(page.locator(".delivery-target-summary")).to_contain_text(
+                "30 fps"
+            )
+            expect(page.locator(".delivery-target-summary")).to_contain_text(
+                "14 Mb/s"
+            )
+            page.get_by_role("button", name="Définir par défaut").click()
+            expect(page.locator(".delivery-target-summary")).to_contain_text(
+                "PERSONNALISÉ · DÉFAUT"
+            )
+
+            page.locator("#editorialDrawer .pane-close").click()
+            page.get_by_role("button", name="Export", exact=True).click()
+            expect(page.locator("#deliveryTarget")).to_have_value(custom_id)
+            expect(page.locator("#deliveryPresetLabel")).to_have_value(
+                "Preset navigateur 9x16"
+            )
+
+            page.get_by_role("button", name="Supprimer").click()
+            expect(page.locator("#deliveryTarget")).to_have_value(
+                "online_1080"
+            )
             assert errors == []
             browser.close()
     finally:
