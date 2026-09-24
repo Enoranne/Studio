@@ -17,6 +17,7 @@ AUDIO_ROLES = {"dialogue", "vo", "music", "ambience", "sfx"}
 TITLE_FONT_FAMILIES = {"sans", "serif", "mono"}
 TITLE_ALIGNS = {"left", "center", "right"}
 TITLE_PRESETS = {"center", "lower_third", "top", "custom"}
+TITLE_ROLES = {"overlay", "final_card"}
 
 
 def _clean_hex_color(value: object, fallback: str, field: str) -> str:
@@ -30,7 +31,7 @@ def _clean_hex_color(value: object, fallback: str, field: str) -> str:
     return clean.upper()
 
 
-def _clean_title_clip(raw: dict, cid: str) -> dict:
+def _clean_title_clip(raw: dict, cid: str, clip_duration: float) -> dict:
     text = str(raw.get("text") or raw.get("label") or "").strip()
     if not text:
         raise TimelineError(f"Texte de titre vide pour {cid}.")
@@ -46,6 +47,10 @@ def _clean_title_clip(raw: dict, cid: str) -> dict:
     align = str(raw.get("textAlign") or "center").strip().lower()
     if align not in TITLE_ALIGNS:
         raise TimelineError(f"textAlign invalide pour {cid}.")
+
+    role = str(raw.get("titleRole") or "overlay").strip().lower()
+    if role not in TITLE_ROLES:
+        raise TimelineError(f"titleRole invalide pour {cid}.")
 
     defaults = {
         "center": (0.5, 0.5),
@@ -63,6 +68,10 @@ def _clean_title_clip(raw: dict, cid: str) -> dict:
     background_opacity = float(raw.get("backgroundOpacity", 0.0))
     padding = float(raw.get("padding", 0.02))
     corner_radius = float(raw.get("cornerRadius", 0.0))
+    canvas_background_opacity = float(
+        raw.get("canvasBackgroundOpacity", 1.0 if role == "final_card" else 0.0)
+    )
+    black_tail = float(raw.get("blackTailSeconds", 0.0))
 
     if not (0 <= x <= 1 and 0 <= y <= 1):
         raise TimelineError(f"positionX/positionY hors plage 0..1 pour {cid}.")
@@ -80,6 +89,14 @@ def _clean_title_clip(raw: dict, cid: str) -> dict:
         raise TimelineError(f"padding hors plage 0..0.2 pour {cid}.")
     if not 0 <= corner_radius <= 0.2:
         raise TimelineError(f"cornerRadius hors plage 0..0.2 pour {cid}.")
+    if not 0 <= canvas_background_opacity <= 1:
+        raise TimelineError(
+            f"canvasBackgroundOpacity hors plage 0..1 pour {cid}."
+        )
+    if black_tail < 0 or black_tail >= clip_duration:
+        raise TimelineError(
+            f"blackTailSeconds doit être >= 0 et < durée du clip pour {cid}."
+        )
 
     return {
         "text": text,
@@ -99,6 +116,14 @@ def _clean_title_clip(raw: dict, cid: str) -> dict:
         "opacity": round(opacity, 4),
         "padding": round(padding, 4),
         "cornerRadius": round(corner_radius, 4),
+        "titleRole": role,
+        "canvasBackgroundColor": _clean_hex_color(
+            raw.get("canvasBackgroundColor"),
+            "#000000",
+            "canvasBackgroundColor",
+        ),
+        "canvasBackgroundOpacity": round(canvas_background_opacity, 4),
+        "blackTailSeconds": round(black_tail, 4),
     }
 
 
@@ -410,7 +435,7 @@ def validate_timeline(root: Path, payload: dict) -> dict:
         if str(track).lower() == "titles" or str(
             next((t["kind"] for t in clean_tracks if t["id"] == track), "")
         ).lower() in {"title", "titles"}:
-            clean.update(_clean_title_clip(c, cid))
+            clean.update(_clean_title_clip(c, cid, clip_duration))
         clean_clips.append(clean)
 
     _validate_connections(clean_clips)
