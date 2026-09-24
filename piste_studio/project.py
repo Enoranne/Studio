@@ -52,7 +52,7 @@ def init_project(root: Path, name: str, master: Path | None = None) -> ProjectPa
         master_info = {"path": str(master), "filename": master.name, "size_bytes": master.stat().st_size, "sha256": sha256_file(master), "protected": True, "read_only_reference": True}
     now = datetime.now(timezone.utc).isoformat()
     write_yaml(root / "project.yaml", {"schema_version":1,"project":{"name":name,"created_at":now,"master_protected":True,"master":master_info}})
-    write_yaml(root / "canon.yaml", {"schema_version":1,"project":{"title":name,"subtitle":""},"visual":{"aspect_ratio":"16:9","look":[],"avoid":[]},"editing":{"principles":[],"avoid":[]},"sound":{"motifs":[],"ending_sequence":[]},"characters":{},"props":{}})
+    write_yaml(root / "canon.yaml", {"schema_version":2,"project":{"title":name,"subtitle":""},"visual":{"aspect_ratio":"16:9","look":[],"avoid":[]},"editing":{"principles":[],"avoid":[]},"sound":{"motifs":[],"ending_sequence":[]},"characters":{},"props":{},"decors":{},"semantic":{"allowed_tags":[],"forbidden_tags":[],"closed_facets":[]}})
     write_yaml(root / "locks.yaml", {"schema_version":1,"locks":[]})
     connect(root / "media.sqlite").close()
     return ProjectPaths(root)
