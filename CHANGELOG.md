@@ -2,6 +2,29 @@
 
 ## V0.22 — Editorial Vision Refinement
 
+### V0.22.5 — Continuité de voisinage
+
+- Nouveau moteur `timeline_continuity.py`.
+- Analyse du plan sélectionné dans son contexte STORYLINE réel.
+- Identification déterministe du plan précédent et du plan suivant.
+- Comparaison des facets structurés `character`, `prop`, `decor`, `look`.
+- Détection de continuité explicite lorsqu’un tag est partagé.
+- Détection de **FACET_RUPTURE** uniquement lorsque deux côtés possèdent des tags structurés incompatibles.
+- Détection de **BRIDGE_CONTINUITY** lorsque précédent et suivant partagent une preuve conservée par le plan central.
+- Détection de **BRIDGE_EVIDENCE_GAP** lorsque les voisins partagent une preuve que le plan central ne documente pas.
+- Les preuves manquantes sont classées **REVIEW / À VÉRIFIER**, jamais comme rupture certaine.
+- Statuts de synthèse : **CONTINUOUS**, **RUPTURE**, **REVIEW**, **INSUFFICIENT**, **NO_SIGNAL**.
+- Simulation d’un autre rush à la position du clip sélectionné via `candidate_media_id`.
+- La simulation ne modifie ni timeline, ni IN/OUT, ni tags.
+- Évaluation Canon V0.22.4 incluse pour les tags du candidat.
+- API `GET /api/vision/timeline-continuity`.
+- Inspector clip vidéo : **CONTINUITÉ DE VOISINAGE → Analyser voisins**.
+- Drawer en triptyque **PRÉCÉDENT / PLAN-CANDIDAT / SUIVANT**.
+- Sélecteur permettant de tester n’importe quel rush catalogué à cette position.
+- Command Palette : **Vision · Continuité voisins**.
+- Tests unitaires, API et Chromium dédiés.
+- V0.22 Editorial Vision Refinement complète.
+
 ### V0.22.4 — Canon Conflict Detection
 
 - Nouveau moteur `canon_conflicts.py`.
