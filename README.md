@@ -474,3 +474,30 @@ Les rapports sont écrits dans :
 `reports/delivery/`
 
 Le rapport contient notamment la cible, le cadrage, le préflight, le fichier source de rendu, le fichier final et les mesures ffprobe.
+
+
+### Conformité finale du fichier
+
+Après le transcodage V0.23.4, PISTE ne se contente pas de vérifier que ffmpeg a créé un fichier.
+
+ffprobe relit le livrable et le compare à sa cible :
+
+- codec vidéo ;
+- dimensions ;
+- pixel format ;
+- frame rate ;
+- présence et codec audio ;
+- sample rate ;
+- nombre de canaux.
+
+Le Delivery Center affiche ensuite :
+
+**CONFORMITÉ · PASS**
+
+ou :
+
+**CONFORMITÉ · WARN**
+
+avec les écarts constatés.
+
+Pour un export d’une version publiée `Vxxx`, le Master Check audio est lui aussi évalué contre le snapshot `Vxxx/timeline.json`. Si le working cut a changé depuis, le préflight peut donc simultanément indiquer **Version publiée · STALE** tout en contrôlant correctement l’audio de la version réellement livrée.
