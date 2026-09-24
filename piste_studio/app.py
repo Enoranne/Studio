@@ -204,7 +204,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/ui/{filename}")
     def ui_asset(filename: str):
-        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-editorial-vision.js", "ux-semantic-vision.js", "ux-targeted-references.js", "ux-timeline-continuity.js", "ux-titles.js", "ux-audio-mix.js", "ux-audio-intelligence.js", "ux-audio-delivery.js", "ux-delivery.js", "ux-readiness.js", "ux-editorial-agent.js", "backend.js"}:
+        if filename not in {"style.css", "state.js", "editor.js", "ux-browser.js", "ux-timeline.js", "ux-magnetic.js", "ux-shell.js", "ux-polish.js", "ux-context.js", "ux-help.js", "ux-universal-search.js", "ux-preferences.js", "ux-editorial.js", "ux-media-intelligence.js", "ux-editorial-vision.js", "ux-semantic-vision.js", "ux-targeted-references.js", "ux-timeline-continuity.js", "ux-titles.js", "ux-audio-mix.js", "ux-audio-intelligence.js", "ux-audio-delivery.js", "ux-delivery.js", "ux-readiness.js", "ux-editorial-agent.js", "backend.js"}:
             raise HTTPException(404, "Ressource UI introuvable.")
         path = ui_file.parent / filename
         if not path.exists():
