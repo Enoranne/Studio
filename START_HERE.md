@@ -233,3 +233,19 @@ Pour un conflit, lis la source affichée avant d’utiliser **Accepter malgré c
 8. Clique **Tester ce candidat**.
 
 Le candidat n’est pas inséré dans le montage. Le résultat sert uniquement à éclairer une décision de remplacement ultérieure.
+
+
+## Titres / overlays V0.23.1
+
+1. Place le playhead à l’endroit voulu.
+2. Clique **+ Titre**.
+3. Sélectionne le clip de la piste TITLES.
+4. Dans **TITRE / OVERLAY**, saisis le texte.
+5. Choisis Centre, Lower third, Haut ou Personnalisé.
+6. Ajuste taille, graisse, alignement, couleur et fond.
+7. En mode Personnalisé, règle Position X / Y.
+8. Observe le résultat directement dans PROGRAM.
+9. Clique **Appliquer PATCH**.
+10. Enregistre la timeline.
+
+Les familles Sans / Serif / Mono sont intentionnellement génériques : elles améliorent la portabilité entre Viewer, machine locale et futurs exports.
