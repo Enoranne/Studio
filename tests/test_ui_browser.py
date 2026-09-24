@@ -673,7 +673,7 @@ def test_timeline_neighbor_continuity_drawer_and_candidate_simulation(tmp_path):
             expect(page.locator(".selector-policy")).to_contain_text("RUPTURE POTENTIELLE")
             expect(page.locator("#editorialDrawer")).to_contain_text("Candidate Ronan")
             expect(page.locator("#editorialDrawer")).to_contain_text("FACET_RUPTURE")
-            expect(page.locator("#editorialDrawer")).to_contain_text("BRIDGE_GAP")
+            expect(page.locator("#editorialDrawer")).to_contain_text("BRIDGE_EVIDENCE_GAP")
 
             timeline = (root / "edits" / "teaser_30" / "working" / "timeline.json").read_text(encoding="utf-8")
             assert '"mediaDbId": ' + str(rows["target.mp4"]["id"]) in timeline
