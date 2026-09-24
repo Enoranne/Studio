@@ -511,3 +511,41 @@ def test_custom_delivery_preset_is_used_by_preflight(tmp_path):
     assert result["target"]["fps"] == 30
     assert result["framing_mode"] == "fit"
     assert result["can_export"] is True
+
+
+
+def test_custom_preset_native_depends_on_tesseract_canvas(tmp_path):
+    root = tmp_path / "ProjectPresetCanvas"
+    root.mkdir()
+
+    same = create_project_delivery_preset(
+        root,
+        {
+            "label": "1080 native",
+            "family": "online",
+            "width": 1920,
+            "height": 1080,
+            "fps": 24,
+            "video_codec": "libx264",
+            "tesseract_resolution": "1080p",
+            "default_framing": "native",
+        },
+    )
+    assert same["framing_modes"] == ["native"]
+    assert same["default_framing"] == "native"
+
+    downscale = create_project_delivery_preset(
+        root,
+        {
+            "label": "4K source vers 1080",
+            "family": "online",
+            "width": 1920,
+            "height": 1080,
+            "fps": 24,
+            "video_codec": "libx264",
+            "tesseract_resolution": "4k",
+            "default_framing": "native",
+        },
+    )
+    assert downscale["framing_modes"] == ["fit", "fill"]
+    assert downscale["default_framing"] == "fit"
