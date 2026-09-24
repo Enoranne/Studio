@@ -78,7 +78,7 @@ Validation de code V0.26 : **162 tests passés / 162** après ajout de la recett
 - ✅ **V0.27.4 — Fenêtres candidates & comparaison** : Editorial Vision, Favorite/Reject, score détaillé, comparaison de plans, aucun gagnant appliqué automatiquement ;
 - ✅ **V0.27.5 — VO→Image Proposed Edit** : beats visuels, pauses VO conservées, EDL virtuelle, VO préservée et validation via le pipeline transactionnel V0.26.
 
-**V0.27 — IMPLÉMENTÉE, VALIDATION CI ET RECETTE RÉELLE PISTE 0 EN COURS ⏳**
+**V0.27 — VOICE-TO-VISUAL EDITORIAL BRIDGE FUSIONNÉE DANS MAIN ✅**
 
 ## Avant V1
 
