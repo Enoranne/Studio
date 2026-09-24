@@ -40,8 +40,14 @@
 
 **V0.23 — Motion & Delivery : TERMINÉE ✅**
 
+## V0.24 — Production Validation
+
+- ✅ **V0.24.0 — Production Readiness** : diagnostic projet/outils/médias/version publiée, sélection prudente de la timeline, validation du plan d'authoring, détection bootstrap/authoring/rendu Tesseract, capacités `can_start_editing / can_bootstrap / can_author / can_deliver`, prochaine action explicite, CLI `piste-studio readiness` et API `/api/readiness` ;
+- ⏳ **V0.24.1 — Première recette réelle PISTE 0** : montage 30–60 s sur médias réels → publication Vxxx → bootstrap Tesseract → authoring → preview → rendu source → Delivery Center → contrôle du livrable final et journal des frictions.
+
 ## Avant V1
 
+- valider **V0.24.1** sur le vrai projet PISTE 0 ;
 - refactor progressif des globals JS vers state/actions ;
 - recovery après crash ;
 - tests navigateur approfondis de drag/trim/ripple/fades ;
