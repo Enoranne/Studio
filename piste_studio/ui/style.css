@@ -164,3 +164,8 @@ body.workspace-review .edit-grid{grid-template-rows:minmax(440px,70%) minmax(190
 .continuity-finding{margin:6px 0}
 .continuity-info-list{margin-top:8px}
 @media(max-width:900px){.continuity-triptych{grid-template-columns:1fr}}
+
+
+.title-style-section textarea{width:100%;resize:vertical;min-height:58px;background:#0b0f13;border:1px solid #282f37;border-radius:5px;padding:7px;font:8px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text)}
+.title-style-section input[type=color]{height:30px;padding:3px}
+.viewer-title{box-sizing:border-box;max-height:80%;overflow:hidden}
