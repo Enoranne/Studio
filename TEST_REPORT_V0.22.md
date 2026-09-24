@@ -16,7 +16,7 @@ Ce rapport couvre les cinq briques de V0.22 :
 
 ## Résultat global
 
-- Python/API/UI : **111 tests attendus au HEAD V0.22.5**, avec validation CI finale enregistrée après le dernier correctif de test.
+- Python/API/UI : **112 tests passés / 112** sur le run fonctionnel V0.22.5.
 - JavaScript : tous les modules UI passent `node --check`.
 - Chromium / Playwright : succès.
 - ffmpeg système installé explicitement dans la CI.
@@ -680,6 +680,7 @@ Command Palette :
 Couverture moteur :
 
 - continuité complète sur quatre facets ;
+- position simulée sous HARD LOCK sémantique : le candidat hérite du contexte du clip central ;
 - pont précédent/suivant conservé ;
 - candidat explicitement incompatible ;
 - simulation sans mutation de timeline ;
