@@ -65,9 +65,9 @@
 - ✅ **V0.26.9 — Apply Proposal** : confirmation humaine, contrôle anti-stale par hash, validation timeline, locks, checkpoint Undo puis transaction Storyline ;
 - ✅ **V0.26.10 — Rendered Master Critic** : ffprobe, durée, présence audio/vidéo, plages noires, LUFS/true peak et rapport persistant ; diagnostic uniquement, revue humaine toujours requise.
 
-**V0.26 — FONDATION EDITORIAL AGENT IMPLÉMENTÉE SUR BRANCHE DE VALIDATION ✅**
+**V0.26 — FONDATION EDITORIAL AGENT FUSIONNÉE DANS MAIN ✅**
 
-Validation restante avant fusion : CI complète, smoke desktop et première utilisation sur médias réels PISTE 0. Les appels de transcription externes restent explicitement opt-in.
+Validation de code : **159 tests passés / 159**, syntaxe JavaScript validée. Le bundle macOS V0.26 a atteint construction, signature et démarrage du sidecar avec `/api/health` en 0.26.0 ; le garde-fou de smoke test resté en 0.25.0 a été corrigé. Restent comme validations de production la première utilisation sur médias réels PISTE 0 et le smoke final du workflow macOS courant. Les appels de transcription externes restent explicitement opt-in.
 
 ## Avant V1
 
