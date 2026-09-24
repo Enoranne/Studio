@@ -41,6 +41,9 @@
     </div>
     <div class="sub-actions">
       <span class="context-chip" id="contextDomainChip" aria-live="polite">VIDEO</span>
+      <button class="universal-search-trigger" id="universalSearchBtn" type="button" aria-label="Recherche universelle">
+        <span>⌕</span><em>Rechercher action, aide, ressource…</em><kbd>⌘K</kbd>
+      </button>
       <button class="btn tiny" id="scanBtn" data-domain="video">Scanner</button>
       <button class="btn tiny" id="analyzeMediaBtn" data-domain="video">Analyser</button>
       <button class="btn tiny" id="bindBtn" data-domain="video">Rushes</button>
@@ -158,10 +161,17 @@
   <label><input type="checkbox" id="overlayRange" checked> IN / OUT source</label>
 </div>
 <div class="command-backdrop" id="commandPalette" hidden>
-  <div class="command-panel" role="dialog" aria-modal="true" aria-label="Palette de commandes">
-    <div class="command-search-row"><span>⌘K</span><input id="commandSearch" placeholder="Rechercher une commande…" autocomplete="off"></div>
+  <div class="command-panel universal-command-panel" role="dialog" aria-modal="true" aria-label="Recherche universelle">
+    <div class="command-search-row"><span>⌕</span><input id="commandSearch" placeholder="Action, menu, question, ressource…" autocomplete="off"></div>
+    <div class="command-filters" id="commandFilters">
+      <button class="active" data-command-filter="all">Tout</button>
+      <button data-command-filter="action">Actions</button>
+      <button data-command-filter="goto">Aller à</button>
+      <button data-command-filter="help">Aide</button>
+      <button data-command-filter="resource">Ressources</button>
+    </div>
     <div class="command-results" id="commandResults"></div>
-    <div class="command-footer"><span>↑↓ naviguer</span><span>Entrée exécuter</span><span>Échap fermer</span></div>
+    <div class="command-footer"><span>↑↓ naviguer</span><span>Entrée ouvrir/exécuter</span><span>Échap retour/fermer</span></div>
   </div>
 </div>
 <aside class="editorial-drawer" id="editorialDrawer" hidden>
