@@ -1,4 +1,4 @@
-let storylineStart=null,storylineMode='free',localUndoStack=[];
+let storylineStart=null,storylineMode='free',localUndoStack=[],localRedoStack=[];
 
 function getStorylineStart(){
   if(Number.isFinite(storylineStart))return storylineStart;
@@ -149,6 +149,7 @@ async function checkpointBeforeMagnetic(before,reason){
   }
   localUndoStack.push({clips:cloneClips(before),storylineMode,storylineStart:getStorylineStart(),reason});
   if(localUndoStack.length>50)localUndoStack.shift();
+  localRedoStack=[];
   return true
 }
 async function commitBackendMagneticOperation(operation,args,message,before=clips){
@@ -162,6 +163,7 @@ async function commitBackendMagneticOperation(operation,args,message,before=clip
         args,
         edit_name:activeEditName,
         checkpoint_reason:message,
+        actor:'user',
       }),
     });
     const previousSelection=selectedClip;
@@ -188,14 +190,34 @@ async function undoLastEdit(){
       const r=await api('/api/history/undo',{method:'POST',body:JSON.stringify({edit_name:activeEditName})});
       hydrateTimeline(r.timeline);
       renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));
-      toast('Undo · '+(r.restored?.reason||'checkpoint restauré'));
+      toast('Undo · '+(r.undone?.reason||r.restored?.reason||'transaction restaurée'));
       return true
     }catch(err){toast('Undo indisponible : '+err.message,true);return false}
   }
   const snap=localUndoStack.pop();
   if(!snap){toast('Aucun checkpoint local à restaurer',true);return false}
+  localRedoStack.push({clips:cloneClips(),storylineMode,storylineStart:getStorylineStart(),reason:snap.reason});
+  if(localRedoStack.length>50)localRedoStack.shift();
   clips=cloneClips(snap.clips);storylineMode=snap.storylineMode;storylineStart=snap.storylineStart;selectedClip=clips[0]?.id||null;
   renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));toast('Undo local · '+(snap.reason||'édition'));return true
+}
+async function redoLastEdit(){
+  pausePlayback();
+  if(backendConnected){
+    try{
+      const r=await api('/api/history/redo',{method:'POST',body:JSON.stringify({edit_name:activeEditName})});
+      hydrateTimeline(r.timeline);
+      renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));
+      toast('Redo · '+(r.redone?.reason||'transaction rétablie'));
+      return true
+    }catch(err){toast('Redo indisponible : '+err.message,true);return false}
+  }
+  const snap=localRedoStack.pop();
+  if(!snap){toast('Aucun Redo local disponible',true);return false}
+  localUndoStack.push({clips:cloneClips(),storylineMode,storylineStart:getStorylineStart(),reason:snap.reason});
+  if(localUndoStack.length>50)localUndoStack.shift();
+  clips=cloneClips(snap.clips);storylineMode=snap.storylineMode;storylineStart=snap.storylineStart;selectedClip=clips[0]?.id||null;
+  renderTracks();renderMedia();setPlayhead(Math.min(playhead,DURATION));toast('Redo local · '+(snap.reason||'édition'));return true
 }
 
 const _legacyBeginClipInteraction=beginClipInteraction,_legacyPointerMove=onClipPointerMove,_legacyEndClipInteraction=endClipInteraction;
@@ -498,7 +520,14 @@ renderTracks=function(){
 }
 
 document.addEventListener('keydown',e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){
+  const mod=e.ctrlKey||e.metaKey,key=e.key.toLowerCase();
+  if(mod&&key==='z'&&e.shiftKey){
+    e.preventDefault();redoLastEdit();return
+  }
+  if(e.ctrlKey&&!e.metaKey&&key==='y'){
+    e.preventDefault();redoLastEdit();return
+  }
+  if(mod&&key==='z'){
     e.preventDefault();undoLastEdit()
   }
 });

@@ -31,7 +31,14 @@ from .storyline import (
     validate_locked_change,
 )
 from .timeline_continuity import TimelineContinuityError, analyze_timeline_continuity
-from .history import HistoryError, create_checkpoint, history_status, undo_checkpoint
+from .history import (
+    HistoryError,
+    create_checkpoint,
+    history_status,
+    record_transaction,
+    redo_checkpoint,
+    undo_checkpoint,
+)
 from .editorial import (
     add_marker,
     delete_editorial_range,
@@ -1144,13 +1151,16 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 float(payload["gain_adjustment_db"]),
             )
             clean = validate_timeline(root, after)
-            create_checkpoint(
+            record_transaction(
                 root,
                 timeline,
+                clean,
                 edit_name=str(timeline.get("edit_name") or "teaser_30"),
                 reason=f"Normalisation audio · {payload['clip_id']}",
+                actor="user",
+                operation="audio.normalize",
+                affected=[payload["clip_id"]],
             )
-            save_timeline(root, clean)
             return {"ok": True, "timeline": clean}
         except (AudioIntelligenceError, TimelineError, HistoryError, KeyError, TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -1199,13 +1209,16 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
                 list(payload.get("envelope") or []),
             )
             clean = validate_timeline(root, after)
-            create_checkpoint(
+            record_transaction(
                 root,
                 timeline,
+                clean,
                 edit_name=str(timeline.get("edit_name") or "teaser_30"),
                 reason=f"Ducking audio · {payload['music_clip_id']}",
+                actor="user",
+                operation="audio.ducking",
+                affected=[payload["music_clip_id"]],
             )
-            save_timeline(root, clean)
             return {"ok": True, "timeline": clean}
         except (AudioIntelligenceError, TimelineError, HistoryError, KeyError, TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -1235,13 +1248,19 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         try:
             after = apply_crossfade(timeline, proposal)
             clean = validate_timeline(root, after)
-            create_checkpoint(
+            record_transaction(
                 root,
                 timeline,
+                clean,
                 edit_name=str(timeline.get("edit_name") or "teaser_30"),
                 reason=f"Crossfade audio · {proposal.get('left_clip_id')} / {proposal.get('right_clip_id')}",
+                actor="user",
+                operation="audio.crossfade",
+                affected=[
+                    proposal.get("left_clip_id"),
+                    proposal.get("right_clip_id"),
+                ],
             )
-            save_timeline(root, clean)
             return {"ok": True, "timeline": clean}
         except (AudioIntelligenceError, TimelineError, HistoryError, KeyError, TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -1365,15 +1384,36 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
             ).strip()
             checkpoint = None
             if checkpoint_reason:
-                checkpoint = create_checkpoint(
+                affected = [
+                    value
+                    for key in (
+                        "clip_id",
+                        "child_id",
+                        "parent_id",
+                    )
+                    if (value := args.get(key)) is not None
+                ]
+                inserted = args.get("clip")
+                if isinstance(inserted, dict) and inserted.get("id"):
+                    affected.append(inserted["id"])
+                checkpoint = record_transaction(
                     root,
                     before,
+                    clean,
                     edit_name=str(
                         payload.get("edit_name")
                         or before.get("edit_name")
                         or "teaser_30"
                     ),
                     reason=checkpoint_reason,
+                    actor=str(payload.get("actor") or "user"),
+                    operation=f"storyline.{operation}",
+                    transaction_id=payload.get("transaction_id"),
+                    affected=affected,
+                    coalesce_key=payload.get("coalesce_key"),
+                    coalesce_window_ms=int(
+                        payload.get("coalesce_window_ms", 500)
+                    ),
                 )
         except (
             TimelineError,
@@ -1413,6 +1453,16 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     def history_undo(payload: dict = Body(default_factory=dict)):
         try:
             return undo_checkpoint(
+                root,
+                str(payload.get("edit_name") or "teaser_30"),
+            )
+        except (TimelineError, HistoryError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/history/redo")
+    def history_redo(payload: dict = Body(default_factory=dict)):
+        try:
+            return redo_checkpoint(
                 root,
                 str(payload.get("edit_name") or "teaser_30"),
             )

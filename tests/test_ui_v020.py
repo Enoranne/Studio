@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from piste_studio import __version__
 from piste_studio.app import create_app
 from piste_studio.project import init_project
 
@@ -16,7 +17,7 @@ def test_v022_ui_structure_and_assets(tmp_path):
     client = TestClient(app)
     html = client.get("/").text
 
-    assert "PISTE Studio — Local App v0.29.0" in html
+    assert f"PISTE Studio — Local App v{__version__}" in html
     assert 'id="audioMeters"' in html
     assert 'id="editorialDrawer"' in html
     assert "Storyline magnétique" in html

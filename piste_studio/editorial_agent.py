@@ -10,7 +10,7 @@ import re
 from .audio_tracks import audio_waveform_samples, list_audio_tracks
 from .db import connect
 from .editorial import list_editorial_ranges
-from .history import create_checkpoint
+from .history import record_transaction
 from .locks import check_operation
 from .media_intelligence import get_media_analysis
 from .metadata import fetch_media_with_metadata
@@ -19,7 +19,7 @@ from .semantic_vision import (
     list_targeted_semantic_references,
 )
 from .storyline import validate_locked_change
-from .timeline import load_timeline, save_timeline, validate_timeline
+from .timeline import load_timeline, validate_timeline
 from .transcript_engine import get_transcript
 
 EDITORIAL_AGENT_VERSION = "0.26-editorial-agent-1"
@@ -859,13 +859,21 @@ def apply_proposal(
         if not decision.allowed:
             raise EditorialAgentError(decision.reason)
 
-    create_checkpoint(
+    record_transaction(
         root,
         current,
+        clean,
         edit_name=record["edit_name"],
         reason=f"Editorial Agent · proposition {proposal_id}",
+        actor="agent",
+        operation="editorial.apply_proposal",
+        transaction_id=f"proposal:{proposal_id}",
+        affected=[
+            str(clip.get("id"))
+            for clip in clean.get("clips", [])
+            if clip.get("id")
+        ],
     )
-    save_timeline(root, clean)
 
     conn = connect(root / "media.sqlite")
     try:

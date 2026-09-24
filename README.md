@@ -13,6 +13,22 @@ Les composants, dépendances, références et services tiers restent soumis à *
 Le fait que ce dépôt soit public sur GitHub ne constitue pas, à lui seul, une autorisation générale de copier, modifier, redistribuer, sous-licencier ou commercialiser PISTE Studio.
 
 
+## V0.30 — Transaction Journal
+
+V0.30 rend l'historique d'édition réellement réversible tout en conservant les checkpoints persistants comme filet de sécurité :
+
+- transactions avec snapshots avant/après ;
+- Undo et Redo persistants ;
+- provenance explicite USER / AGENT / SYSTEM ;
+- opérations et entités affectées enregistrées dans le journal ;
+- Storyline, audio et Apply Proposal reliés au même modèle d'historique ;
+- nouvelle édition après Undo = branche Redo invalidée proprement ;
+- coalescing explicite des micro-opérations d'un même geste ;
+- migration transparente des anciens index d'historique ;
+- bouton Redo et raccourcis clavier standards.
+
+Le journal ne donne aucun pouvoir supplémentaire à l'agent : Apply Proposal conserve la confirmation humaine, les locks et l'anti-stale existants.
+
 ## V0.29 — Timeline Core Reliability
 
 V0.29 consolide la Storyline sans changer son modèle créatif :
