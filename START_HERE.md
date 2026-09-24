@@ -1,4 +1,4 @@
-# Démarrage rapide — PISTE Studio v0.22
+# Démarrage rapide — PISTE Studio v0.24
 
 ## 1. Installer
 
@@ -370,3 +370,24 @@ Un preset contenant **FILL** ne mémorise jamais ton consentement au crop.
 **Autoriser explicitement le crop centré**
 
 Le preset mémorise une configuration technique, pas une autorisation éditoriale permanente.
+
+
+## Production Readiness V0.24.0
+
+Avant la première recette sur un vrai projet, lance :
+
+```bash
+piste-studio readiness --root "/chemin/vers/PISTE_0"
+```
+
+Si plusieurs montages existent, ajoute `--name`. Pour cibler une version précise, ajoute aussi `--version Vxxx`.
+
+Le rapport indique :
+
+- si le projet peut commencer à être monté ;
+- si Tesseract peut être bootstrapé ;
+- si l'authoring peut être exécuté ;
+- si un rendu source peut partir vers le Delivery Center ;
+- la **prochaine action exacte** à effectuer.
+
+La recette complète du premier essai réel est décrite dans `PRODUCTION_TEST_V0.24.md`.
