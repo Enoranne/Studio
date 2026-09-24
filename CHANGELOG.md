@@ -2,6 +2,29 @@
 
 ## V0.22 — Editorial Vision Refinement
 
+### V0.22.4 — Canon Conflict Detection
+
+- Nouveau moteur `canon_conflicts.py`.
+- Normalisation stable des tags sémantiques `character / prop / decor / look`.
+- Index Canon combinant personnages, accessoires, décors, look, `visual.avoid` et règles sémantiques explicites.
+- Nouvelle section Canon optionnelle :
+  - `allowed_tags` ;
+  - `forbidden_tags` ;
+  - `closed_facets`.
+- Statuts : **ALIGNED**, **UNVERIFIED**, **CONFLICT**, **HARD_LOCK**, **REVIEW**.
+- Une absence dans le Canon n’est pas considérée comme contradiction sauf si le facet est explicitement fermé.
+- `visual.avoid` peut produire un conflit explicite pour le facet `look`.
+- Les propositions sémantiques transportent désormais un `canon_assessment` recalculé depuis le Canon courant.
+- Détection du contexte HARD/SOFT LOCK lorsque le média proposé est réellement utilisé dans une zone temporelle concernée.
+- Un HARD LOCK ne s’applique à la sémantique que si ses opérations interdites couvrent la sémantique, le tag concerné ou toutes les opérations.
+- Acceptation d’un conflit/HARD LOCK impossible silencieusement : premier passage renvoie `REQUIRES_ACKNOWLEDGEMENT`.
+- L’utilisateur peut ensuite choisir explicitement **Accepter malgré conflit** ; ni Canon ni lock ne sont modifiés.
+- UI : badges Canon, raisons et sources visibles sur chaque proposition.
+- Vue **Canon & Locks** enrichie avec règles sémantiques.
+- Nouveaux projets initialisés avec Canon schema v2 et section `semantic`.
+- Tests de classification, closed facets, `visual.avoid`, HARD/SOFT LOCK et override explicite.
+- CI de référence : **101+ tests** avant validation Chromium finale.
+
 ### V0.22.3 — Groupes et qualité de référence
 
 - Migration SQLite rétrocompatible des références V0.22.2.
