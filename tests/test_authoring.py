@@ -183,10 +183,12 @@ class AuthoringTests(unittest.TestCase):
                 'tracks':[
                     {'id':'video','name':'VIDEO','kind':'video','muted':False,'locked':False},
                     {'id':'vo','name':'VO','kind':'audio','muted':False,'locked':False},
+                    {'id':'titles','name':'TITLES','kind':'title','muted':False,'locked':False},
                 ],
                 'clips':[
                     {'id':'v1','track':'video','label':'Shot','start':3,'duration':4,'sourceStart':1,'mediaDbId':video['id']},
                     {'id':'a1','track':'vo','label':'Voice','start':3,'duration':5,'sourceStart':.5,'audioDbId':audio['id'],'gainDb':-6,'pan':-.25,'audioRole':'vo','fadeIn':.2,'fadeOut':.3,'volumeEnvelope':[{'time':1,'gainDb':-6},{'time':3,'gainDb':-12}]},
+                    {'id':'t1','track':'titles','label':'PISTE 0','text':'PISTE 0','start':8,'duration':2,'titlePreset':'lower_third','fontFamily':'sans','fontSize':72,'fontWeight':700,'textAlign':'center','positionX':.5,'positionY':.82,'boxWidth':.8,'color':'#FFFFFF','backgroundColor':'#000000','backgroundOpacity':.25,'opacity':1,'padding':.02,'cornerRadius':.01},
                 ],
             }
             save_timeline(root,timeline)
@@ -195,6 +197,12 @@ class AuthoringTests(unittest.TestCase):
             self.assertEqual(plan['source'],'timeline.json')
             self.assertEqual(len(plan['cuts']),1)
             self.assertEqual(len(plan['audio_cuts']),1)
+            self.assertEqual(len(plan['title_cuts']),1)
+            title_cut=plan['title_cuts'][0]
+            self.assertEqual(title_cut['text'],'PISTE 0')
+            self.assertEqual(title_cut['preset'],'lower_third')
+            self.assertEqual(title_cut['font_size'],72.0)
+            self.assertEqual(title_cut['background_opacity'],.25)
             audio_cut=plan['audio_cuts'][0]
             self.assertAlmostEqual(audio_cut['volume'],10**(-6/20),places=6)
             self.assertEqual(audio_cut['gain_db'],-6)
@@ -209,6 +217,9 @@ class AuthoringTests(unittest.TestCase):
             result=execute_authoring(root,rec.edit_name,rec.version_label,dry_run=False)
             self.assertEqual(len(result['manifest']['layers']),1)
             self.assertEqual(len(result['manifest']['audio_layers']),1)
+            self.assertEqual(result['manifest']['title_layers'],[])
+            self.assertEqual(len(result['manifest']['unmaterialized_titles']),1)
+            self.assertIn('schéma Tesseract installé ne confirme pas', ' '.join(result['manifest']['warnings']))
             project=root/'edits'/rec.edit_name/rec.version_label/f'{rec.edit_name}_{rec.version_label}.tsrct'
             doc=json.loads(project.read_text())
             kinds=[x['type'] for x in doc['composition']['layers']]
