@@ -645,6 +645,164 @@ La Command Palette expose :
 
 **Delivery · Festival / social**
 
+## Motion & Delivery V0.23.5
+
+### Store projet
+
+Les presets personnalisés sont enregistrés dans :
+
+`delivery-presets.yaml`
+
+Structure :
+
+```yaml
+schema_version: 1
+default_preset_id: online_1080
+presets: []
+```
+
+Le fichier n’est créé qu’à la première mutation.
+
+### Presets intégrés
+
+Les profils V0.23.4 restent codés dans PISTE Studio.
+
+Ils portent :
+
+`custom = false`
+
+et ne peuvent être ni modifiés ni supprimés.
+
+### Presets personnalisés
+
+Un preset créé ou dupliqué porte :
+
+`custom = true`
+
+Son ID est stable même si son label change.
+
+Format d’ID :
+
+`custom_[a-z0-9_]+`
+
+La longueur est bornée et les IDs provenant d’un YAML modifié manuellement sont validés avant usage.
+
+### Normalisation
+
+Le serveur ne laisse pas l’UI construire une combinaison de codec arbitraire.
+
+#### H.264
+
+- conteneur MP4 ;
+- `libx264` ;
+- `yuv420p` ;
+- AAC ;
+- 48 kHz ;
+- 2 canaux ;
+- bitrate vidéo 1–200 Mb/s ;
+- bitrate audio 96–512 kb/s.
+
+#### ProRes
+
+- MOV ;
+- `prores_ks` ;
+- profile 3 / ProRes 422 HQ ;
+- `yuv422p10le` ;
+- PCM 24-bit ;
+- 48 kHz ;
+- 2 canaux.
+
+Les champs de bitrate H.264/AAC ne sont pas conservés sur un preset ProRes.
+
+### Dimensions et cadence
+
+Bornes :
+
+- largeur : 320–7680 ;
+- hauteur : 240–7680 ;
+- dimensions paires ;
+- fps : 24, 30 ou 60.
+
+La restriction fps correspond au bridge Tesseract courant.
+
+### Canvas source Tesseract
+
+Correspondances utilisées :
+
+- 720p → 1280×720 ;
+- 1080p → 1920×1080 ;
+- 4K → 3840×2160.
+
+`native` est autorisé seulement si la sortie correspond au canvas source choisi.
+
+Sinon le preset expose FIT/FILL et retombe sur FIT si un ancien réglage native devient incompatible.
+
+### Défaut projet
+
+`default_preset_id` peut référencer :
+
+- un preset intégré ;
+- un preset personnalisé.
+
+Si le preset personnalisé défini par défaut est supprimé, PISTE revient à :
+
+`online_1080`.
+
+### Portabilité
+
+Export :
+
+```json
+{
+  "schema_version": 1,
+  "kind": "piste_studio_delivery_preset",
+  "preset": {}
+}
+```
+
+Les champs locaux suivants sont exclus :
+
+- ID ;
+- custom/reference_only ;
+- timestamps.
+
+L’import génère donc un nouvel ID sûr dans le projet cible.
+
+### API presets
+
+- `POST /api/delivery/presets`
+- `PATCH /api/delivery/presets/{preset_id}`
+- `POST /api/delivery/presets/{preset_id}/duplicate`
+- `DELETE /api/delivery/presets/{preset_id}`
+- `POST /api/delivery/presets/{preset_id}/default`
+- `GET /api/delivery/presets/{preset_id}/export`
+- `POST /api/delivery/presets/import`
+
+`GET /api/delivery/targets` retourne maintenant :
+
+- built-ins ;
+- custom presets ;
+- `default_preset_id`.
+
+### UI
+
+Le Delivery Center indique :
+
+- **INTÉGRÉ** ;
+- **PERSONNALISÉ** ;
+- **DÉFAUT**.
+
+Pour un preset custom, l’éditeur expose ses paramètres et **Enregistrer le preset**.
+
+Pour tous les presets :
+
+- **Dupliquer** ;
+- **Définir par défaut** ;
+- **Exporter JSON** ;
+- **Importer JSON**.
+
+La suppression est disponible uniquement pour les presets personnalisés.
+
 ## Audio Delivery V0.21
 
 Le **Master Check** contrôle le mix rendu, après sommation des clips audio audibles de la timeline.
