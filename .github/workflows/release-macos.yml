@@ -71,9 +71,7 @@ jobs:
         run: python3 -m pip install -e '.[packaging]'
 
       - name: Build backend sidecar with Developer ID
-        env:
-          PISTE_CODESIGN_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
-        run: bash scripts/build_desktop_backend.sh
+        run: PISTE_CODESIGN_IDENTITY="$APPLE_SIGNING_IDENTITY" bash scripts/build_desktop_backend.sh
 
       - name: Install Tauri CLI and generate icons
         working-directory: desktop
