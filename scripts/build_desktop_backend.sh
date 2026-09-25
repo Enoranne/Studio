@@ -9,7 +9,24 @@ if ! command -v rustc >/dev/null 2>&1; then
   exit 2
 fi
 
-python3 -m PyInstaller   --clean   --noconfirm   --onefile   --name piste-studio-backend   --collect-data piste_studio   --hidden-import uvicorn.logging   --hidden-import uvicorn.loops.auto   --hidden-import uvicorn.protocols.http.auto   --hidden-import uvicorn.protocols.websockets.auto   --hidden-import uvicorn.lifespan.on   scripts/desktop_backend_entry.py
+PYINSTALLER_SIGN_ARGS=()
+if [[ -n "${PISTE_CODESIGN_IDENTITY:-}" ]]; then
+  PYINSTALLER_SIGN_ARGS+=(--codesign-identity "$PISTE_CODESIGN_IDENTITY")
+fi
+
+python3 -m PyInstaller \
+  --clean \
+  --noconfirm \
+  --onefile \
+  --name piste-studio-backend \
+  --collect-data piste_studio \
+  --hidden-import uvicorn.logging \
+  --hidden-import uvicorn.loops.auto \
+  --hidden-import uvicorn.protocols.http.auto \
+  --hidden-import uvicorn.protocols.websockets.auto \
+  --hidden-import uvicorn.lifespan.on \
+  "${PYINSTALLER_SIGN_ARGS[@]}" \
+  scripts/desktop_backend_entry.py
 
 TRIPLE="$(rustc --print host-tuple 2>/dev/null || true)"
 if [[ -z "$TRIPLE" ]]; then
