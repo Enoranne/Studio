@@ -36,8 +36,7 @@
     "shortDescription": "Montage local avec canon, locks, versions et delivery",
     "macOS": {
       "minimumSystemVersion": "10.15",
-      "hardenedRuntime": true,
-      "signingIdentity": "-"
+      "hardenedRuntime": true
     }
   }
 }
