@@ -16,7 +16,7 @@ def test_v022_ui_structure_and_assets(tmp_path):
     client = TestClient(app)
     html = client.get("/").text
 
-    assert "PISTE Studio — Local App v0.29.0" in html
+    assert "PISTE Studio — Local App v0.29.1" in html
     assert 'id="audioMeters"' in html
     assert 'id="editorialDrawer"' in html
     assert "Storyline magnétique" in html
