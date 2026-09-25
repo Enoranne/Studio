@@ -1,5 +1,9 @@
 name: desktop-macos
 
+concurrency:
+  group: desktop-macos-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
@@ -52,15 +56,23 @@ jobs:
 
       - name: Build macOS app and DMG
         working-directory: desktop
-        run: npx tauri build --bundles app,dmg
+        run: npx tauri build --config src-tauri/tauri.test.conf.json --bundles app,dmg
 
-      - name: Verify macOS code signature
+      - name: Verify macOS test signature and runtime mode
         shell: bash
         run: |
           set -euo pipefail
           APP="$(find desktop/src-tauri/target/release/bundle/macos -maxdepth 1 -name '*.app' -print -quit)"
           test -n "$APP"
           codesign --verify --deep --strict --verbose=2 "$APP"
+          SIDECAR="$(find "$APP/Contents" -type f -name 'piste-studio-backend*' -perm -111 -print -quit)"
+          test -n "$SIDECAR"
+          DETAILS="$(codesign -d --verbose=4 "$SIDECAR" 2>&1 || true)"
+          printf '%s\n' "$DETAILS"
+          if printf '%s\n' "$DETAILS" | grep -q 'runtime'; then
+            echo "ERROR: ad-hoc test sidecar must not use Hardened Runtime." >&2
+            exit 1
+          fi
 
       - name: Smoke test bundled backend
         shell: bash
@@ -104,7 +116,7 @@ jobs:
 
           cat "$RUNNER_TEMP/piste-health.json"
           grep -q '"ok":true' "$RUNNER_TEMP/piste-health.json"
-          grep -q '"version":"0.29.0"' "$RUNNER_TEMP/piste-health.json"
+          grep -q '"version":"0.29.1"' "$RUNNER_TEMP/piste-health.json"
           grep -q '"project_root":' "$RUNNER_TEMP/piste-health.json"
           kill "$PID"
           wait "$PID" 2>/dev/null || true

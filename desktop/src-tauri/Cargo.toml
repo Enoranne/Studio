@@ -1,6 +1,6 @@
 [package]
 name = "piste-studio-desktop"
-version = "0.29.0"
+version = "0.29.1"
 description = "Desktop shell for PISTE Studio"
 edition = "2021"
 

@@ -199,7 +199,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
     if not ui_file.exists():
         raise RuntimeError(f"UI introuvable : {ui_file}")
 
-    app = FastAPI(title="PISTE Studio Local App", version="0.29.0")
+    app = FastAPI(title="PISTE Studio Local App", version="0.29.1")
     app.state.project_root = root
 
     @app.get("/")
@@ -218,7 +218,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.29.0", "project_root": str(root)}
+        return {"ok": True, "version": "0.29.1", "project_root": str(root)}
 
     @app.get("/api/production-run")
     def production_run(
@@ -317,7 +317,7 @@ def create_app(project_root: Path, ui_path: Path | None = None) -> FastAPI:
         except Exception as exc:
             tesseract = {"ready": False, "message": f"Diagnostic Tesseract indisponible : {exc}"}
         return {
-            "app_version": "0.29.0",
+            "app_version": "0.29.1",
             "project": project,
             "canon": read_yaml(paths.canon_yaml) or {},
             "locks": read_yaml(paths.locks_yaml) or {"locks": []},

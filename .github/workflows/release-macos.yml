@@ -70,8 +70,8 @@ jobs:
       - name: Install packaging dependencies
         run: python3 -m pip install -e '.[packaging]'
 
-      - name: Build backend sidecar
-        run: bash scripts/build_desktop_backend.sh
+      - name: Build backend sidecar with Developer ID
+        run: PISTE_CODESIGN_IDENTITY="$APPLE_SIGNING_IDENTITY" bash scripts/build_desktop_backend.sh
 
       - name: Install Tauri CLI and generate icons
         working-directory: desktop

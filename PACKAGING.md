@@ -192,3 +192,28 @@ Le contrôle de démarrage ne se contente plus de vérifier qu’un port TCP est
 - shell Rust/Tauri ;
 - configuration Tauri ;
 - package desktop Node.
+
+
+## Hotfix V0.29.1 — macOS Library Validation
+
+Le premier essai réel du DMG V0.29.0 sur une machine Apple Silicon a révélé
+un défaut que le smoke test CI ne reproduisait pas : le sidecar PyInstaller
+`onefile` pouvait être signé ad-hoc avec Hardened Runtime actif par Tauri,
+puis macOS refusait la bibliothèque Python extraite avec une erreur de
+Library Validation / Team ID.
+
+La stratégie est désormais séparée :
+
+- **build de test ad-hoc** : `tauri.test.conf.json` force
+  `hardenedRuntime=false` avec l’identité ad-hoc `-` ;
+- **release Developer ID** : le Hardened Runtime reste actif dans
+  `tauri.conf.json`, et l’identité Apple est transmise à PyInstaller via
+  `PISTE_CODESIGN_IDENTITY` afin que les binaires embarqués du `onefile`
+  soient signés avec la même identité avant le bundling Tauri.
+
+Le workflow de test vérifie aussi que le sidecar ad-hoc final n’expose pas le
+flag `runtime` dans sa signature.
+
+Ce hotfix ne diminue pas les exigences du build public notarized : il évite
+seulement d’appliquer Library Validation à un build de test qui ne possède pas
+encore de Team ID Apple.
