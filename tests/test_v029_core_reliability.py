@@ -284,6 +284,25 @@ def test_v029_version_is_aligned_across_python_desktop_ui_and_smoke_test():
     ).read_text(encoding="utf-8")
     assert f'\"version\":\"{expected}\"' in workflow
 
+    launcher = (ROOT / "desktop" / "src" / "index.html").read_text(
+        encoding="utf-8"
+    )
+    assert f"DESKTOP · V{expected}" in launcher
+
+    test_config = json.loads(
+        (ROOT / "desktop" / "src-tauri" / "tauri.test.conf.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert test_config["bundle"]["macOS"]["hardenedRuntime"] is False
+    assert test_config["bundle"]["macOS"]["signingIdentity"] == "-"
+
+    release_workflow = (
+        ROOT / ".github" / "workflows" / "release-macos.yml"
+    ).read_text(encoding="utf-8")
+    assert "PISTE_CODESIGN_IDENTITY" in release_workflow
+    assert "APPLE_SIGNING_IDENTITY" in release_workflow
+
 
 def test_storyline_operation_api_can_checkpoint_atomically(tmp_path):
     root = tmp_path / "AtomicKernel"
