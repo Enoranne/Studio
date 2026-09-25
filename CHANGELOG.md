@@ -1,3 +1,20 @@
+# V0.29.1 — macOS Sidecar Packaging Hotfix
+
+- corrige l’échec réel du launcher lors de **Nouveau projet…** sur macOS :
+  Library Validation refusait la bibliothèque Python extraite du sidecar
+  PyInstaller `onefile` dans le build ad-hoc ;
+- sépare le profil de test macOS du profil release :
+  le build ad-hoc désactive Hardened Runtime, tandis que la release Developer
+  ID conserve Hardened Runtime ;
+- la release transmet désormais la même identité Developer ID à PyInstaller
+  pour signer les binaires collectés avant leur encapsulation `onefile` ;
+- le workflow macOS vérifie que le sidecar de test final ne porte pas le flag
+  Hardened Runtime ;
+- corrige le libellé launcher resté sur **DESKTOP · V0.25** ;
+- version alignée sur **0.29.1**.
+
+---
+
 # V0.29.0 — Timeline Core Reliability
 
 - timebase interne entier à 1 MHz pour les opérations temporelles critiques ;
