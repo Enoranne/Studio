@@ -248,7 +248,7 @@ def test_magnetic_ui_delegates_insert_remove_and_serializes_media_for_kernel():
 
 
 def test_v029_version_is_aligned_across_python_desktop_ui_and_smoke_test():
-    expected = "0.29.0"
+    expected = "0.29.1"
     assert __version__ == expected
 
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
