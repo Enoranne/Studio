@@ -96,4 +96,4 @@ Tester le bridge avec une installation externe Tesseract épinglée, contrôler 
 
 ## Première tranche de corrections
 
-La tranche initiale reste limitée à la portabilité des fixtures de tests, au projet neuf sans clips de démonstration et au son du lecteur principal avec respect du mute VIDEO. Les résultats après correction sont consignés dans `BILAN_CORRECTIONS_CODEX.md`. Les corrections ne changent ni le schéma v6, ni les locks, ni les propositions éditoriales, ni le moteur Tesseract, ni les branches 0.29.1/0.30.
+La tranche initiale reste limitée à la portabilité des fixtures de tests, au projet neuf sans clips de démonstration et au son du lecteur principal avec respect du mute VIDEO. Les résultats après correction sont consignés dans `BILAN_CORRECTIONS_CODEX.md` : **190 tests réussis en CI et build macOS arm64 réussi**, sans validation Finder/GH5/export Tesseract réel. Les corrections ne changent ni le schéma v6, ni les locks, ni les propositions éditoriales, ni le moteur Tesseract, ni les branches 0.29.1/0.30.
