@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
 import os
+import sys
 import unittest
 
 from piste_studio.project import init_project
@@ -15,7 +16,7 @@ from piste_studio.timeline import save_timeline
 from piste_studio.metadata import set_media_metadata, fetch_media_with_metadata
 
 
-FAKE_AUTHOR_CLI = r'''#!/usr/bin/python3
+FAKE_AUTHOR_CLI = f"#!{sys.executable}\n" + r'''
 import json, pathlib, sys
 args=sys.argv[1:]
 

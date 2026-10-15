@@ -1,6 +1,7 @@
 from pathlib import Path
 import json
 import os
+import sys
 from unittest.mock import patch
 
 import pytest
@@ -15,7 +16,7 @@ from piste_studio.tesseract_bridge import save_tesseract_config
 from piste_studio.versioning import create_timeline_version
 
 
-FAKE_CLI = r'''#!/usr/bin/python3
+FAKE_CLI = f"#!{sys.executable}\n" + r'''
 import sys
 if sys.argv[1:] == ['--version']:
     print('Tesseract CLI v0.2.0')

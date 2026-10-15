@@ -15,13 +15,14 @@ const audioAssets=[
 {id:'au_hiss',file:'cassette_hiss.wav',label:'CASSETTE HISS',role:'sfx',duration:5,tags:['cassette','souffle'],note:'Texture magnétophone / cassette.',url:null,peaks:null},
 {id:'au_click',file:'click.wav',label:'CLICK',role:'sfx',duration:1,tags:['cassette','click'],note:'Clic mécanique de fin.',url:null,peaks:null}
 ];
-const tracks=[
+function makeDefaultTracks(){return [
 {id:'video',name:'VIDEO',kind:'video',muted:false,locked:false},
 {id:'titles',name:'TITLES',kind:'title',muted:false,locked:false},
 {id:'vo',name:'VO',kind:'audio',muted:false,locked:false},
 {id:'music',name:'MUSIC',kind:'music',muted:false,locked:false},
 {id:'sfx',name:'SFX',kind:'sfx',muted:false,locked:false}
-];
+]}
+const tracks=makeDefaultTracks();
 let clips=[
 {id:'v1',track:'video',mediaId:'r017',label:'MALO + FISHER',start:3,duration:5,sourceStart:0},
 {id:'v2',track:'video',mediaId:'r024',label:'RONAN · RIRE',start:8,duration:5,sourceStart:0},
@@ -48,7 +49,18 @@ function setPlayhead(t,fromPlayback=false){playhead=Math.max(0,Math.min(DURATION
 function step(d){pausePlayback();setPlayhead(playhead+d)}
 function syncTitle(){const title=activeTitle();$('#viewerTitle').classList.toggle('show',!!title);$('#viewerTitle').textContent=title?.text||title?.label||''}
 function setPlaceholder(title,body){const p=$('#viewerPlaceholder');p.innerHTML=`<strong>${title}</strong>${body}`;$('#viewer').classList.remove('has-video')}
+function renderEmptyInspector(){
+  $('#selectionKind').textContent='AUCUNE SÉLECTION';
+  $('#inspector').innerHTML=media.length||audioAssets.length
+    ?'<h3>Aucune sélection</h3><p>Sélectionne un média dans la bibliothèque.</p>'
+    :'<h3>Projet vide</h3><p>Place tes médias dans les dossiers rushes et audio du projet, puis clique sur Scanner.</p>';
+}
+function syncVideoSound(){
+  // SOURCE auditions the original rush; PROGRAM follows the VIDEO track mute.
+  $('#video').muted=typeof viewerMode!=='undefined'&&viewerMode==='program'&&!!getTrack('video')?.muted;
+}
 function syncProgramMonitor(fromPlayback=false){
+  syncVideoSound();
   const clip=activeVideoClip();const v=$('#video');
   if(!clip){currentMonitorMedia=null;v.pause();$('#viewerSource').textContent='NO VIDEO';setPlaceholder('PISTE 0 · PREVIEW','Aucun clip VIDEO sous le playhead.');return}
   const m=getMedia(clip.mediaId);$('#viewerSource').textContent=`${clip.label} · ${fmt(clip.sourceStart+(playhead-clip.start))}`;
@@ -138,7 +150,7 @@ function addAudio(track){const a=audioAssets.find(x=>x.role===track)||audioAsset
 function nudge(d){const c=getClip(selectedClip);if(!c)return;const next={...c,start:snapTime(c.start+d)},err=validate(next,c.id);if(err){toast(err,true);return}c.start=next.start;renderTracks();setPlayhead(c.start)}
 function duplicateClip(){const c=getClip(selectedClip);if(!c)return;const n={...c,id:'x'+Date.now(),start:snapTime(c.start+c.duration)};const err=validate(n);if(err){toast(err,true);return}clips.push(n);selectedClip=n.id;renderTracks();toast('Clip dupliqué')}
 function removeClip(){const p=audioPlayers.get(selectedClip);if(p){p.pause();audioPlayers.delete(selectedClip)}clips=clips.filter(c=>c.id!==selectedClip);selectedClip=clips[0]?.id||null;renderTracks();syncProgramMonitor();syncAudio();toast('Clip supprimé')}
-function toggleMute(id){const t=getTrack(id);t.muted=!t.muted;renderTracks();toast(`${t.name} ${t.muted?'mutée':'active'}`)}
+function toggleMute(id){const t=getTrack(id);t.muted=!t.muted;if(id==='video')syncVideoSound();renderTracks();toast(`${t.name} ${t.muted?'mutée':'active'}`)}
 function toggleTrackLock(id){const t=getTrack(id);t.locked=!t.locked;renderTracks();toast(`${t.name} ${t.locked?'verrouillée':'déverrouillée'}`)}
 function previewMedia(id){pausePlayback();const m=getMedia(id);if(!m)return;if(!m.url){setPlaceholder(m.label,`Rush local non associé.<br><small>${m.file}</small>`);$('#viewerSource').textContent=m.file;return}const v=$('#video');currentMonitorMedia=m.id;v.src=m.url;v.onloadedmetadata=()=>{v.currentTime=m.in;$('#viewer').classList.add('has-video');$('#viewerSource').textContent=`MEDIA · ${m.file}`};v.load()}
 function bindSelectedMedia(){window.__bindTarget=selectedMedia;$('#singleFileInput').value='';$('#singleFileInput').click()}

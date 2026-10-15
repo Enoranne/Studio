@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import pytest
 
 from piste_studio.media import scan_media
 from piste_studio.metadata import fetch_media_with_metadata, set_media_metadata
@@ -109,7 +110,14 @@ def test_production_run_reports_representative_edit(tmp_path):
     assert report["machine_complete"] is False
 
 
-def test_production_run_never_auto_passes_human_review(tmp_path):
+@pytest.mark.parametrize("tools_available", [True, False])
+def test_production_run_never_auto_passes_human_review(tmp_path, monkeypatch, tools_available):
+    # This test uses synthetic reports, not real renders. Exercise both tool
+    # states explicitly instead of depending on the developer's FFmpeg install.
+    monkeypatch.setattr(
+        "piste_studio.readiness.shutil.which",
+        lambda name: f"/test/{name}" if tools_available and name in {"ffmpeg", "ffprobe"} else None,
+    )
     root = make_project(tmp_path)
     rec = publish_representative_timeline(root)
     version_dir = rec.directory
@@ -131,7 +139,7 @@ def test_production_run_never_auto_passes_human_review(tmp_path):
 
     report = build_production_run_report(root, edit_name=rec.edit_name)
     assert report["machine_complete"] is True
-    assert report["status"] in {"IN_PROGRESS", "AWAITING_HUMAN_REVIEW"}
+    assert report["status"] == ("AWAITING_HUMAN_REVIEW" if tools_available else "BLOCKED")
     assert report["status"] != "PASS"
     assert report["policy"]["never_auto_pass_human_review"] is True
 
