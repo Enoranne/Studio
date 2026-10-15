@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
 import os
+import sys
 import unittest
 
 from piste_studio.project import init_project
@@ -19,7 +20,7 @@ from piste_studio.tesseract_bridge import (
 )
 
 
-FAKE_CLI = r'''#!/usr/bin/python3
+FAKE_CLI = f"#!{sys.executable}\n" + r'''
 import json, pathlib, sys
 args=sys.argv[1:]
 if args == ['--version']:

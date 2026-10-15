@@ -58,7 +58,7 @@ for f in piste_studio/ui/*.js desktop/src/*.js; do node --check "$f" || exit 1; 
 
 - **187 tests collectés**.
 - Hors navigateur : **168 réussis, 10 échoués, 4 ignorés** en 5,97 s.
-- Les 10 échecs utilisent des faux CLI dont le shebang impose `/usr/bin/python3`. Sur ce Mac, ce chemin demande les outils Apple absents, même si un Python fonctionnel lance pytest. C’est un défaut de portabilité des fixtures de tests ; cela ne prouve pas un défaut du moteur Tesseract réel.
+- Neuf échecs utilisent des faux CLI dont le shebang impose `/usr/bin/python3`. Sur ce Mac, ce chemin demande les outils Apple absents, même si un Python fonctionnel lance pytest. Le dixième test attend un état de livraison sans garantir la présence de FFmpeg/ffprobe. Ce sont des dépendances à l’environnement dans les fixtures ; cela ne prouve pas un défaut du moteur Tesseract réel.
 - Les 4 tests ignorés nécessitent FFmpeg/ffprobe. Le détail est conservé dans les résultats complémentaires.
 - Syntaxe de tous les fichiers JavaScript : **réussie**.
 - Les 5 tests navigateur ne sont pas inclus dans ce premier résultat. Installation Chromium en cours à ce stade ; résultat final séparé ci-dessous ou dans le bilan de corrections.
